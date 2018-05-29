@@ -1,5 +1,4 @@
 import sys
-sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Blender')
 import os
 import imp
 import bpy

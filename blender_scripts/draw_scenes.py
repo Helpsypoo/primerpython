@@ -1,5 +1,3 @@
-import sys
-sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts')
 import imp
 import bpy
 import mathutils
@@ -9,13 +7,14 @@ import inspect
 from copy import deepcopy
 from random import random, uniform
 
-#import my_quick_explode
-#import two_d_world
+#I feel like the line below should be needed, but apparently it isn't.
+#sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts\\tools')
+
+import bobject
 import drawn_world
 import tex_bobject
 import constants
 
-import bobject
 
 import clear
 #import alone doesn't check for changes in cached files
@@ -33,6 +32,8 @@ import helpers
 imp.reload(helpers)
 from helpers import *
 
+import sys
+sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts\\video_scenes')
 import why_things_exist
 imp.reload(why_things_exist)
 from why_things_exist import *
@@ -42,22 +43,16 @@ imp.reload(population)
 from population import *
 
 '''
-Next
-- Create a video
--- Preview of graphs and family trees (?)
--- Write function to run sims until it finds one with the right results
--- Make sims take more arguments (e.g., pop cap, closeness)
-- 60 fps
-
 Workflow improvements
 - Make a decision about specifying start/end or start/duration and make
     keyframing functions follow that convention.
 - Automate rendering
--
+- Write function to run sims until it finds one with the right results
+- Make sims take more arguments (e.g., pop cap, closeness)
+- Preview of graphs and family trees (?)
 
 New functionality
 - Stop and alter play speed of sims
-- Graphs
 - Family tree
 
 Open source
@@ -66,30 +61,11 @@ e.g., Add kwargs to class init functions to customize on instantiation
 - Clean up imports
 - Delete old print statements and commented-out blocks
 
-Visual improvements
-- Creature improvements
--- Tweak neck turn parameters for faster movement and less backward bending
--- Make eyes bigger
-- Appear/disappear animations
--- Tex
---- Fade in from left
---- Collapse splines into each other rather than from nothing
---- 3b1b-style outline then fill, perhaps by fading in splines and fill
-- 2D Roaming
--- Make repulsion inverse, maybe inverse square
--- Try inverse repulsion from walls
-- Rain
--- metaballs
--- bevel collision objects
-
 Performance
 - Final render speed
 -- Possibly convert metaballs to mesh, or something
 -- Hide bobjects that haven't appeared yet so they don't need to be syncronized
 --  for render.
-- Find right number for points per spline (to speed up high-quality mode)
-- (Doesn't really seem to matter) Get rid of UI-centric ways of doing things.
-Instead, set properties directly. Will make things faster.
 '''
 
 def initialize_blender(total_duration = DEFAULT_SCENE_DURATION):
@@ -603,9 +579,9 @@ def main():
     #morph_test()
     #graph_test()
     #color_test()
-    bcard()
+    #bcard()
 
-    #draw_scenes_from_file(why_things_exist)
+    draw_scenes_from_file(why_things_exist)
 
     print_time_report()
     finish_noise()

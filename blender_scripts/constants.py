@@ -88,7 +88,7 @@ for color in COLORS:
 '''
 File and directory constants
 '''
-MEDIA_DIR = os.path.join(os.path.expanduser('~'), "Documents\\CodeProjects\\Blender")
+MEDIA_DIR = os.path.join(os.path.expanduser('~'), "Documents\\CodeProjects\\Primer")
 
 ###
 THIS_DIR          = os.path.dirname(os.path.realpath(__file__))
