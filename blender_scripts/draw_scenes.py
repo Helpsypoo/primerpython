@@ -7,8 +7,9 @@ import inspect
 from copy import deepcopy
 from random import random, uniform
 
-#I feel like the line below should be needed, but apparently it isn't.
-#sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts\\tools')
+import sys
+sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts')
+sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts\\tools')
 
 import bobject
 import drawn_world
@@ -24,6 +25,10 @@ imp.reload(tex_bobject)
 imp.reload(constants)
 from constants import *
 
+import svg_bobject
+imp.reload(svg_bobject)
+from svg_bobject import *
+
 import graph_bobject
 imp.reload(graph_bobject)
 from graph_bobject import *
@@ -32,15 +37,22 @@ import helpers
 imp.reload(helpers)
 from helpers import *
 
-import sys
 sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts\\video_scenes')
 import why_things_exist
 imp.reload(why_things_exist)
 from why_things_exist import *
 
+import replication_only
+imp.reload(replication_only)
+from replication_only import *
+
 import population
 imp.reload(population)
 from population import *
+
+import gesture
+imp.reload(gesture)
+from gesture import *
 
 '''
 Workflow improvements
@@ -386,7 +398,7 @@ def tex_test():
     initialize_blender(total_duration = 350)
 
     slogan = tex_bobject.TexBobject(
-        '\\text{A FRESH TAKE ON OLD SUBJECTS}',
+        '\\rightarrow',
         centered = True
     )
 
@@ -432,8 +444,37 @@ def morph_test():
 
     print_time_report()
 
+def gesture_test():
+    initialize_blender()
+
+    bracket = gesture.Gesture(
+        gesture_series = [
+            {
+                'type': 'bracket',
+                'points': {
+                    'annotation_point': (0, -2, 0),
+                    'left_point': (2, -0, 0),
+                    'right_point': (-1, 1, 0)
+                }
+            },
+            {
+                'type': 'bracket',
+                'points': {
+                    'annotation_point': (0, -1, 0),
+                    'left_point': (3, -5, 0),
+                    'right_point': (0, 2, 0)
+                }
+            }
+        ]
+    )
+    bracket.add_to_blender(appear_frame = 0)
+    bracket.morph_figure(1, start_frame = 60)
+
 def draw_scenes_from_file(script_file):
-    #script_file = existence_and_stability
+    #This function is meant to process many scenes at once.
+    #Most scenes end up being large enough where it doesn't make sense to have
+    #more than one in blender at once, so this is obsolete and will
+    #break if you try to process more than one scene at a time.
     scenes = get_scene_object_list(script_file)
     duration = get_total_duration(scenes)
     initialize_blender(total_duration =  duration)
@@ -442,14 +483,16 @@ def draw_scenes_from_file(script_file):
     for scene in scenes:
         execute_and_time(
             scene[0], #This is just a string
-            scene[1].play_from_frame(frame)
+            scene[1].play()
         )
-        frame += scene[1].duration + DEFAULT_SCENE_BUFFER
+        #frame += scene[1].duration + DEFAULT_SCENE_BUFFER
 
     #Hide empty objects from render, for speed
     for obj in bpy.data.objects:
         if obj.type == 'EMPTY':
             obj.hide_render = True
+    #Doesn't change much, since most empty objects are keyframed handles for
+    #other objects.
 
     print_time_report()
 
@@ -580,8 +623,9 @@ def main():
     #graph_test()
     #color_test()
     #bcard()
+    gesture_test()
 
-    draw_scenes_from_file(why_things_exist)
+    #draw_scenes_from_file(replication_only)
 
     print_time_report()
     finish_noise()

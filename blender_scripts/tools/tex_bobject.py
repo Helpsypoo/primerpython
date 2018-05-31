@@ -147,7 +147,7 @@ def tex_to_svg_file(expression, template_tex_file):
 
 def tex_title(expression, template_tex_file):
     name = expression
-    to_delete = ['/', '\\', '{', '}', ' ', ':', '~', '%', '\'', '\"']
+    to_delete = ['/', '\\', '{', '}', ' ', ':', '~', '%', '\'', '\"', '^']
     #Replace these rather than deleting them. These are characters that I've
     #wanted as lone expressions. (Which are also off limits in file names)
     to_replace = {

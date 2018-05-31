@@ -133,7 +133,7 @@ class DrawnWorld(TwoDWorld, Bobject):
                 #2 * MATURATION_TIME because that's the minimum length of time
                 #for a creature to be animated as it's born and then dies
                 if other_cre != cre and \
-                other_cre.deathday + MATURATION_TIME < cre.birthday and \
+                other_cre.deathday + 2 * MATURATION_TIME < cre.birthday and \
                 other_cre.alleles == cre.alleles and \
                 other_cre.reused == False:
                     cre.bobject = other_cre.bobject
@@ -206,8 +206,7 @@ class DrawnWorld(TwoDWorld, Bobject):
             effective_deathday = cre.deathday
             if effective_deathday - cre.birthday < MATURATION_TIME:
                 effective_deathday = cre.birthday + MATURATION_TIME
-            #MATURATION_TIME / 2 because cre time is in 30 fps
-            disappear_frame = self.start_frame + 2 * effective_deathday + MATURATION_TIME
+            disappear_frame = self.start_frame + effective_deathday + MATURATION_TIME
             #Ensure creature disappears in place.
             try:
                 obj.location = cre.locations[cre.deathday]

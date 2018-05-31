@@ -154,7 +154,7 @@ Vector operations on lists/tuples
 def add_lists_by_element(list1, list2, subtract = False):
     if len(list1) != len(list2):
         raise Warning("The lists aren't the same length")
-    list3 = deepcopy(list2)
+    list3 = list(deepcopy(list2))
     if subtract == True:
         for i in range(len(list3)):
             list3[i] *= -1
@@ -173,6 +173,13 @@ def scalar_mult_vec(vec, scalar):
         v[i] *= scalar
     return v
 
+def dot_product(vec1, vec2):
+    product = 0
+    for x1, x2, in zip(vec1, vec2):
+        product += x1 * x2
+
+    return product
+
 def vec_len(vec):
     length = 0
     for x in vec:
@@ -181,10 +188,10 @@ def vec_len(vec):
     return length
 
 def get_unit_vec(vec):
-    v = deepcopy(vec)
-    length = vec_len(v)
-    for x in v:
-        x /= length
+    v = []
+    length = vec_len(vec)
+    for i in range(len(vec)):
+        v.append(vec[i] / length)
     return v
 
 '''

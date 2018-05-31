@@ -134,6 +134,7 @@ class SVGBobject(Bobject):
         null = new_null_curve(
             parent = self.ref_obj,
             location = self.ref_obj.location,
+            rotation = self.ref_obj.rotation_euler,
             color = 'color5'
         )
 
@@ -152,6 +153,8 @@ class SVGBobject(Bobject):
             rendered_curve = bobject.Bobject(objects = [dup], name = 'rendered')
             rendered_curve.ref_obj.location = \
                                 self.morph_chains[i][0].ref_obj.location
+            rendered_curve.ref_obj.rotation_euler = \
+                                self.morph_chains[i][0].ref_obj.rotation_euler
 
             self.add_subbobject(rendered_curve)
             self.rendered_curve_bobjects.append(rendered_curve)
@@ -276,6 +279,7 @@ class SVGBobject(Bobject):
                 bobj = bobject.Bobject(
                     objects = [obj],
                     location = curve.ref_obj.location,
+                    rotation_euler = curve.ref_obj.rotation_euler,
                     name = 'curve_copy')
                 copies.append(bobj)
             self.lists_of_copies.append(copies)
@@ -321,13 +325,15 @@ class SVGBobject(Bobject):
                 while len(initial) < len(final):
                     null_curve = new_null_curve(
                         parent = initial[-1].ref_obj.parent,
-                        location = initial[-1].ref_obj.location
+                        location = initial[-1].ref_obj.location,
+                        rotation = initial[-1].ref_obj.rotation_euler
                     )
                     initial.append(null_curve)
                 while len(final) < len(initial):
                     null_curve = new_null_curve(
                         parent = final[-1].ref_obj.parent,
-                        location = final[-1].ref_obj.location
+                        location = final[-1].ref_obj.location,
+                        rotation = final[-1].ref_obj.rotation_euler
                     )
                     final.append(null_curve)
                 destinations = range(len(initial))
@@ -409,6 +415,7 @@ class SVGBobject(Bobject):
                     null_curve = new_null_curve(
                         parent = final[0].ref_obj.parent,
                         location = loc_cur.ref_obj.location,
+                        rotation = loc_cur.ref_obj.rotation_euler
                         #reuse_object = self.reusable_empty_curve
                     )
                     self.add_to_or_make_morph_chain(i, cur, null_curve)
@@ -439,6 +446,7 @@ class SVGBobject(Bobject):
                     null_curve = new_null_curve(
                         parent = initial[0].ref_obj.parent,
                         location = loc_cur.ref_obj.location,
+                        rotation = loc_cur.ref_obj.rotation_euler
                         #reuse_object = reuse
                     )
                     #self.expressions[0]['curves'].append(null_curve)
@@ -464,6 +472,7 @@ class SVGBobject(Bobject):
                 null_curve = new_null_curve(
                 parent = final[0].ref_obj.parent,
                 location = chain[-1].ref_obj.location,
+                rotation = chain[-1].ref_obj.rotation_euler
                 #reuse_object = self.reusable_empty_curve
                 )
                 chain.append(null_curve)
@@ -508,6 +517,7 @@ class SVGBobject(Bobject):
             null_curve = new_null_curve(
                 parent = self.ref_obj,
                 location = char1.ref_obj.location,
+                rotation = char1.ref_obj.rotation_euler
                 #reuse_object = self.reusable_empty_curve
             )
             working_chain.append(null_curve)
@@ -668,6 +678,10 @@ class SVGBobject(Bobject):
                 char1.parent.location = char2.parent.location
                 char1.parent.keyframe_insert(data_path = "location", frame = end_frame)
 
+                char1.parent.keyframe_insert(data_path = "rotation_euler", frame = start_frame)
+                char1.parent.rotation_euler = char2.parent.rotation_euler
+                char1.parent.keyframe_insert(data_path = "rotation_euler", frame = end_frame)
+
                 #Shape keys
                 eval_time = char1.data.shape_keys.key_blocks[-2].frame
                 char1.data.shape_keys.eval_time = eval_time
@@ -801,6 +815,65 @@ class SVGBobject(Bobject):
             #add_points_to_curve_splines(char, CONTROL_POINTS_PER_SPLINE)
         self.add_morph_shape_keys(initial, final)
 
+class SVGFromBlend(SVGBobject):
+    def __init__(self, *filenames, **kwargs):
+        super().__init__(*filenames, **kwargs)
+
+    def get_file_paths(self, filenames):
+        #Should just be one file for SVGFromBlend, prepping to import.
+        #Might be multiple strings in the format helpers.import_object takes
+        self.paths = list(filenames)
+
+    def import_svg_data(self):
+        #import from the .blend file and add curves to self.imported_svg_data,
+        #mimicking the data structure of regular svg bobjects
+        paths = self.paths
+        self.imported_svg_data = {}
+
+        #For this type of object, the path list items are lists, which can
+        #have multiple strings to feed to import_objects()
+        for i, path in enumerate(paths):
+            name = str(path)
+            self.imported_svg_data[name] = {'curves' : []}
+            new_curve_bobj = self.import_and_modify_curve(i, path)
+            #self.modify_curves(new_curve_bobj.ref_obj.children[0].children[0])
+            #self.modify_curves()
+
+            new_curves = []
+            #These will all have container objects because they were likely
+            #made as regular svgbobjects the first time, so just take the actual
+            #curves.
+            for obj in new_curve_bobj.ref_obj.children:
+                new_curves.append(obj.children[0])
+
+            #self.imported_svg_data[name]['curves'] = new_curves
+
+            #After calling import_objects(), it's best for paths to not be lists
+            #for i in range(len(self.paths)):
+            #    self.paths[i] = str(self.paths[i])
+
+            for j, curve in enumerate(new_curves):
+                curve_bobj = bobject.Bobject(objects = [curve])
+                #Make the bobject's ref_obj handle location
+                curve_bobj.ref_obj.location = curve.location
+                curve.location = [0, 0, 0]
+                curve_bobj.ref_obj.rotation_euler = curve.rotation_euler
+                curve.rotation_euler = [0, 0, 0]
+
+                self.imported_svg_data[name]['curves'].append(curve_bobj)
+
+        print(self.imported_svg_data)
+        print(self.paths)
+
+    def import_and_modify_curve(self, index, path):
+        #This just imports a curve and returns it
+        #Extemded by subclass
+        #index is needed for subclass implementation to know which curve it's
+        #modifying.
+        new_curve_bobj = import_object(*path)
+        return new_curve_bobj
+
+
 def reindex_to_top_point(spline):
     #Make it so the highest control point is at index 0
     #This eliminates net rotation of points around the curve as they transition
@@ -925,6 +998,7 @@ def get_spline_length(spline):
 def new_null_curve(
     parent = None,
     location = None,
+    rotation = None,
     color = 'color5',
     reuse_object = None
 ):
@@ -944,6 +1018,7 @@ def new_null_curve(
     bobj.ref_obj.parent = parent
     #print(matrix_local)
     bobj.ref_obj.location = location
+    bobj.ref_obj.rotation_euler = rotation
     #print(bobj.ref_obj.matrix_local)
     #bpy.context.scene.objects.link(new_null)
     #if reuse_object == None:

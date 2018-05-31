@@ -6,7 +6,7 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'final'
+RENDER_QUALITY = 'low'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
@@ -26,7 +26,7 @@ if RENDER_QUALITY == 'high':
     LAMPS_TO_A_SIDE = 1
     LAMP_TYPE = 'SUN'
     ICO_SUBDIVISIONS = 6
-    CONTROL_POINTS_PER_SPLINE = 50 #TODO: figure out the threshold for noticing a difference
+    CONTROL_POINTS_PER_SPLINE = 100 #TODO: figure out the threshold for noticing a difference
     PARTICLES_PER_MESH = 100000 #Could be smaller if morphing smaller objects
     #Could even be a function of scale
     #Or number of other objects

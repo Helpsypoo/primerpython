@@ -33,6 +33,7 @@ class Bobject(object):
 
         ref_obj = bpy.data.objects.new(name = self.name, object_data = None)
         ref_obj.location = self.get_from_kwargs('location', (0, 0, 0) )
+        ref_obj.rotation_euler = self.get_from_kwargs('rotation_euler', (0, 0, 0) )
         self.scale = self.get_from_kwargs('scale', 1)
         if isinstance(self.scale, int) or isinstance(self.scale, float):
             self.scale = [self.scale] * 3

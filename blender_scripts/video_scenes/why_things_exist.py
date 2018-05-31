@@ -48,7 +48,7 @@ memory in blender for it to make sense to run more than one at a time. So I just
 comment out all but the one I'm working on or want to run.
 '''
 
-#'''
+'''
 class IntroImage(Scene):
     def __init__(self):
         super().__init__()
@@ -119,7 +119,7 @@ class IntroImage(Scene):
         )
 
         bobj.disappear(disappear_frame = scene_end)
-#'''
+'''
 '''
 class BlobMotivation(Scene):
     def __init__(self):
