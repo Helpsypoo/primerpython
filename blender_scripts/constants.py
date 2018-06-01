@@ -147,7 +147,7 @@ BLINK_CYCLE_LENGTH = 600
 World constants
 '''
 DEFAULT_WORLD_DURATION = 100
-WORLD_RADIUS = 8
+WORLD_RADIUS = 10
 
 '''
 Graph constants
@@ -168,7 +168,7 @@ HIGHLIGHT_POINT_UPDATE_TIME = 5
 '''
 Camera and lighting constants
 '''
-CAMERA_LOCATION = (0, 0, 32)
+CAMERA_LOCATION = (0, 0, 32.8)
 CAMERA_ANGLE = (0, 0, 0)
 
 '''

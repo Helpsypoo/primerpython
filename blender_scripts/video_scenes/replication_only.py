@@ -15,6 +15,8 @@ import drawn_world
 imp.reload(drawn_world)
 import gesture
 imp.reload(gesture)
+import graph_bobject
+imp.reload(graph_bobject)
 
 import helpers
 imp.reload(helpers)
@@ -53,7 +55,7 @@ class IntroImage(Scene):
         )
         logo.disappear(disappear_frame = scene_end)
 '''
-#'''
+'''
 class TheGoal(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -230,12 +232,12 @@ class TheGoal(Scene):
         apply_material(cross1.ref_obj.children[0], 'color6')
         cross2 = rhs.lookup_table[1][0]
         apply_material(cross2.ref_obj.children[0], 'color6')
-#'''
+'''
 #'''
 class ThereWillBeGraphs(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('sim', {'duration': 240})
+            ('sim', {'duration': 720})
         ])
         super().__init__()
 
@@ -244,5 +246,107 @@ class ThereWillBeGraphs(Scene):
         cues = self.subscenes
         scene_end = self.duration
 
+        start_delay = 30
+        sim_duration = 60
+        #frames_per_time_step = 5
+        #sim_duration_frames = sim_duration * frames_per_time_step
 
+        initial_creature_count = 10
+        initial_creatures = []
+        for i in range(initial_creature_count):
+            new_creature = creature.Creature()
+            initial_creatures.append(new_creature)
+        sim = drawn_world.DrawnWorld(
+            name = 'blob1_sim',
+            location = [-7.5, 0, 0],
+            scale = 0.6,
+            appear_frame = cues['sim']['start'],
+            start_delay = start_delay,
+            frames_per_time_step = 10,
+            #save = True,
+            #load = 'wte_eq_replication',
+            sim_duration = sim_duration,
+            initial_creatures = initial_creatures,
+            gene_updates = [
+                ['color', 'creature_color_1', 'birth_modifier', 1000, 0],
+                ['shape', 'shape1', 'birth_modifier', 1, 0],
+                ['size', '1', 'birth_modifier', 1, 0],
+                ['color', 'creature_color_1', 'mutation_chance', 0, 0],
+                ['shape', 'shape1', 'mutation_chance', 0, 0],
+                ['size', '1', 'mutation_chance', 0, 0],
+                ['color', 'creature_color_1', 'death_modifier', 100, 0],
+                #['color', 'creature_color_1', 'replication_modifier', 10, 0],
+            ]
+        )
+        sim.add_to_blender(appear_frame = 0)
+
+        func = sim.get_creature_count_by_t()
+        graph = graph_bobject.GraphBobject(
+            func,
+            x_range = [0, sim_duration],
+            y_range = [0, 20],
+            tick_step = [20, 10],
+            width = 10,
+            height = 5,
+            x_label = 't',
+            x_label_pos = 'end',
+            y_label = 'N',
+            y_label_pos = 'along',
+            location = (7, -4.5, 0),
+            centered = True,
+            arrows = True
+        )
+        graph.add_to_blender(appear_frame = 0)
+        graph.animate_function_curve(
+            start_frame = start_delay,
+            end_frame = start_delay + sim.sim_duration_in_frames,
+            uniform_along_x = True
+        )
+        appear_coord = [0, func[0], 0]
+        point = graph.add_point_at_coord(
+            coord = appear_coord,
+            appear_frame = 0,
+            axis_projections = True,
+            track_curve = True
+        )
+        graph.animate_point(
+            end_coord = [sim_duration, 0, 0],
+            start_frame = start_delay,
+            end_frame = start_delay + sim.sim_duration_in_frames,
+            point = point
+        )
+
+        #Rate-number graph
+        def func2(x): return 1 - x / 10
+        graph2 = graph_bobject.GraphBobject(
+            func2,
+            x_range = [0, 20],
+            y_range = [-1, 1],
+            tick_step = [5, 1],
+            width = 10,
+            height = 5,
+            x_label = 'N',
+            x_label_pos = 'end',
+            y_label = '\\Delta',
+            y_label_pos = 'end',
+            location = (7, 2.5, 0),
+            centered = True,
+            arrows = True
+        )
+        graph2.add_to_blender()
+        appear_coord = [func[0], func2(func[0]), 0]
+        point2 = graph2.add_point_at_coord(
+            coord = appear_coord,
+            appear_frame = start_delay,
+            axis_projections = True,
+            track_curve = True
+        )
+        #This needs to change to account for the new frames_per_time_step
+        #parameter. This function assumes it's always 1, but it's not.
+        graph2.multi_animate_point(
+            start_frame = start_delay,
+            point = point2,
+            x_of_t = func, #Not func2. This uses the sim data to inform movements
+            frames_per_time_step = sim.frames_per_time_step
+        )
 #'''

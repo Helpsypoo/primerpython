@@ -33,13 +33,14 @@ class DrawnWorld(TwoDWorld, Bobject):
         scale = 0,
         appear_frame = 0,
         start_delay = 0,
-        duration = DEFAULT_WORLD_DURATION,
+        sim_duration = DEFAULT_WORLD_DURATION,
+        frames_per_time_step = 5,
         load = None,
         save = False,
         overlap_okay = False,
         initial_creatures = 10,
         gene_updates = [],
-        motion_vars = None,
+        #motion_vars = None,
         counter_alignment = 'right_top',
         creature_model = ['boerd_blob', 'creatures', 'boerd_blob_squat', 'creatures']
     ):
@@ -52,13 +53,11 @@ class DrawnWorld(TwoDWorld, Bobject):
         #DrawnWorld's additional attributes aren't generated randomly, and
         #They will be manually changed while working on a video, so saving
         #isn't helpful here.
-        #Could be that class inheritance isn't worth it here. ¯\_(ツ)_/¯
-        self.duration = duration - start_delay
         if load != None:
             self.get_saved_world(load)
         else:
             world = TwoDWorld(
-                duration = self.duration, #/2 because of 60 fps vs 30 fps
+                duration = sim_duration,
                 overlap_okay = overlap_okay,
                 initial_creatures = initial_creatures,
                 gene_updates = gene_updates
@@ -74,14 +73,19 @@ class DrawnWorld(TwoDWorld, Bobject):
             appear_frame = appear_frame
         )
 
+        self.sim_duration = sim_duration # - start_delay
+        self.frames_per_time_step = frames_per_time_step
+        print('There are ' + str(self.frames_per_time_step) +' frames per time step')
+        self.sim_duration_in_frames = self.sim_duration * self.frames_per_time_step
+
         #Could make radius more than 1D, but for now, just uses the
         #x component of scale
         #self.world_radius = self.scale[0] * self.radius #attribute of TwoDWorld
         self.start_frame = self.appear_frame + start_delay
-        #self.disappear_frame = self.start_frame + self.duration
+        #self.disappear_frame = self.start_frame + self.sim_duration
 
         self.info = []
-        self.counter_frames_lists = []
+        self.counter_times_lists = []
         #I kind of hate the above line, but it was the easiest way to separate
         #The creation of the python counter object and the morphing of the
         #characters after adding to blender
@@ -133,13 +137,14 @@ class DrawnWorld(TwoDWorld, Bobject):
                 #2 * MATURATION_TIME because that's the minimum length of time
                 #for a creature to be animated as it's born and then dies
                 if other_cre != cre and \
-                other_cre.deathday + 2 * MATURATION_TIME < cre.birthday and \
+                other_cre.deathday + \
+                2 * MATURATION_TIME < cre.birthday and \
                 other_cre.alleles == cre.alleles and \
                 other_cre.reused == False:
                     cre.bobject = other_cre.bobject
                     cre.bobject.add_to_blender(
                         #2 * cre.birthday due to transition from 30 to 60 fps
-                        appear_frame = self.start_frame + cre.birthday,
+                        appear_frame = self.start_frame + cre.birthday * self.frames_per_time_step,
                         is_creature = True
                     )
                     other_cre.reused = True
@@ -168,15 +173,12 @@ class DrawnWorld(TwoDWorld, Bobject):
             if cre.alleles['shape'] == "shape2":
                 bobj = import_object(model[2], model[3])
 
-
-        #2 * cre.birthday because of change from 30 to 60 fps
         bobj.add_to_blender(
-            appear_frame = self.start_frame + cre.birthday,
+            appear_frame = self.start_frame + cre.birthday * self.frames_per_time_step,
             is_creature = True
         )
         cre.bobject = bobj
         obj = bobj.ref_obj
-        #bpy.context.scene.objects.link(obj)
 
         if cre.alleles['color'] == 'creature_color_1':
             col = 'creature_color3'
@@ -204,27 +206,33 @@ class DrawnWorld(TwoDWorld, Bobject):
             #If creature dies right away, animate as if it lasted long enough to
             #finish appearing before dying
             effective_deathday = cre.deathday
-            if effective_deathday - cre.birthday < MATURATION_TIME:
-                effective_deathday = cre.birthday + MATURATION_TIME
-            disappear_frame = self.start_frame + effective_deathday + MATURATION_TIME
+            #MATURATION_TIME is defined in frames, but we want it in sim time
+            #steps
+            mat_time_in_sim_time = MATURATION_TIME / self.frames_per_time_step
+            if effective_deathday - cre.birthday < mat_time_in_sim_time:
+                effective_deathday = cre.birthday + mat_time_in_sim_time
+            disappear_time = effective_deathday + mat_time_in_sim_time
             #Ensure creature disappears in place.
             try:
                 obj.location = cre.locations[cre.deathday]
             except:
                 obj.location = cre.locations[-1]
-            obj.keyframe_insert(data_path = 'location', frame = disappear_frame)
+            obj.keyframe_insert(data_path = 'location', frame = disappear_time * self.frames_per_time_step)
             bobj.disappear(
-                disappear_frame = disappear_frame,
+                disappear_frame = self.start_frame + disappear_time * self.frames_per_time_step,
                 is_creature = True
             )
 
-            for t in range(self.duration):
+            for t in range(self.sim_duration):
                 if cre.locations and cre.locations[t] != None:
 
                     #obj.location = mathutils.Vector(translated_loc)
                     obj.location = cre.locations[t]
                     #2 * t because of change from 30 to 60 fps
-                    obj.keyframe_insert(data_path="location", frame = t + self.start_frame)
+                    obj.keyframe_insert(
+                        data_path="location",
+                        frame = t * self.frames_per_time_step + self.start_frame
+                    )
 
                     #obj.rotation_euler[2] = cre.rotation[t]
                     #obj.keyframe_insert(data_path="rotation_euler", frame = t + self.start_frame)
@@ -236,7 +244,10 @@ class DrawnWorld(TwoDWorld, Bobject):
                                 bone = obj.children[0].pose.bones[3]
                                 bone.rotation_quaternion = cre.head_angle[t]
                                 #2 * t because of change from 30 to 60 fps
-                                bone.keyframe_insert(data_path="rotation_quaternion", frame = t + self.start_frame)
+                                bone.keyframe_insert(
+                                    data_path="rotation_quaternion",
+                                    frame = t * self.frames_per_time_step + self.start_frame
+                                )
 
     def add_counter(
         self,
@@ -264,15 +275,15 @@ class DrawnWorld(TwoDWorld, Bobject):
 
         #print("Creating expressions for " + label)
         expressions = ['0']
-        expression_frames = [0]
+        expression_times = [0]
         #Make list of expressions for each time the count changes
         count = -math.inf
-        for t in range(self.duration):
+        for t in range(self.sim_duration):
             if count_by_time[t] != count:
                 count = count_by_time[t]
                 expressions.append(str(count))
-                expression_frames.append(t)
-        self.counter_frames_lists.append(expression_frames)
+                expression_times.append(t)
+        self.counter_times_lists.append(expression_times)
         #Everything above here could perhaps be moved to morph_counters, since
         #It's all preparing for that.
 
@@ -337,7 +348,7 @@ class DrawnWorld(TwoDWorld, Bobject):
                     )
 
     def morph_counters(self):
-        for counter, frames in zip(self.info, self.counter_frames_lists):
+        for counter, frames in zip(self.info, self.counter_times_lists):
             count_tex = counter.subbobjects[1] #The second tex_bobject is the counter
             for i in range(1, len(frames)):
                 frame = frames[i]
@@ -348,7 +359,7 @@ class DrawnWorld(TwoDWorld, Bobject):
                     if morph_duration > 6: #6 is an arbitrary max duration
                         morph_duration = 6
                 except: #should only run for the last expression
-                    morph_duration = self.duration - frames[i]
+                    morph_duration = self.sim_duration - frames[i]
                     if morph_duration > 6: #6 is an arbitrary max duration
                         morph_duration = 6
 
@@ -358,7 +369,7 @@ class DrawnWorld(TwoDWorld, Bobject):
                 #2 * frame because of change from 30 to 60 fps
                 count_tex.morph_figure(
                     i,
-                    start_frame = frame  + self.start_frame,
+                    start_frame = frame  + self.start_frame * self.frames_per_time_step,
                     duration = morph_duration
                 )
 

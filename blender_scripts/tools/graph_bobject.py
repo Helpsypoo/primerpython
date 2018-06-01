@@ -140,7 +140,7 @@ class GraphBobject(Bobject):
         y_lab = tex_bobject.TexBobject(self.y_label, name = 'y_lab', centered = True)
         #y_lab_container = bobject.TexComplex(y_lab, centered = True, name = 'y_lab_container')
         if self.y_label_pos == 'along':
-            y_lab.ref_obj.location = ( -2.5, (self.y_range[1] + self.y_range[0]) * self.range_scale_factor / 2, 0)
+            y_lab.ref_obj.location = ( -2, self.y_range[1] * self.range_scale_factor / 2, 0)
         elif self.y_label_pos == 'end':
             y_lab.ref_obj.location = (0, self.y_range[1] * self.range_scale_factor + GRAPH_PADDING + 1.5, 0)
         if self.y_label_rot == True:
@@ -190,36 +190,50 @@ class GraphBobject(Bobject):
             current_tick -= y_tick_step
 
     def add_tick_x(self, value):
+        tick_scale = min(self.width, self.height) / 20
         cyl_bobj = import_object('cylinder', 'primitives', name = 'x_tick')
         apply_material(cyl_bobj.objects[0], 'color2')
         self.add_subbobject(cyl_bobj)
         ref = cyl_bobj.ref_obj
         ref.location = (value * self.domain_scale_factor, 0, 0)
         ref.children[0].rotation_euler = (math.pi / 2, 0, 0)
-        ref.children[0].scale = (AXIS_WIDTH / 2, AXIS_DEPTH / 2, min(self.width, self.height) / 20)
+        ref.children[0].scale = (AXIS_WIDTH / 2, AXIS_DEPTH / 2, tick_scale)
 
+        label_scale = 0.5
         label = tex_bobject.TexBobject(
             str(value),
-            location = (value * self.domain_scale_factor, - min(self.width, self.height) / 10, 0),
+            #Scale label position based on tick length, but stay far enough
+            #away to avoid overlap
+            location = (
+                value * self.domain_scale_factor,
+                min(-label_scale, -2 * tick_scale),
+                0
+            ),
             centered = True,
-            scale = 0.5
+            scale = label_scale
         )
         self.add_subbobject(label)
 
     def add_tick_y(self, value):
+        tick_scale = min(self.width, self.height) / 20
         cyl_bobj = import_object('cylinder', 'primitives', name = 'y_tick')
         apply_material(cyl_bobj.objects[0], 'color2')
         self.add_subbobject(cyl_bobj)
         ref = cyl_bobj.ref_obj
         ref.location = (0, value * self.range_scale_factor, 0)
         ref.children[0].rotation_euler = (0, math.pi / 2, 0)
-        ref.children[0].scale = (AXIS_DEPTH / 2, AXIS_WIDTH / 2, min(self.width, self.height) / 20)
+        ref.children[0].scale = (AXIS_DEPTH / 2, AXIS_WIDTH / 2, tick_scale)
 
+        label_scale = 0.5
         label = tex_bobject.TexBobject(
             str(value),
-            location = (- min(self.width, self.height) / 10, value * self.range_scale_factor, 0),
+            location = (
+                min(-label_scale / 1.5, -2 * tick_scale),
+                value * self.range_scale_factor,
+                0
+            ),
             centered = 'right',
-            scale = 0.5
+            scale = label_scale
         )
         self.add_subbobject(label)
 
@@ -590,6 +604,7 @@ class GraphBobject(Bobject):
         point = None,
         start_frame = 0,
         x_of_t = None,
+        frames_per_time_step = 1,
         full_coords = False
     ):
         #Handle defaults
@@ -613,7 +628,7 @@ class GraphBobject(Bobject):
             except: #Should only run for last element
                 update_time = HIGHLIGHT_POINT_UPDATE_TIME
 
-            end_frame = start_frame + t + update_time
+            end_frame = start_frame + t * frames_per_time_step + update_time
             #Haven't tested this, but trying to making it so I can pass a list
             #of x values or a list of full coords as a denser way of animating
             #several movements of non-curve-constrained points.
@@ -624,7 +639,7 @@ class GraphBobject(Bobject):
 
             self.animate_point(
                 point = point,
-                start_frame = start_frame + t,
+                start_frame = start_frame + t * frames_per_time_step,
                 end_frame = end_frame,
                 end_coord = end_coord
             )
