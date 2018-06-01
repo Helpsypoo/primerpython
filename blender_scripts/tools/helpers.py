@@ -47,12 +47,14 @@ def define_materials():
     make_basic_material(rgb = deepcopy(COLORS[2]), name = 'color3')
     make_basic_material(rgb = deepcopy(COLORS[3]), name = 'color4')
     make_basic_material(rgb = deepcopy(COLORS[4]), name = 'color5')
+    make_basic_material(rgb = deepcopy(COLORS[5]), name = 'color6')
 
     make_creature_material(rgb = deepcopy(COLORS[0]), name = 'creature_color1')
     make_creature_material(rgb = deepcopy(COLORS[1]), name = 'creature_color2')
     make_creature_material(rgb = deepcopy(COLORS[2]), name = 'creature_color3')
     make_creature_material(rgb = deepcopy(COLORS[3]), name = 'creature_color4')
     make_creature_material(rgb = deepcopy(COLORS[4]), name = 'creature_color5')
+    make_creature_material(rgb = deepcopy(COLORS[5]), name = 'creature_color6')
 
 def make_creature_material(rgb = None, name = None, normalize_to_1 = True):
     if rgb == None or name == None:

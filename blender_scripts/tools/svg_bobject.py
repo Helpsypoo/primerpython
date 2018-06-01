@@ -33,6 +33,8 @@ class SVGBobject(Bobject):
         else:
             default_transition_type = 'instant'
         self.transition_type = self.get_from_kwargs('transition_type', default_transition_type)
+        self.reindex_points_before_morph = \
+                    self.get_from_kwargs('reindex_points_before_morph', True)
         self.lazy_morph = self.get_from_kwargs('lazy_morph', True)
         self.min_length = self.get_from_kwargs('min_length', 1)
 
@@ -810,8 +812,9 @@ class SVGBobject(Bobject):
         #equalize_spline_count(initial, final)
         char_set = [initial, final]
         for char in char_set:
-            for spline in char.data.splines:
-                reindex_to_top_point(spline)
+            if self.reindex_points_before_morph == True:
+                for spline in char.data.splines:
+                    reindex_to_top_point(spline)
             #add_points_to_curve_splines(char, CONTROL_POINTS_PER_SPLINE)
         self.add_morph_shape_keys(initial, final)
 

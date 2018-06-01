@@ -13,6 +13,8 @@ import creature
 imp.reload(creature)
 import drawn_world
 imp.reload(drawn_world)
+import gesture
+imp.reload(gesture)
 
 import helpers
 imp.reload(helpers)
@@ -67,7 +69,9 @@ class TheGoal(Scene):
 
         rhs = tex_bobject.TexBobject(
             "\\dfrac{B}{D - R}",
-            centered = True
+            "\\dfrac{\\xcancel{B}}{D - R}",
+            centered = True,
+            vert_align_centers = False
         )
         equals = tex_bobject.TexBobject(
             "\!=",
@@ -122,11 +126,123 @@ class TheGoal(Scene):
             animate = True
         )
 
+        B = rhs.lookup_table[0][0]
+        B.pulse(
+            frame = 60,
+            duration = 2 * OBJECT_APPEARANCE_TIME
+        )
+        B.color_shift(
+            start_frame = 60,
+            duration = 2 * OBJECT_APPEARANCE_TIME,
+            color = COLORS_SCALED[3]
+        )
 
+        spontaneous = tex_bobject.TexBobject(
+            '\\substack{\\text{Spontaneous} \\\\ \\text{birth chance}}',
+            location = (-5.5, 5.5, 0),
+            centered = True
+        )
+        spontaneous.add_to_blender(appear_frame = 60)
 
+        spont_arrow = gesture.Gesture(
+            gesture_series = [
+                #{
+                #    'type': 'bracket',
+                #    'points': {
+                #        'annotation_point': (-5.5, 4, 0),
+                #        'left_point': (-6.5, 2, 0),
+                #        'right_point': (-4.5, 2, 0)
+                #    }
+                #}
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-5.5, 4.25, 0),
+                        'head': (-5.5, 2.25, 0)
+                    }
+                }
+            ]
+        )
+        spont_arrow.add_to_blender(appear_frame = 60)
+        spont_arrow.subbobjects[0].color_shift(
+            start_frame = 60,
+            duration = 2 * OBJECT_APPEARANCE_TIME,
+            color = COLORS_SCALED[3]
+        )
+        for bobj in spontaneous.subbobjects:
+            bobj.color_shift(
+                start_frame = 60,
+                duration = 2 * OBJECT_APPEARANCE_TIME,
+                color = COLORS_SCALED[3]
+            )
 
-        bracket = svg_bobject.SVGFromBlend(['bracket', 'svgblend'])
-        bracket.add_to_blender(appear_frame = 0)
+        R = rhs.lookup_table[0][4]
+        R.pulse(
+            frame = 120,
+            duration = 2 * OBJECT_APPEARANCE_TIME
+        )
+        R.color_shift(
+            start_frame = 120,
+            duration = 2 * OBJECT_APPEARANCE_TIME,
+            color = COLORS_SCALED[3]
+        )
+        replication = tex_bobject.TexBobject(
+            '\\substack{\\text{Replication} \\\\ \\text{chance}}',
+            location = (-5, -5.5, 0),
+            centered = True
+        )
+        replication.add_to_blender(appear_frame = 120)
+
+        rep_arrow = gesture.Gesture(
+            gesture_series = [
+                #{
+                #    'type': 'bracket',
+                #    'points': {
+                #        'annotation_point': (-5.5, 4, 0),
+                #        'left_point': (-6.5, 2, 0),
+                #        'right_point': (-4.5, 2, 0)
+                #    }
+                #}
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-5, -4.25, 0),
+                        'head': (-4.2, -2.25, 0)
+                    }
+                }
+            ]
+        )
+        rep_arrow.add_to_blender(appear_frame = 120)
+        rep_arrow.subbobjects[0].color_shift(
+            start_frame = 120,
+            duration = 2 * OBJECT_APPEARANCE_TIME,
+            color = COLORS_SCALED[3]
+        )
+        for bobj in replication.subbobjects:
+            bobj.color_shift(
+                start_frame = 120,
+                duration = 2 * OBJECT_APPEARANCE_TIME,
+                color = COLORS_SCALED[3]
+            )
+
+        rhs.morph_figure(1, start_frame = 210)
+        cross1 = rhs.lookup_table[1][1]
+        apply_material(cross1.ref_obj.children[0], 'color6')
+        cross2 = rhs.lookup_table[1][0]
+        apply_material(cross2.ref_obj.children[0], 'color6')
+#'''
+#'''
+class ThereWillBeGraphs(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('sim', {'duration': 240})
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
 
 
 #'''

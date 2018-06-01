@@ -6,7 +6,7 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'low'
+RENDER_QUALITY = 'medium'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
@@ -45,26 +45,8 @@ else:
 '''
 Colorssssss
 '''
-color_scheme = 3
+color_scheme = 2
 if color_scheme == 1:
-    #Coolors Exported Palette - coolors.co/ff3366-eac435-01211f-ffede1-20a4f3
-    COLORS = [
-        [1, 33, 31, 1],
-        [255, 237, 225, 1],
-        [32, 164, 243, 1],
-        [255, 51, 102, 1],
-        [234, 196, 53, 1]
-    ]
-elif color_scheme == 2:
-    #Coolors Exported Palette - coolors.co/191308-bbd8b3-f3b61f-48a0c9-72120d
-    COLORS = [
-        [25, 19, 8, 1],
-        [187, 216, 179, 1],
-        [72, 160, 201, 1],
-        [114, 18, 13, 1],
-        [243, 182, 31, 1]
-    ]
-elif color_scheme == 3:
     #Coolors Exported Palette - https://coolors.co/393e41-f3f2f0-3e7ea0-ff9400-e7e247
     COLORS = [
         [57, 62, 65, 1],
@@ -75,6 +57,33 @@ elif color_scheme == 3:
         #[232, 225, 34, 1],
         [231, 226, 71, 1],
         #[106, 141, 115, 1]
+        [215, 38, 61, 1]
+        #[255, 0, 0, 1]
+    ]
+elif color_scheme == 2:
+    #Coolors Exported Palette - coolors.co/191308-bbd8b3-f3b61f-48a0c9-72120d
+    COLORS = [
+        #[42, 46, 48, 1], #Three darker than first video
+        [47, 51, 54, 1], #Three darker than first video
+        #[211, 208, 203, 1],
+        [243, 242, 240, 1],
+        [62, 126, 160, 1],
+        [255, 148, 0, 1],
+        #[232, 225, 34, 1],
+        [231, 226, 71, 1],
+        #[106, 141, 115, 1]
+        [215, 38, 61, 1]
+        #[255, 0, 0, 1]
+    ]
+elif color_scheme == 3:
+    #Coolors Exported Palette - coolors.co/191308-bbd8b3-f3b61f-48a0c9-72120d
+    COLORS = [
+        [1, 33, 31, 1],
+        [255, 237, 225, 1],
+        [32, 164, 243, 1],
+        [255, 51, 102, 1],
+        [234, 196, 53, 1],
+        [215, 38, 61, 1]
     ]
 
 COLORS_SCALED = []

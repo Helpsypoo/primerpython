@@ -450,25 +450,32 @@ def gesture_test():
     bracket = gesture.Gesture(
         gesture_series = [
             {
-                'type': 'bracket',
+                'type': 'arrow',
                 'points': {
-                    'annotation_point': (0, -2, 0),
-                    'left_point': (2, -0, 0),
-                    'right_point': (-1, 1, 0)
+                    'tail': (0, -2, 0),
+                    'head': (2, 0, 0)
+                }
+            },
+            {
+                'type': 'arrow',
+                'points': {
+                    'tail': (0, 0, 0),
+                    'head': (0, -1, 0)
                 }
             },
             {
                 'type': 'bracket',
                 'points': {
-                    'annotation_point': (0, -1, 0),
-                    'left_point': (3, -5, 0),
-                    'right_point': (0, 2, 0)
+                    'annotation_point': (0, 1, 0),
+                    'left_point': (-3, 0, 0),
+                    'right_point': (5, 0, 0)
                 }
             }
         ]
     )
     bracket.add_to_blender(appear_frame = 0)
-    bracket.morph_figure(1, start_frame = 60)
+    bracket.morph_figure(1, start_frame = 50)
+    bracket.morph_figure(2, start_frame = 100)
 
 def draw_scenes_from_file(script_file):
     #This function is meant to process many scenes at once.
@@ -623,11 +630,11 @@ def main():
     #graph_test()
     #color_test()
     #bcard()
-    gesture_test()
+    #gesture_test()
 
-    #draw_scenes_from_file(replication_only)
+    draw_scenes_from_file(replication_only)
 
-    print_time_report()
+    #print_time_report()
     finish_noise()
 
 
