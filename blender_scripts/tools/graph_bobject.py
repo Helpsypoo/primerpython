@@ -63,11 +63,16 @@ class GraphBobject(Bobject):
 
         self.curve_highlight_points = []
 
+        if 'scale' in kwargs:
+            scale = kwargs['scale']
+        else: scale = 1
+
         if centered == True:
+            self.centered = True
             self.ref_obj.location[0] -= \
-                (self.x_range[1] + self.x_range[0]) * self.domain_scale_factor / 2
+                (self.x_range[1] + self.x_range[0]) * self.domain_scale_factor / 2 * scale
             self.ref_obj.location[1] -= \
-                (self.y_range[1] + self.y_range[0]) * self.range_scale_factor / 2
+                (self.y_range[1] + self.y_range[0]) * self.range_scale_factor / 2 * scale
 
     def add_axes(self):
         #x axis
@@ -388,12 +393,13 @@ class GraphBobject(Bobject):
             coords = []
             for x in x_vals:
                 y = self.evaluate_function(input = x, index = func_index)
-                try:
+                '''try:
                     y = self.evaluate_function(input = x, index = func_index)
                 except:
+                    raise Warning("It seems like fixing that off-by-one error didn't work.")
                     #Graph draws point at end of the domain, but list functions
                     #don't include that last point
-                    y = coords[-1][1] / self.range_scale_factor
+                    y = coords[-1][1] / self.range_scale_factor'''
 
                 coords.append([
                     x * self.domain_scale_factor,
@@ -644,9 +650,6 @@ class GraphBobject(Bobject):
                 end_coord = end_coord
             )
 
-
-
-
     def morph_curve(self, to_curve_index, start_frame = None, end_frame = None):
         if start_frame == None:
             if end_frame == None:
@@ -714,8 +717,29 @@ class GraphBobject(Bobject):
                 in_place = True
             )
 
-
     def add_to_blender(self, **kwargs):
         self.add_axes()
         self.add_function_curve()
         super().add_to_blender(**kwargs)
+
+    def move_to(
+        self,
+        **kwargs
+    ):
+        if 'new_location' in kwargs and self.centered == True:
+            #Likely more complicated than it needs to be, but currently, the
+            #ref_obj is situated in a way doesn't take padding into account.
+
+            if 'new_scale' in kwargs:
+                scale = kwargs['new_scale']
+                if isinstance(scale, float):
+                    scale = [scale] * 3
+            else: scale = self.ref_obj.scale
+
+            kwargs['new_location'] = list(kwargs['new_location'])
+            kwargs['new_location'][0] -= (self.x_range[1] + self.x_range[0]) * \
+                        self.domain_scale_factor * scale[0] / 2
+            kwargs['new_location'][1] -= (self.y_range[1] + self.y_range[0]) * \
+                        self.range_scale_factor * scale[1] / 2
+
+        super().move_to(**kwargs)

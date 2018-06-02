@@ -350,7 +350,7 @@ class ThereWillBeGraphs(Scene):
             frames_per_time_step = sim.frames_per_time_step
         )
 '''
-#'''
+'''
 class ChickenEgg(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -366,7 +366,7 @@ class ChickenEgg(Scene):
         chicken = import_object(
             'chicken',
             scale = 4,
-            location = (-6, 0, 0)
+            location = (-7, 0, 0)
         )
         chicken.add_to_blender()
 
@@ -382,7 +382,7 @@ class ChickenEgg(Scene):
                 {
                     'type': 'arrow',
                     'points': {
-                        'tail': (-1, 1.5, 0),
+                        'tail': (-1.5, 1.5, 0),
                         'head': (1.5, 1.5, 0)
                     }
                 }
@@ -396,7 +396,7 @@ class ChickenEgg(Scene):
                 {
                     'type': 'arrow',
                     'points': {
-                        'head': (-1, -1.5, 0),
+                        'head': (-1.5, -1.5, 0),
                         'tail': (1.5, -1.5, 0)
                     }
                 }
@@ -408,9 +408,248 @@ class ChickenEgg(Scene):
         wha = tex_bobject.TexBobject(
             '\\text{?}',
             centered = True,
-            location = (0.5, 0, 0),
+            location = (0, 0, 0),
             scale = 3
         )
         wha.add_to_blender(appear_frame = 180)
+'''
+#'''
+class FirstKindOfGraph(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('one_sim', {'duration': 420}),
+            ('two_sims', {'duration': 420}),
+            ('three_sims', {'duration': 420})
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        frames_per_time_step = 5
+        start_delay = 30
+        sim_duration = 60
+
+        initial_creature_count = 10
+        initial_creatures = []
+        for i in range(initial_creature_count):
+            new_creature = creature.Creature()
+            initial_creatures.append(new_creature)
+        sim = drawn_world.DrawnWorld(
+            name = 'blob1_sim',
+            location = [-7.5, 0, 0],
+            scale = 0.6,
+            appear_frame = cues['one_sim']['start'],
+            start_delay = start_delay,
+            frames_per_time_step = frames_per_time_step,
+            #save = True,
+            #load = 'wte_eq_replication',
+            sim_duration = sim_duration,
+            initial_creatures = initial_creatures,
+            gene_updates = [
+                ['color', 'creature_color_1', 'birth_modifier', 1000, 0],
+                ['shape', 'shape1', 'birth_modifier', 1, 0],
+                ['size', '1', 'birth_modifier', 1, 0],
+                ['color', 'creature_color_1', 'mutation_chance', 0, 0],
+                ['shape', 'shape1', 'mutation_chance', 0, 0],
+                ['size', '1', 'mutation_chance', 0, 0],
+                ['color', 'creature_color_1', 'death_modifier', 100, 0],
+                #['color', 'creature_color_1', 'replication_modifier', 10, 0],
+            ]
+        )
+        sim.add_to_blender(appear_frame = 0)
+
+        func = sim.get_creature_count_by_t()
+        graph = graph_bobject.GraphBobject(
+            func,
+            x_range = [0, sim_duration],
+            y_range = [0, 20],
+            tick_step = [20, 5],
+            width = 10,
+            height = 10,
+            x_label = '\\text{Time}',
+            x_label_pos = 'along',
+            y_label = '\\text{Number}',
+            y_label_pos = 'end',
+            location = (7, 0, 0),
+            centered = True,
+            arrows = True
+        )
+        graph.add_to_blender(appear_frame = 0)
+        graph.animate_function_curve(
+            start_frame = start_delay,
+            end_frame = start_delay + sim.sim_duration_in_frames,
+            uniform_along_x = True
+        )
+        appear_coord = [0, func[0], 0]
+        point = graph.add_point_at_coord(
+            coord = appear_coord,
+            appear_frame = 0,
+            axis_projections = True,
+            track_curve = True
+        )
+        graph.animate_point(
+            end_coord = [sim_duration, 0, 0],
+            start_frame = start_delay,
+            end_frame = start_delay + sim.sim_duration_in_frames,
+            point = point
+        )
+
+        sim.move_to(
+            new_location = (-9, -4.2, 0),
+            new_scale = 0.35,
+            end_frame = cues['one_sim']['end']
+        )
+        graph.move_to(
+            new_location = (-9, 3.7, 0),
+            new_scale = 0.6,
+            end_frame = cues['one_sim']['end']
+        )
+
+
+
+        #Two sims
+        frames_per_time_step = 5
+        start_delay = 30
+        sim_duration = 60
+
+        initial_creature_count = 10
+        initial_creatures = []
+        for i in range(initial_creature_count):
+            new_creature = creature.Creature()
+            initial_creatures.append(new_creature)
+        sim2 = drawn_world.DrawnWorld(
+            name = 'blob1_sim',
+            location = [0, -4.2, 0],
+            scale = 0.35,
+            appear_frame = cues['two_sims']['start'],
+            start_delay = start_delay,
+            frames_per_time_step = frames_per_time_step,
+            #save = True,
+            #load = 'wte_eq_replication',
+            sim_duration = sim_duration,
+            initial_creatures = initial_creatures,
+            gene_updates = [
+                ['color', 'creature_color_1', 'birth_modifier', 1000, 0],
+                ['shape', 'shape1', 'birth_modifier', 1, 0],
+                ['size', '1', 'birth_modifier', 1, 0],
+                ['color', 'creature_color_1', 'mutation_chance', 0, 0],
+                ['shape', 'shape1', 'mutation_chance', 0, 0],
+                ['size', '1', 'mutation_chance', 0, 0],
+                ['color', 'creature_color_1', 'death_modifier', 100, 0],
+                #['color', 'creature_color_1', 'replication_modifier', 10, 0],
+            ]
+        )
+        sim2.add_to_blender(appear_frame = cues['two_sims']['start'])
+
+        func2 = sim2.get_creature_count_by_t()
+        graph2 = graph_bobject.GraphBobject(
+            func2,
+            x_range = [0, sim_duration],
+            y_range = [0, 20],
+            tick_step = [20, 5],
+            width = 10,
+            height = 10,
+            x_label = '\\text{Time}',
+            x_label_pos = 'along',
+            y_label = '\\text{Number}',
+            y_label_pos = 'end',
+            location = (0, 3.7, 0),
+            centered = True,
+            arrows = True,
+            scale = 0.6
+        )
+        graph2.add_to_blender(appear_frame = cues['two_sims']['start'])
+        graph2.animate_function_curve(
+            start_frame = cues['two_sims']['start'] + start_delay,
+            end_frame = cues['two_sims']['start'] + start_delay + sim2.sim_duration_in_frames,
+            uniform_along_x = True
+        )
+        appear_coord = [0, func2[0], 0]
+        point = graph2.add_point_at_coord(
+            coord = appear_coord,
+            appear_frame = 0,
+            axis_projections = True,
+            track_curve = True
+        )
+        graph2.animate_point(
+            end_coord = [sim_duration, 0, 0],
+            start_frame = cues['two_sims']['start'] + start_delay,
+            end_frame = cues['two_sims']['start'] + start_delay + sim2.sim_duration_in_frames,
+            point = point
+        )
+
+        #Three sims
+        frames_per_time_step = 5
+        start_delay = 30
+        sim_duration = 60
+
+        initial_creature_count = 10
+        initial_creatures = []
+        for i in range(initial_creature_count):
+            new_creature = creature.Creature()
+            initial_creatures.append(new_creature)
+        sim3 = drawn_world.DrawnWorld(
+            name = 'blob1_sim',
+            location = [9, -4.2, 0],
+            scale = 0.35,
+            appear_frame = cues['three_sims']['start'],
+            start_delay = start_delay,
+            frames_per_time_step = frames_per_time_step,
+            #save = True,
+            #load = 'wte_eq_replication',
+            sim_duration = sim_duration,
+            initial_creatures = initial_creatures,
+            gene_updates = [
+                ['color', 'creature_color_1', 'birth_modifier', 1000, 0],
+                ['shape', 'shape1', 'birth_modifier', 1, 0],
+                ['size', '1', 'birth_modifier', 1, 0],
+                ['color', 'creature_color_1', 'mutation_chance', 0, 0],
+                ['shape', 'shape1', 'mutation_chance', 0, 0],
+                ['size', '1', 'mutation_chance', 0, 0],
+                ['color', 'creature_color_1', 'death_modifier', 100, 0],
+                #['color', 'creature_color_1', 'replication_modifier', 10, 0],
+            ]
+        )
+        sim3.add_to_blender(appear_frame = cues['three_sims']['start'])
+
+        func3 = sim3.get_creature_count_by_t()
+        graph3 = graph_bobject.GraphBobject(
+            func3,
+            x_range = [0, sim_duration],
+            y_range = [0, 20],
+            tick_step = [20, 5],
+            width = 10,
+            height = 10,
+            x_label = '\\text{Time}',
+            x_label_pos = 'along',
+            y_label = '\\text{Number}',
+            y_label_pos = 'end',
+            location = (9, 3.7, 0),
+            centered = True,
+            arrows = True,
+            scale = 0.6
+        )
+        graph3.add_to_blender(appear_frame = cues['three_sims']['start'])
+        graph3.animate_function_curve(
+            start_frame = cues['three_sims']['start'] + start_delay,
+            end_frame = cues['three_sims']['start'] + start_delay + sim3.sim_duration_in_frames,
+            uniform_along_x = True
+        )
+        appear_coord = [0, func3[0], 0]
+        point = graph3.add_point_at_coord(
+            coord = appear_coord,
+            appear_frame = 0,
+            axis_projections = True,
+            track_curve = True
+        )
+        graph3.animate_point(
+            end_coord = [sim_duration, 0, 0],
+            start_frame = cues['three_sims']['start'] + start_delay,
+            end_frame = cues['three_sims']['start'] + start_delay + sim3.sim_duration_in_frames,
+            point = point
+        )
 
 #'''

@@ -120,7 +120,8 @@ class Population(object):
 
         self.apply_updates(0) #Catches any gene property changes at time 0
         self.duration = int(self.duration)
-        for t in range(1, self.duration):
+        for t in range(1, self.duration + 1): #self.duration steps, leaving
+                                              #the initial state untouched.
             self.apply_updates(t)
 
             #The order here allows creatures to be elligible for replication or
@@ -299,12 +300,7 @@ class Population(object):
         creature_count_by_t = []
         count = 0
         #print(self.duration)
-        for t in range(self.duration):
-            '''for creature in creatures_to_count:
-                if creature.birthday == t:
-                    count += 1
-                if creature.deathday == t:
-                    count -= 1'''
+        for t in range(self.duration + 1):
             count = self.count_creatures_at_t(t, creatures = creatures_to_count)
             creature_count_by_t.append(count)
 

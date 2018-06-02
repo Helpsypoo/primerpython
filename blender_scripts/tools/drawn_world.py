@@ -136,14 +136,17 @@ class DrawnWorld(TwoDWorld, Bobject):
             for other_cre in self.creatures:
                 #2 * MATURATION_TIME because that's the minimum length of time
                 #for a creature to be animated as it's born and then dies
+                #EDIT: I haven't dug into this, but for some reason, 2 times
+                #maturation time doesn't cut it. I just made it 3x. This means
+                #more unique creatures will be made than absolutely necessary,
+                #but it still puts a manageable cap on longer sims, so ¯\_(ツ)_/¯.
                 if other_cre != cre and \
                 other_cre.deathday + \
-                2 * MATURATION_TIME < cre.birthday and \
+                3 * MATURATION_TIME < cre.birthday and \
                 other_cre.alleles == cre.alleles and \
                 other_cre.reused == False:
                     cre.bobject = other_cre.bobject
                     cre.bobject.add_to_blender(
-                        #2 * cre.birthday due to transition from 30 to 60 fps
                         appear_frame = self.start_frame + cre.birthday * self.frames_per_time_step,
                         is_creature = True
                     )
@@ -204,13 +207,15 @@ class DrawnWorld(TwoDWorld, Bobject):
             #Set scale to 1 in case cre.bobject is being reused.
             obj.scale = (1, 1, 1)
             #If creature dies right away, animate as if it lasted long enough to
-            #finish appearing before dying
+            #finish appearing before dying. 2 * maturation time because creatures
+            #start appearing on their birthday and finish disappearing on their
+            #deathday.
             effective_deathday = cre.deathday
             #MATURATION_TIME is defined in frames, but we want it in sim time
             #steps
             mat_time_in_sim_time = MATURATION_TIME / self.frames_per_time_step
-            if effective_deathday - cre.birthday < mat_time_in_sim_time:
-                effective_deathday = cre.birthday + mat_time_in_sim_time
+            if effective_deathday - cre.birthday < 2 * mat_time_in_sim_time:
+                effective_deathday = cre.birthday + 2 * mat_time_in_sim_time
             disappear_time = effective_deathday + mat_time_in_sim_time
             #Ensure creature disappears in place.
             try:
@@ -218,12 +223,17 @@ class DrawnWorld(TwoDWorld, Bobject):
             except:
                 obj.location = cre.locations[-1]
             obj.keyframe_insert(data_path = 'location', frame = disappear_time * self.frames_per_time_step)
-            bobj.disappear(
-                disappear_frame = self.start_frame + disappear_time * self.frames_per_time_step,
-                is_creature = True
-            )
 
-            for t in range(self.sim_duration):
+            #Make creatures disappear if they died before the sim ended.
+            #(All creatures are given a numerical deathday even if they last
+            #the whole time)
+            if cre.deathday < self.sim_duration:
+                bobj.disappear(
+                    disappear_frame = self.start_frame + disappear_time * self.frames_per_time_step,
+                    is_creature = True
+                )
+
+            for t in range(self.sim_duration + 1):
                 if cre.locations and cre.locations[t] != None:
 
                     #obj.location = mathutils.Vector(translated_loc)
@@ -378,7 +388,7 @@ class DrawnWorld(TwoDWorld, Bobject):
         if 'start_frame' in kwargs:
             start_frame = kwargs['start_frame']
         else:
-            if end_frame in kwargs:
+            if 'end_frame' in kwargs:
                 start_frame = kwargs['end_frame'] - OBJECT_APPEARANCE_TIME
             else:
                 raise Warning('Need to specify start frame or end frame for move_to')

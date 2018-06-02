@@ -61,9 +61,9 @@ class TwoDWorld(Population):
     def populate_spacetime(self):
         creatures = self.creatures
         for creature in creatures:
-            creature.locations = [None] * self.duration
-            creature.velocities = [None] * self.duration
-        for t in range(self.duration):
+            creature.locations = [None] * (self.duration + 1) #duration+1 states
+            creature.velocities = [None] * (self.duration + 1)
+        for t in range(self.duration + 1): #duration steps, duration+1 states
             for creature in creatures:
                 if t < creature.birthday:
                     pass
@@ -86,6 +86,8 @@ class TwoDWorld(Population):
                         print()
                         print(creature.name, "time = " + str(t))
                         print("B-day: " + str(creature.birthday))
+                        print(creature.locations[t-1])
+                        print(creature.velocities[t-1])
                         print(creature.parent, creature.parent.deathday, creature.parent.locations[creature.birthday])
                         print(creature.locations)
                         print('location', a, type(a))
