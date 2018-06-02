@@ -233,7 +233,7 @@ class TheGoal(Scene):
         cross2 = rhs.lookup_table[1][0]
         apply_material(cross2.ref_obj.children[0], 'color6')
 '''
-#'''
+'''
 class ThereWillBeGraphs(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -349,4 +349,68 @@ class ThereWillBeGraphs(Scene):
             x_of_t = func, #Not func2. This uses the sim data to inform movements
             frames_per_time_step = sim.frames_per_time_step
         )
+'''
+#'''
+class ChickenEgg(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('scene', {'duration': 720})
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        chicken = import_object(
+            'chicken',
+            scale = 4,
+            location = (-6, 0, 0)
+        )
+        chicken.add_to_blender()
+
+        egg = import_object(
+            'egg',
+            scale = 4,
+            location = (7, 0, 0)
+        )
+        egg.add_to_blender()
+
+        top_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-1, 1.5, 0),
+                        'head': (1.5, 1.5, 0)
+                    }
+                }
+            ],
+            scale = 2
+        )
+        top_arrow.add_to_blender(appear_frame = 120)
+
+        bottom_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (-1, -1.5, 0),
+                        'tail': (1.5, -1.5, 0)
+                    }
+                }
+            ],
+            scale = 2
+        )
+        bottom_arrow.add_to_blender(appear_frame = 120)
+
+        wha = tex_bobject.TexBobject(
+            '\\text{?}',
+            centered = True,
+            location = (0.5, 0, 0),
+            scale = 3
+        )
+        wha.add_to_blender(appear_frame = 180)
+
 #'''
