@@ -652,7 +652,7 @@ class FirstKindOfGraph(Scene):
             point = point
         )
 '''
-#'''
+'''
 class FunctionTime(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -733,11 +733,6 @@ class FunctionTime(Scene):
             disappear_frame = 360
         )
 
-        '''equation_strings = []
-        for i in range(len(x_values)):
-            string = str(y_values[i]) + '=f(' + str(x_values[i]) + ')'
-            equation_strings.append(string)'''
-
         func_eq = tex_bobject.TexBobject(
             'y = f(x)',
             location = (7.5, 3, 0),
@@ -805,22 +800,6 @@ class FunctionTime(Scene):
         )
         y_arrow.add_to_blender(appear_frame = 540)
 
-        '''func_eq.morph_figure(1, start_frame = 480)
-        #A second bobject to morph with instant transitions through many values
-        #An svg bobject can only have one transition type.
-        func_eq2 = tex_bobject.TexBobject(
-            *equation_strings,
-            location = (7.5, 0, 0),
-            centered = True,
-            scale = 2,
-            transition_type = 'instant'
-        )
-        func_eq1.disappear(disappear_frame = 540, animate = False)
-        func_eq2.add_to_blender(
-            animate = False,
-            appear_frame = 540
-        )'''
-
         graph.animate_function_curve(
             start_frame = 600,
             end_frame = 720,
@@ -846,10 +825,105 @@ class FunctionTime(Scene):
         for i in range(1, len(x_values)):
             x.morph_figure(i, start_frame = start_frame + i * time_step)
             y.morph_figure(i, start_frame = start_frame + i * time_step)
+'''
+#'''
+class EquationToFunction(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('sim', {'duration': 1000}),
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
 
 
+        #Equation
+        lhs = tex_bobject.TexBobject(
+            "\\text{Birth rate}",
+            #"B",
+            #"\\dfrac{B}{D}",
+            centered = True
+        )
+        equals = tex_bobject.TexBobject(
+            "\!=",
+            #"\!<",
+            #"\!=",
+            #"\!>",
+            #"\!=",
+            centered = True
+        )
+        rhs = tex_bobject.TexBobject(
+            "\\text{Death rate}",
+            #"\\text{Number} \\times \\text{Death rate per creature}",
+            #"\\text{Number} \\times 0.1",
+            #"\\text{Number} \\times \\text{Death rate per creature}",
+            #N \\times D",
+            #"\\dfrac{N \\times D}{D}",
+            #"N",
+            centered = True
+        )
 
+        equation = bobject.TexComplex(
+            lhs, equals, rhs,
+            centered = True,
+            location = (0, 0, 0),
+            scale = 1.5
+        )
 
+        equation.add_to_blender(
+            appear_frame = 0,
+            animate = False,
+            subbobject_timing = [0, 60, 105]
+        )
 
+        equation.move_to(
+            new_location = (-7.5, 0, 0),
+            new_scale = 1,
+            start_frame = 180
+        )
 
+        start_delay = 30
+        sim_duration = 60
+        #frames_per_time_step = 5
+        #sim_duration_frames = sim_duration * frames_per_time_step
+
+        initial_creature_count = 10
+        initial_creatures = []
+        for i in range(initial_creature_count):
+            new_creature = creature.Creature()
+            initial_creatures.append(new_creature)
+        sim = drawn_world.DrawnWorld(
+            name = 'blob1_sim',
+            location = [7.5, 0, 0],
+            scale = 0.6,
+            appear_frame = cues['sim']['start'] + 180,
+            start_delay = start_delay,
+            frames_per_time_step = 10,
+            #save = True,
+            #load = 'wte_eq_replication',
+            sim_duration = sim_duration,
+            initial_creatures = initial_creatures,
+            gene_updates = [
+                ['color', 'creature_color_1', 'birth_modifier', 1000, 0],
+                ['shape', 'shape1', 'birth_modifier', 1, 0],
+                ['size', '1', 'birth_modifier', 1, 0],
+                ['color', 'creature_color_1', 'death_modifier', 100, 0],
+                ['color', 'creature_color_1', 'replication_modifier', 0, 0],
+                ['color', 'creature_color_1', 'birth_modifier', 0, 6],
+                ['color', 'creature_color_1', 'death_modifier', 500, 6],
+                ['color', 'creature_color_1', 'birth_modifier', 5000, 7],
+                ['color', 'creature_color_1', 'death_modifier', 0, 7],
+                ['color', 'creature_color_1', 'birth_modifier', 1000, 8],
+                ['color', 'creature_color_1', 'death_modifier', 100, 8],
+            ],
+            pauses = [
+                [5, 6],
+                [6, 6],
+                [7, 6]
+            ]
+        )
+        sim.add_to_blender(appear_frame = cues['sim']['start'] + 180)
 #'''

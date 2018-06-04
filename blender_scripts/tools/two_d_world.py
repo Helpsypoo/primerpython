@@ -23,9 +23,6 @@ from helpers import *
 '''
 Instantiates a population and manages the addition and motion of creatures
 on in a 2D world.
-
-Would it make sense for this to inherit from the Population class? Would make
-the duration passing easy.
 '''
 
 class TwoDWorld(Population):

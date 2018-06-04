@@ -37,6 +37,7 @@ class DrawnWorld(TwoDWorld, Bobject):
         frames_per_time_step = 5,
         load = None,
         save = False,
+        pauses = [[0, 0]], #[pause_at, pause_duration]
         overlap_okay = False,
         initial_creatures = 10,
         gene_updates = [],
@@ -83,6 +84,7 @@ class DrawnWorld(TwoDWorld, Bobject):
         #self.world_radius = self.scale[0] * self.radius #attribute of TwoDWorld
         self.start_frame = self.appear_frame + start_delay
         #self.disappear_frame = self.start_frame + self.sim_duration
+        self.pauses = pauses
 
         self.info = []
         self.counter_times_lists = []
@@ -146,8 +148,13 @@ class DrawnWorld(TwoDWorld, Bobject):
                 other_cre.alleles == cre.alleles and \
                 other_cre.reused == False:
                     cre.bobject = other_cre.bobject
+                    delay = 0
+                    for pause in self.pauses:
+                        if cre.birthday > pause[0]:
+                            delay += pause[1]
                     cre.bobject.add_to_blender(
-                        appear_frame = self.start_frame + cre.birthday * self.frames_per_time_step,
+                        appear_frame = self.start_frame + \
+                            (cre.birthday + delay) * self.frames_per_time_step,
                         is_creature = True
                     )
                     other_cre.reused = True
@@ -176,8 +183,13 @@ class DrawnWorld(TwoDWorld, Bobject):
             if cre.alleles['shape'] == "shape2":
                 bobj = import_object(model[2], model[3])
 
+        delay = 0
+        for pause in self.pauses:
+            if cre.birthday > pause[0]:
+                delay += pause[1]
         bobj.add_to_blender(
-            appear_frame = self.start_frame + cre.birthday * self.frames_per_time_step,
+            appear_frame = self.start_frame + (cre.birthday + delay) * \
+                                                    self.frames_per_time_step,
             is_creature = True
         )
         cre.bobject = bobj
@@ -206,6 +218,12 @@ class DrawnWorld(TwoDWorld, Bobject):
 
             #Set scale to 1 in case cre.bobject is being reused.
             obj.scale = (1, 1, 1)
+
+            delay = 0
+            for pause in self.pauses:
+                if cre.deathday > pause[0]:
+                    delay += pause[1]
+
             #If creature dies right away, animate as if it lasted long enough to
             #finish appearing before dying. 2 * maturation time because creatures
             #start appearing on their birthday and finish disappearing on their
@@ -216,13 +234,17 @@ class DrawnWorld(TwoDWorld, Bobject):
             mat_time_in_sim_time = MATURATION_TIME / self.frames_per_time_step
             if effective_deathday - cre.birthday < 2 * mat_time_in_sim_time:
                 effective_deathday = cre.birthday + 2 * mat_time_in_sim_time
-            disappear_time = effective_deathday + mat_time_in_sim_time
+            disappear_time = effective_deathday + mat_time_in_sim_time + delay
             #Ensure creature disappears in place.
             try:
                 obj.location = cre.locations[cre.deathday]
             except:
                 obj.location = cre.locations[-1]
-            obj.keyframe_insert(data_path = 'location', frame = disappear_time * self.frames_per_time_step)
+            obj.keyframe_insert(
+                data_path = 'location',
+                frame = self.start_frame + \
+                    disappear_time * self.frames_per_time_step
+            )
 
             #Make creatures disappear if they died before the sim ended.
             #(All creatures are given a numerical deathday even if they last
@@ -235,17 +257,19 @@ class DrawnWorld(TwoDWorld, Bobject):
 
             for t in range(self.sim_duration + 1):
                 if cre.locations and cre.locations[t] != None:
-
-                    #obj.location = mathutils.Vector(translated_loc)
                     obj.location = cre.locations[t]
-                    #2 * t because of change from 30 to 60 fps
+
+                    delay = 0
+                    for pause in self.pauses:
+                        if t > pause[0]:
+                            delay += pause[1]
+
+                    key_time = t + delay
+
                     obj.keyframe_insert(
                         data_path="location",
-                        frame = t * self.frames_per_time_step + self.start_frame
+                        frame = key_time * self.frames_per_time_step + self.start_frame
                     )
-
-                    #obj.rotation_euler[2] = cre.rotation[t]
-                    #obj.keyframe_insert(data_path="rotation_euler", frame = t + self.start_frame)
 
                     if RENDER_QUALITY == 'high':
                         if self.creature_model == \
@@ -253,10 +277,9 @@ class DrawnWorld(TwoDWorld, Bobject):
                             if cre.head_angle and cre.head_angle[t] != None:
                                 bone = obj.children[0].pose.bones[3]
                                 bone.rotation_quaternion = cre.head_angle[t]
-                                #2 * t because of change from 30 to 60 fps
                                 bone.keyframe_insert(
                                     data_path="rotation_quaternion",
-                                    frame = t * self.frames_per_time_step + self.start_frame
+                                    frame = key_time * self.frames_per_time_step + self.start_frame
                                 )
 
     def add_counter(
