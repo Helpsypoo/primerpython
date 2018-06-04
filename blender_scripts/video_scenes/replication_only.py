@@ -830,7 +830,8 @@ class FunctionTime(Scene):
 class EquationToFunction(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('sim', {'duration': 1000}),
+            ('sim', {'duration': 600}),
+            ('equation', {'duration': 600}),
         ])
         super().__init__()
 
@@ -843,6 +844,7 @@ class EquationToFunction(Scene):
         #Equation
         lhs = tex_bobject.TexBobject(
             "\\text{Birth rate}",
+            "\\text{Birth rate} - \\text{Death rate}",
             #"B",
             #"\\dfrac{B}{D}",
             centered = True
@@ -857,6 +859,7 @@ class EquationToFunction(Scene):
         )
         rhs = tex_bobject.TexBobject(
             "\\text{Death rate}",
+            "0",
             #"\\text{Number} \\times \\text{Death rate per creature}",
             #"\\text{Number} \\times 0.1",
             #"\\text{Number} \\times \\text{Death rate per creature}",
@@ -880,8 +883,8 @@ class EquationToFunction(Scene):
         )
 
         equation.move_to(
-            new_location = (-7.5, 0, 0),
-            new_scale = 1,
+            new_location = (0, 6.5, 0),
+            #new_scale = 1,
             start_frame = 180
         )
 
@@ -897,7 +900,7 @@ class EquationToFunction(Scene):
             initial_creatures.append(new_creature)
         sim = drawn_world.DrawnWorld(
             name = 'blob1_sim',
-            location = [7.5, 0, 0],
+            location = [0, -1.5, 0],
             scale = 0.6,
             appear_frame = cues['sim']['start'] + 180,
             start_delay = start_delay,
@@ -926,4 +929,117 @@ class EquationToFunction(Scene):
             ]
         )
         sim.add_to_blender(appear_frame = cues['sim']['start'] + 180)
+
+        lhs.morph_figure(1, start_frame = cues['equation']['start'])
+        rhs.morph_figure(1, start_frame = cues['equation']['start'])
+
+        equals2 = tex_bobject.TexBobject(
+            "\!=",
+            centered = True
+        )
+        slhs = tex_bobject.TexBobject(
+            "\\Delta",
+            centered = True
+        )
+        equals2.superbobject = equation
+        slhs.superbobject = equation
+        equals2.ref_obj.parent = equation.ref_obj
+        slhs.ref_obj.parent = equation.ref_obj
+        equals2.add_to_blender(appear_frame = cues['equation']['start'] + 60)
+        slhs.add_to_blender(appear_frame = cues['equation']['start'] + 60)
+        equation.subbobjects = [slhs, equals2, lhs, equals, rhs]
+        equation.arrange_tex_bobjects(
+            start_frame = cues['equation']['start'] + 60,
+            end_frame = cues['equation']['start'] + 60 + DEFAULT_MORPH_TIME
+        )
+        tot = tex_bobject.TexBobject(
+            "\\text{Total}",
+            centered = True
+        )
+        exp = tex_bobject.TexBobject(
+            "\\text{expected}",
+            centered = True
+        )
+        cha = tex_bobject.TexBobject(
+            "\\text{change}",
+            centered = True
+        )
+        total_change_annotation = tex_bobject.TexComplex(
+            tot, exp, cha,
+            location = (-11.5, 0, 0),
+            centered = True,
+            scale = 1,
+            multiline = True
+        )
+        total_change_annotation.add_to_blender(
+            appear_frame = cues['equation']['start'] + 120
+        )
+        arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-11.5, 2.2, 0),
+                        'head': (-11.5, 5.2, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-11, 2.2, 0),
+                        'head': (-10.25, 5.2, 0)
+                    }
+                }
+            ]
+        )
+        arrow.add_to_blender(
+            appear_frame = cues['equation']['start'] + 120
+        )
+        birth_rate_bobjs = []
+        for i in range(0, 9):
+            birth_rate_bobjs.append(lhs.lookup_table[0][i])
+        for bobj in birth_rate_bobjs:
+            bobj.color_shift(
+                color = COLORS_SCALED[3],
+                start_frame = cues['equation']['start'] + 180,
+                duration = 60
+            )
+        death_rate_bobjs = []
+        for i in range(10, 19):
+            death_rate_bobjs.append(lhs.lookup_table[1][i])
+        for bobj in death_rate_bobjs:
+            bobj.color_shift(
+                color = COLORS_SCALED[3],
+                start_frame = cues['equation']['start'] + 240,
+                duration = 60
+            )
+        delta = slhs.lookup_table[0][0]
+        delta.color_shift(
+            color = COLORS_SCALED[3],
+            start_frame = cues['equation']['start'] + 300,
+            duration = 60
+        )
+        eq = equals.lookup_table[0][0]
+        eq.color_shift(
+            color = COLORS_SCALED[3],
+            start_frame = cues['equation']['start'] + 360,
+            duration = 60
+        )
+        zero = rhs.lookup_table[0][0]
+        zero.color_shift(
+            color = COLORS_SCALED[3],
+            start_frame = cues['equation']['start'] + 360,
+            duration = 60
+        )
+
+        equals.disappear(disappear_frame = cues['equation']['start'] + 420)
+        rhs.disappear(disappear_frame = cues['equation']['start'] + 420)
+
+        equation.subbobjects = [slhs, equals2, lhs]
+        equation.arrange_tex_bobjects(
+            start_frame = cues['equation']['start'] + 420,
+            end_frame = cues['equation']['start'] + 420 + DEFAULT_MORPH_TIME
+        )
+        arrow.morph_figure(1, start_frame = cues['equation']['start'] + 420)
+
 #'''

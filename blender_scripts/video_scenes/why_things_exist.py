@@ -2010,7 +2010,7 @@ class EquationWithReplication(Scene):
         equals2.ref_obj.parent = equation.ref_obj
         srhs.ref_obj.parent = equation.ref_obj
         equals2.superbobject = equation
-        equals2.superbobject = equation
+        srhs.superbobject = equation
 
         blob1.add_to_blender(
             appear_frame = cues['add_equation']['start'] - 60,

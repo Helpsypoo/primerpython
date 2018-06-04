@@ -328,9 +328,6 @@ class Bobject(object):
             mat_copy.diffuse_color = original_color[:3]
             mat_copy.keyframe_insert(data_path = 'diffuse_color', frame = start_frame + duration)
 
-
-
-
 class MeshMorphBobject(Bobject):
     def __init__(self, *subbobjects, **kwargs):
         super().__init__(*subbobjects, **kwargs)
@@ -558,27 +555,22 @@ class MeshMorphBobject(Bobject):
 
 class TexComplex(Bobject):
     """docstring for TexComplex."""
-    def __init__(self, *subbobjects, centered = False, **kwargs):
+    def __init__(
+        self,
+        *subbobjects,
+        centered = False,
+        multiline = False,
+        line_height = 1.2,
+        **kwargs
+    ):
         super().__init__(*subbobjects, **kwargs)
         self.centered = centered
+        self.multiline = multiline
+        self.line_height = line_height
 
     def add_to_blender(self, **kwargs):
-        '''if 'appear_as_unit' in kwargs:
-            appear_as_unit = kwargs['appear_as_unit']
-            kwargs.pop('appear_as_unit')
-        else:
-            appear_as_unit = False
-
-        if appear_as_unit == False:
-            kwargs['appear_frame'] -= OBJECT_APPEARANCE_TIME
-            kwargs['subbobject_delay'] = OBJECT_APPEARANCE_TIME'''
-
-
         self.arrange_tex_bobjects()
         super().add_to_blender(**kwargs)
-        '''    start_frame = kwargs['appear_frame'] - OBJECT_APPEARANCE_TIME,
-            end_frame = kwargs['appear_frame']
-        )'''
 
     def arrange_tex_bobjects(self, start_frame = None, end_frame = None, centered = None):
         t_bobjs = self.subbobjects
@@ -595,20 +587,29 @@ class TexComplex(Bobject):
             bpy.context.scene.frame_set(end_frame)
 
         next_align = 0
-        for t_bobj in t_bobjs:
-            #Align expression
-            t_bobj_length = t_bobj.ref_obj.scale[0] * \
-                    t_bobj.imported_svg_data[t_bobj.active_expression_path]['length']
-            if t_bobj.centered == True:
-                t_bobj.ref_obj.location[0] = next_align + t_bobj_length / 2
-            else:
-                t_bobj.ref_obj.location[0] = next_align
-            expr_length = t_bobj_length
-            next_align += expr_length + \
-                         SPACE_BETWEEN_EXPRESSIONS * t_bobj.ref_obj.scale[0]
+        if self.multiline == False:
+            for t_bobj in t_bobjs:
+                #Align expression
+                t_bobj_length = t_bobj.ref_obj.scale[0] * \
+                        t_bobj.imported_svg_data[t_bobj.active_expression_path]['length']
+                if t_bobj.centered == True:
+                    t_bobj.ref_obj.location[0] = next_align + t_bobj_length / 2
+                else:
+                    t_bobj.ref_obj.location[0] = next_align
+                expr_length = t_bobj_length
+                next_align += expr_length + \
+                             SPACE_BETWEEN_EXPRESSIONS * t_bobj.ref_obj.scale[0]
+        else:
+            num_newlines = len(t_bobjs) - 1
+            vert_disp = num_newlines * self.line_height / 2
+            for t_bobj in t_bobjs:
+                t_bobj.ref_obj.location[1] = vert_disp
+                vert_disp -= self.line_height
+                if t_bobj.centered == True:
+                    t_bobj.ref_obj.location[0] = 0
 
         if centered == None: centered = self.centered
-        if centered == True:
+        if centered == True and self.multiline == False:
             next_align -= SPACE_BETWEEN_EXPRESSIONS
             for t_bobj in t_bobjs:
                 t_bobj.ref_obj.location[0] -= next_align / 2
