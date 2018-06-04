@@ -58,8 +58,9 @@ class GraphBobject(Bobject):
         self.functions = functions
         self.active_function_index = 0
         self.functions_coords = []
-        for i in range(len(self.functions)):
-            self.functions_coords.append(self.func_to_coords(func_index = i))
+        if len(self.functions) > 0:
+            for i in range(len(self.functions)):
+                self.functions_coords.append(self.func_to_coords(func_index = i))
 
         self.curve_highlight_points = []
 
@@ -112,6 +113,7 @@ class GraphBobject(Bobject):
             x_lab.ref_obj.location = (self.x_range[1] * self.domain_scale_factor + GRAPH_PADDING + 1.5, 0, 0)
             x_lab.centered = False
         self.add_subbobject(x_lab)
+        self.x_label_bobject = x_lab
 
         #y axis
         cyl_bobj = import_object('one_side_cylinder', 'primitives')
@@ -151,6 +153,7 @@ class GraphBobject(Bobject):
         if self.y_label_rot == True:
             y_lab.ref_obj.rotation_euler = (0, 0, math.pi / 2)
         self.add_subbobject(y_lab)
+        self.y_label_bobject = y_lab
 
 
         tick_step = self.tick_step
@@ -171,28 +174,30 @@ class GraphBobject(Bobject):
                 raise Warning('Idk wtf to do with that tick step.')
 
         #Positive x ticks
-        current_tick = x_tick_step
-        while current_tick <= self.x_range[1]:
-            self.add_tick_x(current_tick)
-            current_tick += x_tick_step
+        if x_tick_step != None:
+            current_tick = x_tick_step
+            while current_tick <= self.x_range[1]:
+                self.add_tick_x(current_tick)
+                current_tick += x_tick_step
 
-        #Negative x ticks
-        current_tick = -x_tick_step
-        while current_tick >= self.x_range[0]:
-            self.add_tick_x(current_tick)
-            current_tick -= x_tick_step
+            #Negative x ticks
+            current_tick = -x_tick_step
+            while current_tick >= self.x_range[0]:
+                self.add_tick_x(current_tick)
+                current_tick -= x_tick_step
 
-        #Positive y ticks
-        current_tick = y_tick_step
-        while current_tick <= self.y_range[1]:
-            self.add_tick_y(current_tick)
-            current_tick += y_tick_step
+        if x_tick_step != None:
+            #Positive y ticks
+            current_tick = y_tick_step
+            while current_tick <= self.y_range[1]:
+                self.add_tick_y(current_tick)
+                current_tick += y_tick_step
 
-        #Negative y ticks
-        current_tick = -y_tick_step
-        while current_tick >= self.y_range[0]:
-            self.add_tick_y(current_tick)
-            current_tick -= y_tick_step
+            #Negative y ticks
+            current_tick = -y_tick_step
+            while current_tick >= self.y_range[0]:
+                self.add_tick_y(current_tick)
+                current_tick -= y_tick_step
 
     def add_tick_x(self, value):
         tick_scale = min(self.width, self.height) / 20
@@ -719,7 +724,8 @@ class GraphBobject(Bobject):
 
     def add_to_blender(self, **kwargs):
         self.add_axes()
-        self.add_function_curve()
+        if len(self.functions) > 0:
+            self.add_function_curve()
         super().add_to_blender(**kwargs)
 
     def move_to(

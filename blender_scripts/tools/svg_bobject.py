@@ -67,7 +67,6 @@ class SVGBobject(Bobject):
                 self.rendered_bobject_lists.append(rendered_bobject_list)
             self.make_lookup_table()
 
-
         print("SVG Bobject initialized")
 
         self.copyable_null = None
@@ -120,8 +119,13 @@ class SVGBobject(Bobject):
         else:
             disappear_mode = 'per_curve'
 
+        if 'animate' in kwargs:
+            animate = kwargs['animate']
+        else:
+            animate = True
+
         if disappear_mode == 'per_curve' and \
-            self.transition_type == 'morph':
+            self.transition_type == 'morph' and animate == True:
             #Bobject appears early but with each curve at size zero, then
             #the curves morph to non-zero size, making it look like the
             #curves appear independently.
@@ -662,8 +666,8 @@ class SVGBobject(Bobject):
         #duration = 60
         end_frame = start_frame + duration
         morph_pairs = []
-        print('Start frame = ' + str(start_frame))
-        print('End frame = ' + str(end_frame))
+        #print('Start frame = ' + str(start_frame))
+        #print('End frame = ' + str(end_frame))
 
         if self.transition_type == 'morph':
             for curve, chain in zip(self.rendered_curve_bobjects, self.morph_chains):

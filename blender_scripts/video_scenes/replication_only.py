@@ -413,7 +413,7 @@ class ChickenEgg(Scene):
         )
         wha.add_to_blender(appear_frame = 180)
 '''
-#'''
+'''
 class FirstKindOfGraph(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -651,5 +651,205 @@ class FirstKindOfGraph(Scene):
             end_frame = cues['three_sims']['start'] + start_delay + sim3.sim_duration_in_frames,
             point = point
         )
+'''
+#'''
+class FunctionTime(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('graph', {'duration': 1000}),
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        def func(x):
+            return 3 + 2 * x - x * x / 1.55 + x ** 3 / 20
+
+        graph = graph_bobject.GraphBobject(
+            func,
+            x_range = [0, 10],
+            y_range = [0, 10],
+            tick_step = [5, 5],
+            width = 10,
+            height = 10,
+            x_label = 'x',
+            x_label_pos = 'end',
+            y_label = 'y',
+            y_label_pos = 'end',
+            location = (0, -1, 0),
+            centered = True,
+            arrows = True
+        )
+        graph.add_to_blender(appear_frame = 0)
+        arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (-3, 5.3, 0),
+                        'tail': (0, 5.3, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (6.5, -4, 0),
+                        'tail': (6.5, -1, 0)
+                    }
+                }
+            ]
+        )
+        arrow.add_to_blender(appear_frame = 60)
+        graph.y_label_bobject.pulse(
+            frame = 60,
+            duration = 120
+        )
+        graph.y_label_bobject.subbobjects[0].color_shift(
+            start_frame = 60,
+            duration = 120,
+            color = COLORS_SCALED[3],
+            shift_time = OBJECT_APPEARANCE_TIME / 2
+        )
+        arrow.morph_figure(1, start_frame = 180)
+        graph.x_label_bobject.pulse(
+            frame = 180,
+            duration = 120
+        )
+        graph.x_label_bobject.subbobjects[0].color_shift(
+            start_frame = 180,
+            duration = 120,
+            color = COLORS_SCALED[3],
+            shift_time = OBJECT_APPEARANCE_TIME / 2
+        )
+
+        graph.move_to(
+            new_location = (-7.5, -1, 0),
+            start_frame = 360
+        )
+        arrow.disappear(
+            disappear_frame = 360
+        )
+
+        '''equation_strings = []
+        for i in range(len(x_values)):
+            string = str(y_values[i]) + '=f(' + str(x_values[i]) + ')'
+            equation_strings.append(string)'''
+
+        func_eq = tex_bobject.TexBobject(
+            'y = f(x)',
+            location = (7.5, 3, 0),
+            centered = True,
+            scale = 2
+        )
+        func_eq.add_to_blender(
+            appear_frame = 420
+        )
+
+        x_step = 0.1
+        x = 0
+        x_values = []
+        y_values = []
+        while x <= 10:
+            x_values.append(str(x))
+            x += x_step
+            x = round(x, 1)
+            y = round(func(x), 1)
+            y_values.append(str(y))
+
+        x = tex_bobject.TexBobject(
+            *x_values,
+            location = (10.2, -3, 0),
+            transition_type = 'instant',
+            centered = True,
+            scale = 2
+        )
+        x.add_to_blender(
+            appear_frame = 480
+        )
+        x_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (10.2, -1.5, 0),
+                        'head': (10.2, 1, 0)
+                    }
+                }
+            ]
+        )
+        x_arrow.add_to_blender(appear_frame = 480)
+
+        y = tex_bobject.TexBobject(
+            *y_values,
+            location = (4, -3, 0),
+            transition_type = 'instant',
+            centered = True,
+            scale = 2
+        )
+        y.add_to_blender(
+            appear_frame = 540
+        )
+        y_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (4, -1.5, 0),
+                        'tail': (4, 1, 0)
+                    }
+                }
+            ]
+        )
+        y_arrow.add_to_blender(appear_frame = 540)
+
+        '''func_eq.morph_figure(1, start_frame = 480)
+        #A second bobject to morph with instant transitions through many values
+        #An svg bobject can only have one transition type.
+        func_eq2 = tex_bobject.TexBobject(
+            *equation_strings,
+            location = (7.5, 0, 0),
+            centered = True,
+            scale = 2,
+            transition_type = 'instant'
+        )
+        func_eq1.disappear(disappear_frame = 540, animate = False)
+        func_eq2.add_to_blender(
+            animate = False,
+            appear_frame = 540
+        )'''
+
+        graph.animate_function_curve(
+            start_frame = 600,
+            end_frame = 720,
+            uniform_along_x = True
+        )
+        appear_coord = [0, func(0), 0]
+        point = graph.add_point_at_coord(
+            coord = appear_coord,
+            appear_frame = 540,
+            axis_projections = True,
+            track_curve = True
+        )
+        graph.animate_point(
+            end_coord = [10, 0, 0],
+            start_frame = 600,
+            end_frame = 720,
+            point = point
+        )
+
+        start_frame = 600
+        end_frame = 720
+        time_step = (end_frame - start_frame) / (len(x_values) - 1)
+        for i in range(1, len(x_values)):
+            x.morph_figure(i, start_frame = start_frame + i * time_step)
+            y.morph_figure(i, start_frame = start_frame + i * time_step)
+
+
+
+
+
 
 #'''

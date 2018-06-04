@@ -197,7 +197,8 @@ class Bobject(object):
             main_obj.scale = [0, 0, 0]
             main_obj.keyframe_insert(data_path="scale", frame = scale_down_frame)
 
-        else: scale_down_frame = disappear_frame
+        else:
+            scale_down_frame = disappear_frame
 
 
 
