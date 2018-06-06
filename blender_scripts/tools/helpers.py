@@ -56,14 +56,36 @@ def define_materials():
     make_creature_material(rgb = deepcopy(COLORS[4]), name = 'creature_color5')
     make_creature_material(rgb = deepcopy(COLORS[5]), name = 'creature_color6')
 
-def make_creature_material(rgb = None, name = None, normalize_to_1 = True):
+    make_translucent_material(rgb = deepcopy(COLORS[0]), name = 'trans_color1')
+    make_translucent_material(rgb = deepcopy(COLORS[1]), name = 'trans_color2')
+    make_translucent_material(rgb = deepcopy(COLORS[2]), name = 'trans_color3')
+    make_translucent_material(rgb = deepcopy(COLORS[3]), name = 'trans_color4')
+    make_translucent_material(rgb = deepcopy(COLORS[4]), name = 'trans_color5')
+    make_translucent_material(rgb = deepcopy(COLORS[5]), name = 'trans_color6')
+
+def make_basic_material(rgb = None, name = None):
     if rgb == None or name == None:
-        raise Warning('Need rgb and name to make material')
-    if normalize_to_1:
-        for i in range(3):
-            #Range exactly 3 so a fourth component (alpha) isn't affected
-            rgb[i] /= 255
-            #rgb[i] = rgb[i] ** 2.2
+        raise Warning('Need rgb and name to make basic material')
+    for i in range(3):
+        #Range exactly 3 so a fourth component (alpha) isn't affected
+        rgb[i] /= 255
+
+    color = bpy.data.materials.new(name = name)
+    color.use_nodes = True
+    nodes = color.node_tree.nodes
+    #nodes[1].inputs[1].default_value = 1 #Roughness. 1 means not shiny.
+    nodes[1].inputs[0].default_value = rgb
+
+    rgb = rgb[:3] #Cuts to 3 components so it works for diffuse_color
+                  #which doesn't take alpha
+    color.diffuse_color = rgb
+
+def make_creature_material(rgb = None, name = None):
+    if rgb == None or name == None:
+        raise Warning('Need rgb and name to make creature material')
+    for i in range(3):
+        #Range exactly 3 so a fourth component (alpha) isn't affected
+        rgb[i] /= 255
 
     color = bpy.data.materials.new(name = name)
     color.use_nodes = True
@@ -77,20 +99,35 @@ def make_creature_material(rgb = None, name = None, normalize_to_1 = True):
                   #which doesn't take alpha
     color.diffuse_color = rgb
 
-def make_basic_material(rgb = None, name = None, normalize_to_1 = True):
+def make_translucent_material(rgb = None, name = None):
     if rgb == None or name == None:
-        raise Warning('Need rgb and name to make basic material')
-    if normalize_to_1:
-        for i in range(3):
-            #Range exactly 3 so a fourth component (alpha) isn't affected
-            rgb[i] /= 255
-            #rgb[i] = rgb[i] ** 2.2
+        raise Warning('Need rgb and name to make translucent material')
+    for i in range(3):
+        #Range exactly 3 so a fourth component (alpha) isn't affected
+        rgb[i] /= 255
+
+    strength = 2 #Arbitrary, could make this a constant
 
     color = bpy.data.materials.new(name = name)
     color.use_nodes = True
     nodes = color.node_tree.nodes
-    #nodes[1].inputs[1].default_value = 1 #Roughness. 1 means not shiny.
-    nodes[1].inputs[0].default_value = rgb
+    color.node_tree.links.remove(nodes[0].inputs[0].links[0])
+    nodes.new(type = 'ShaderNodeAddShader') #index 2
+    color.node_tree.links.new(nodes[2].outputs[0], nodes[0].inputs[1])
+    nodes.new(type = 'ShaderNodeAddShader') #index 3
+    color.node_tree.links.new(nodes[3].outputs[0], nodes[2].inputs[1])
+    nodes.new(type = 'ShaderNodeEmission') #index 4
+    nodes[4].inputs[0].default_value = rgb
+    nodes[4].inputs[1].default_value = strength
+    color.node_tree.links.new(nodes[4].outputs[0], nodes[2].inputs[0])
+    nodes.new(type = 'ShaderNodeVolumeScatter') #index 5
+    nodes[5].inputs[0].default_value = rgb
+    nodes[5].inputs[1].default_value = strength
+    color.node_tree.links.new(nodes[5].outputs[0], nodes[3].inputs[0])
+    nodes.new(type = 'ShaderNodeVolumeAbsorption') #index 6
+    nodes[6].inputs[0].default_value = rgb
+    nodes[6].inputs[1].default_value = strength
+    color.node_tree.links.new(nodes[6].outputs[0], nodes[3].inputs[1])
 
     rgb = rgb[:3] #Cuts to 3 components so it works for diffuse_color
                   #which doesn't take alpha

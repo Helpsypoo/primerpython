@@ -28,6 +28,11 @@ class SVGBobject(Bobject):
         else:
             self.vert_align_centers = False
 
+        if 'color' in kwargs:
+            self.default_color = kwargs['color']
+        else:
+            self.default_color = 'color5'
+
         if RENDER_QUALITY == 'medium' or RENDER_QUALITY == 'high':
             default_transition_type = 'morph'
         else:
@@ -58,7 +63,7 @@ class SVGBobject(Bobject):
                 for curve in self.imported_svg_data[svg]['curves']:
                     new_curve = curve.ref_obj.children[0].copy()
                     new_curve.data = curve.ref_obj.children[0].data.copy()
-                    apply_material(new_curve, 'color5')
+                    apply_material(new_curve, self.default_color)
                     new_curve_bobj = bobject.Bobject(
                         objects = [new_curve],
                         location = curve.ref_obj.location
@@ -140,8 +145,7 @@ class SVGBobject(Bobject):
         null = new_null_curve(
             parent = self.ref_obj,
             location = self.ref_obj.location,
-            rotation = self.ref_obj.rotation_euler,
-            color = 'color5'
+            rotation = self.ref_obj.rotation_euler
         )
 
         #print("Max spline count is " + str(max_spline_count))
@@ -155,7 +159,7 @@ class SVGBobject(Bobject):
             #Would just deepcopy null, but that doesn't work on Blender data blocks
             dup = null.ref_obj.children[0].copy()
             dup.data = null.ref_obj.children[0].data.copy()
-            apply_material(dup, 'color5')
+            apply_material(dup, self.default_color)
             rendered_curve = bobject.Bobject(objects = [dup], name = 'rendered')
             rendered_curve.ref_obj.location = \
                                 self.morph_chains[i][0].ref_obj.location
@@ -1006,7 +1010,7 @@ def new_null_curve(
     parent = None,
     location = None,
     rotation = None,
-    color = 'color5',
+    #color = 'color5',
     reuse_object = None
 ):
     #print("    Adding null curve")

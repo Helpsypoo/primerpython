@@ -100,6 +100,9 @@ class Population(object):
             self.updates = []'''
 
     def simulate(self):
+        self.creatures = [] #clear creatures each time so one population
+                            #objects can be used to generate multiple sets of
+                            #sim data
         print('Simulating ' + self.name)
         num = 1
         if isinstance(self.initial_creatures, int):

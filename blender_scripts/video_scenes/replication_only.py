@@ -826,7 +826,7 @@ class FunctionTime(Scene):
             x.morph_figure(i, start_frame = start_frame + i * time_step)
             y.morph_figure(i, start_frame = start_frame + i * time_step)
 '''
-#'''
+'''
 class EquationToFunction(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -839,7 +839,6 @@ class EquationToFunction(Scene):
         super().play()
         cues = self.subscenes
         scene_end = self.duration
-
 
         #Equation
         lhs = tex_bobject.TexBobject(
@@ -1041,5 +1040,580 @@ class EquationToFunction(Scene):
             end_frame = cues['equation']['start'] + 420 + DEFAULT_MORPH_TIME
         )
         arrow.morph_figure(1, start_frame = cues['equation']['start'] + 420)
+'''
+#'''
+class InTermsOfN(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('graph', {'duration': 300}),
+            ('birth_rate', {'duration': 360}),
+            ('death_rate', {'duration': 300}),
+            ('condense', {'duration': 500}),
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        rhs = tex_bobject.TexBobject(
+            "\\text{Birth rate} - \\text{Death rate}",
+            "f(N)",
+            "\\text{Birth rate} - \\text{Death rate}",
+            "B + R \\times N - \\text{Death rate}",
+            "B + R \\times N - D \\times N",
+            "B + (R-D) \\times N",
+            centered = True
+        )
+        equals = tex_bobject.TexBobject(
+            "\!=",
+            centered = True
+        )
+        lhs = tex_bobject.TexBobject(
+            "\\Delta",
+            centered = True
+        )
+
+        equation = bobject.TexComplex(
+            lhs, equals, rhs,
+            location = (0, 6.5, 0),
+            scale = 1.5,
+            centered = True
+        )
+        equation.add_to_blender(
+            appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME,
+            animate = False
+        )
+
+        graph = graph_bobject.GraphBobject(
+            #func,
+            x_range = [0, 10],
+            y_range = [0, 10],
+            tick_step = [None, None],
+            width = 9,
+            height = 9,
+            x_label = 'N',
+            x_label_pos = 'end',
+            y_label = '\\Delta',
+            y_label_pos = 'end',
+            location = (0, -2, 0),
+            centered = True,
+            arrows = True,
+        )
+        graph.add_to_blender(appear_frame = 0)
+
+        deltas = [lhs.lookup_table[0][0], graph.y_label_bobject.subbobjects[0]]
+        for delta in deltas:
+            delta.pulse(
+                frame = cues['graph']['start'] + 60,
+                duration = 60
+            )
+            delta.color_shift(
+                start_frame = 60,
+                duration = 60,
+                shift_time = OBJECT_APPEARANCE_TIME / 2,
+                color = COLORS_SCALED[3]
+            )
+
+        rhs.morph_figure(1, start_frame = cues['graph']['start'] + 120)
+
+        Ns = [rhs.lookup_table[1][2], graph.x_label_bobject.subbobjects[0]]
+
+        for N in Ns:
+            N.pulse(
+                frame = cues['graph']['start'] + 180,
+                duration = 60
+            )
+            N.color_shift(
+                start_frame = 180,
+                duration = 60,
+                shift_time = OBJECT_APPEARANCE_TIME / 2,
+                color = COLORS_SCALED[3]
+            )
+
+        rhs.morph_figure(2, start_frame = cues['graph']['start'] + 240)
+
+        graph.disappear(disappear_frame = cues['graph']['end'] + \
+                                                    OBJECT_APPEARANCE_TIME)
+        equation.move_to(
+            new_location = (0, 0, 0),
+            start_frame = cues['graph']['end']
+        )
+
+        rhs.morph_figure(3, start_frame = cues['birth_rate']['start'] + 60)
+        tot = tex_bobject.TexBobject(
+            "\\text{Total}",
+            centered = True,
+            color = 'color2'
+        )
+        br = tex_bobject.TexBobject(
+            "\\text{birth rate} \\phantom{blurghh}",
+            centered = True,
+            color = 'color2'
+        )
+        birth_annotation = tex_bobject.TexComplex(
+            tot, br,
+            location = (-3.7, 4, 0),
+            centered = True,
+            scale = 1,
+            multiline = True
+        )
+        birth_annotation.add_to_blender(
+            appear_frame = cues['birth_rate']['start'] + 60
+        )
+        birth_bracket = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'bracket',
+                    'points': {
+                        'annotation_point': (-3.7, 2.5, 0),
+                        'left_point': (-7.3, 1, 0),
+                        'right_point': (0.8, 1, 0)
+                    }
+                },
+                { #Move to the right by 1.65 units when expression morphs
+                    'type': 'bracket',
+                    'points': {
+                        'annotation_point': (-2.05, 2.5, 0),
+                        'left_point': (-5.65, 1, 0),
+                        'right_point': (2.45, 1, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        birth_bracket.add_to_blender(appear_frame = cues['birth_rate']['start'] + 60)
+        spont = tex_bobject.TexBobject(
+            "\\text{Spontaneous}",
+            centered = True,
+            color = 'color2'
+        )
+        br = tex_bobject.TexBobject(
+            "\\text{birth rate} \\phantom{blurghh}",
+            centered = True,
+            color = 'color2'
+        )
+        spont_annotation = tex_bobject.TexComplex(
+            spont, br,
+            location = (-6.9, -4.2, 0),
+            centered = True,
+            scale = 1,
+            multiline = True
+        )
+        spont_annotation.add_to_blender(
+            appear_frame = cues['birth_rate']['start'] + 120
+        )
+        spont_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (-6.9, -1, 0),
+                        'tail': (-6.9, -3, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (-7.3, -1, 0),
+                        'tail': (-9.5, -3, 0)
+                    }
+                },
+                { #Move to the right by 1.65 units when expression morphs
+                    'type': 'arrow',
+                    'points': {
+                        'head': (-5.65, -1, 0),
+                        'tail': (-7.85, -3, 0)
+                    }
+                },
+                { #Move to the right by 1.25 units when expression morphs
+                    'type': 'arrow',
+                    'points': {
+                        'head': (-4.4, -1, 0),
+                        'tail': (-6.6, -3, 0)
+                    }
+                }
+                ,
+                { #Rearrange for final equation morph
+                    'type': 'arrow',
+                    'points': {
+                        'head': (4.8, -0.8, 0),
+                        'tail': (4.8, -2.3, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        spont_arrow.add_to_blender(appear_frame = cues['birth_rate']['start'] + 120)
+        B = rhs.lookup_table[2][0]
+        B.pulse(
+            frame = cues['birth_rate']['start'] + 120,
+            duration = 60
+        )
+        B.color_shift(
+            start_frame = cues['birth_rate']['start'] + 120,
+            duration = 60,
+            shift_time = OBJECT_APPEARANCE_TIME / 2,
+            color = COLORS_SCALED[3]
+        )
+
+
+        spont_annotation.move_to(
+            new_location = (-9.5, -4.2, 0),
+            start_frame = cues['birth_rate']['start'] + 180
+        )
+        spont_arrow.morph_figure(1, start_frame = cues['birth_rate']['start'] + 180)
+        rep_bracket = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'bracket',
+                    'points': {
+                        'annotation_point': (-1.6, -2.7, 0),
+                        'right_point': (-4.2, -1, 0),
+                        'left_point': (0.7, -1, 0)
+                    }
+                },
+                { #Move to the right by 1.65 units when expression morphs
+                    'type': 'bracket',
+                    'points': {
+                        'annotation_point': (0.05, -2.7, 0),
+                        'right_point': (-2.55, -1, 0),
+                        'left_point': (2.35, -1, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        rep_bracket.add_to_blender(appear_frame = cues['birth_rate']['start'] + 180)
+        rep = tex_bobject.TexBobject(
+            "\\text{Replication}",
+            centered = True,
+            color = 'color2'
+        )
+        br = tex_bobject.TexBobject(
+            "\\text{rate}",
+            centered = True,
+            color = 'color2'
+        )
+        rep_annotation = tex_bobject.TexComplex(
+            rep, br,
+            location = (-1.6, -4.2, 0),
+            centered = True,
+            scale = 1,
+            multiline = True
+        )
+        rep_annotation.add_to_blender(
+            appear_frame = cues['birth_rate']['start'] + 180
+        )
+        R = rhs.lookup_table[2][2]
+        R.pulse(
+            frame = cues['birth_rate']['start'] + 240,
+            duration = 60
+        )
+        R.color_shift(
+            start_frame = cues['birth_rate']['start'] + 240,
+            duration = 60,
+            shift_time = OBJECT_APPEARANCE_TIME / 2,
+            color = COLORS_SCALED[3]
+        )
+        N = rhs.lookup_table[2][4]
+        N.pulse(
+            frame = cues['birth_rate']['start'] + 300,
+            duration = 60
+        )
+        N.color_shift(
+            start_frame = cues['birth_rate']['start'] + 300,
+            duration = 60,
+            shift_time = OBJECT_APPEARANCE_TIME / 2,
+            color = COLORS_SCALED[3]
+        )
+
+
+        #Death rate
+        rhs.morph_figure(4, start_frame = cues['death_rate']['start'])
+        tot = tex_bobject.TexBobject(
+            "\\text{Total}",
+            centered = True,
+            color = 'color2'
+        )
+        dth = tex_bobject.TexBobject(
+            "\\text{death rate} \\phantom{blurghh}",
+            centered = True,
+            color = 'color2'
+        )
+        death_annotation = tex_bobject.TexComplex(
+            tot, dth,
+            location = (6.9, 4, 0),
+            centered = True,
+            scale = 1,
+            multiline = True
+        )
+        death_annotation.add_to_blender(
+            appear_frame = cues['death_rate']['start']
+        )
+        death_bracket = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'bracket',
+                    'points': {
+                        'annotation_point': (6.9, 2.5, 0),
+                        'left_point': (4.5, 1, 0),
+                        'right_point': (9.4, 1, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        death_bracket.add_to_blender(appear_frame = cues['death_rate']['start'])
+        #This moves characters to the right by 1.65 blender units,
+        #so move annotations
+        #Such manual
+        birth_bracket.morph_figure(1, start_frame = cues['death_rate']['start'])
+        spont_arrow.morph_figure(2, start_frame = cues['death_rate']['start'])
+        rep_bracket.morph_figure(1, start_frame = cues['death_rate']['start'])
+        annotations = [birth_annotation, spont_annotation, rep_annotation]
+        for annotation in annotations:
+            annotation.move_to(
+                displacement = [1.65, 0, 0],
+                start_frame = cues['death_rate']['start']
+            )
+
+        D = rhs.lookup_table[4][6]
+        D.pulse(
+            frame = cues['death_rate']['start'] + 60,
+            duration = 60
+        )
+        D.color_shift(
+            start_frame = cues['death_rate']['start'] + 60,
+            duration = 60,
+            shift_time = OBJECT_APPEARANCE_TIME / 2,
+            color = COLORS_SCALED[3]
+        )
+        N = rhs.lookup_table[4][8]
+        N.pulse(
+            frame = cues['death_rate']['start'] + 120,
+            duration = 60
+        )
+        N.color_shift(
+            start_frame = cues['death_rate']['start'] + 120,
+            duration = 60,
+            shift_time = OBJECT_APPEARANCE_TIME / 2,
+            color = COLORS_SCALED[3]
+        )
+
+        to_disappear = [
+            birth_annotation,
+            birth_bracket,
+            death_annotation,
+            death_bracket,
+            rep_annotation,
+            rep_bracket
+        ]
+        for bobj in to_disappear:
+            bobj.disappear(disappear_frame = cues['death_rate']['end'])
+
+        #Condense
+        rhs.morph_figure(5, start_frame = cues['condense']['start'])
+        spont_arrow.morph_figure(3, start_frame = cues['condense']['start'])
+        spont_annotation.move_to(
+            displacement = [1.65, 0, 0],
+            start_frame = cues['condense']['start']
+        )
+
+        net_ex = tex_bobject.TexBobject(
+            "\\text{Net expected}",
+            centered = True,
+            color = 'color2'
+        )
+        ch_pr = tex_bobject.TexBobject(
+            "\\text{change per}",
+            centered = True,
+            color = 'color2'
+        )
+        cre = tex_bobject.TexBobject(
+            "\\text{creature}",
+            centered = True,
+            color = 'color2'
+        )
+        net_annotation = tex_bobject.TexComplex(
+            net_ex, ch_pr, cre,
+            location = (1.6, 4.6, 0),
+            centered = True,
+            scale = 1,
+            multiline = True
+        )
+        net_annotation.add_to_blender(
+            appear_frame = cues['condense']['start'] + 60
+        )
+        net_bracket = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'bracket',
+                    'points': {
+                        'annotation_point': (1.6, 2.5, 0),
+                        'left_point': (-1.1, 1, 0),
+                        'right_point': (4.4, 1, 0)
+                    }
+                },
+                {
+                    'type': 'bracket',
+                    'points': {
+                        'annotation_point': (8.5, 5/3, 0),
+                        'left_point': (6.8, 2/3, 0),
+                        'right_point': (10.4, 2/3, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        net_bracket.add_to_blender(appear_frame = cues['condense']['start'] + 60)
+
+        tot = tex_bobject.TexBobject(
+            "\\text{Total}",
+            centered = True,
+            color = 'color2'
+        )
+        exp = tex_bobject.TexBobject(
+            "\\text{expected}",
+            centered = True,
+            color = 'color2'
+        )
+        cha = tex_bobject.TexBobject(
+            "\\text{change}",
+            centered = True,
+            color = 'color2'
+        )
+        total_change_annotation = tex_bobject.TexComplex(
+            tot, exp, cha,
+            location = (-10, 4.6, 0),
+            centered = True,
+            scale = 1,
+            multiline = True
+        )
+        total_change_annotation.add_to_blender(
+            appear_frame = cues['condense']['start'] + 120
+        )
+        tot_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-10, 2.5, 0),
+                        'head': (-8.2, 0.7, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        tot_arrow.add_to_blender(appear_frame = cues['condense']['start'] + 120)
+
+        num = tex_bobject.TexBobject(
+            "\\text{Number}",
+            centered = True,
+            color = 'color2'
+        )
+        o_cre = tex_bobject.TexBobject(
+            "\\text{of creatures}",
+            centered = True,
+            color = 'color2'
+        )
+        num_annotation = tex_bobject.TexComplex(
+            num, o_cre,
+            location = (9, -4.2, 0),
+            centered = True,
+            scale = 1,
+            multiline = True
+        )
+        num_annotation.add_to_blender(
+            appear_frame = cues['condense']['start'] + 180
+        )
+        num_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (9, -3, 0),
+                        'head': (8, -1, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        num_arrow.add_to_blender(appear_frame = cues['condense']['start'] + 180)
+
+        equation.move_to(
+            new_location = (7.5, 0, 0),
+            new_scale = 1,
+            start_frame = cues['condense']['start'] + 300
+        )
+
+        net_annotation.move_to(
+            new_location = (8.5, 3.2, 0),
+            new_scale = 0.67,
+            start_frame = cues['condense']['start'] + 300
+        )
+        net_bracket.morph_figure(1, start_frame = cues['condense']['start'] + 300)
+        spont_annotation.move_to(
+            new_location = (4.8, -3.1, 0),
+            new_scale = 0.67,
+            start_frame = cues['condense']['start'] + 300
+        )
+        spont_arrow.morph_figure(4, start_frame = cues['condense']['start'] + 300)
+
+        to_disappear = [
+            total_change_annotation,
+            tot_arrow,
+            num_annotation,
+            num_arrow
+        ]
+        for bobj in to_disappear:
+            bobj.disappear(disappear_frame = cues['condense']['start'] + 300)
+
+        graph = graph_bobject.GraphBobject(
+            #func,
+            x_range = [0, 10],
+            y_range = [0, 10],
+            tick_step = [None, None],
+            width = 10,
+            height = 10,
+            x_label = 'N',
+            x_label_pos = 'end',
+            y_label = '\\Delta',
+            y_label_pos = 'end',
+            location = (-7.5, -1, 0),
+            centered = True,
+            arrows = True,
+        )
+        graph.add_to_blender(appear_frame = cues['condense']['start'] + 300)
+
+        """Ns = [rhs.lookup_table[5][8], graph.x_label_bobject.subbobjects[0]]
+
+        for N in Ns:
+            N.pulse(
+                frame = cues['condense']['start'] + 360,
+                duration = 60
+            )
+            N.color_shift(
+                start_frame = cues['condense']['start'] + 360,
+                duration = 60,
+                shift_time = OBJECT_APPEARANCE_TIME / 2,
+                color = COLORS_SCALED[3]
+            )
+
+        deltas = [lhs.lookup_table[0][0], graph.y_label_bobject.subbobjects[0]]
+        for delta in deltas:
+            delta.pulse(
+                frame = cues['condense']['start'] + 420,
+                duration = 60
+            )
+            delta.color_shift(
+                start_frame = cues['condense']['start'] + 420,
+                duration = 60,
+                shift_time = OBJECT_APPEARANCE_TIME / 2,
+                color = COLORS_SCALED[3]
+            )"""
+
+
 
 #'''

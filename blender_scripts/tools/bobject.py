@@ -226,8 +226,8 @@ class Bobject(object):
         obj = self.ref_obj
         if displacement != None:
             obj.keyframe_insert(data_path="location", frame = start_frame)
-            for dx, x in zip(displacement, self.ref_obj.location):
-                x += dx #Pretty sure this doesn't actually work
+            for i in range(len(self.ref_obj.location)):
+                self.ref_obj.location[i] += displacement[i]
             obj.keyframe_insert(data_path="location", frame = end_frame)
         if new_location != None:
             obj.keyframe_insert(data_path="location", frame = start_frame)

@@ -520,12 +520,13 @@ def graph_test():
         return 10 * math.sin(3*x) * math.cos(x / 6) #+ math.sin(5*x)
         #return 3 + 5 * x - 1.5 * x * x + (x ** 3) / 9.2
         #return 10 - (9 * (10 ** (10 - x)) / (10 ** 10))
+    '''
 
-    def func2(x):
-        #return 3 * math.sin(x) + 3 #+ math.sin(5*x)
+    def func(x):
+        return 10 #+ math.sin(5*x)
         #return 3 + 5 * x - 1.5 * x * x + (x ** 3) / 9.2
         #return 10 - (9 * (10 ** (10 - x)) / (10 ** 10))
-        return - x * x / 10 + 10'''
+        #return - x * x / 10 + 10
 
     initial_creature_count = 10
     initial_creatures = []
@@ -536,20 +537,21 @@ def graph_test():
         duration = 10 * DEFAULT_WORLD_DURATION,
         initial_creatures = initial_creatures,
         gene_updates = [
-            ['color', 'creature_color_1', 'birth_modifier', 100, 0],
+            ['color', 'creature_color_1', 'birth_modifier', 50, 0],
             ['shape', 'shape1', 'birth_modifier', 1, 0],
             ['size', '1', 'birth_modifier', 1, 0],
             ['color', 'creature_color_1', 'replication_modifier', 0, 0],
-            ['color', 'creature_color_1', 'death_modifier', 10, 0],
+            ['color', 'creature_color_1', 'death_modifier', 5, 0],
         ]
     )
-    pop.simulate()
-
-    func = pop.get_creature_count_by_t()
-    #print(func)
+    num_sims = 40
+    funcs = [func]
+    for i in range(num_sims):
+        pop.simulate()
+        funcs.append(pop.get_creature_count_by_t())
 
     graph = graph_bobject.GraphBobject(
-        func,
+        *funcs,
         x_range = [0, 1000],
         y_range = [0, 20],
         tick_step = [200, 5],
@@ -563,9 +565,24 @@ def graph_test():
         centered = True,
         arrows = True
     )
-    graph.add_to_blender()
-    graph.animate_function_curve(start_frame = 60, end_frame = 1060, uniform_along_x = True)
-    appear_coord = [0, func[0], 0]
+    graph.add_to_blender(curve_colors = 'fade_secondary')
+    graph.animate_function_curve(
+        start_frame = 60,
+        end_frame = 180,
+        uniform_along_x = True,
+        index = 0
+    )
+    graph.animate_all_function_curves(
+        start_frame = 180,
+        end_frame = 1060,
+        uniform_along_x = True,
+        except_first = True,
+        start_window = 0.5
+    )
+    try:
+        appear_coord = [0, funcs[0][0], 0]
+    except:
+        appear_coord = [0, funcs[0](0), 0]
     point = graph.add_point_at_coord(
         coord = appear_coord,
         appear_frame = 30,
@@ -575,7 +592,7 @@ def graph_test():
     graph.animate_point(
         end_coord = [1000, 0, 0],
         start_frame = 60,
-        end_frame = 1060,
+        end_frame = 180,
         point = point
     )
     #graph.morph_curve(1, start_frame = 360)
@@ -585,7 +602,7 @@ def graph_test():
         x_of_t = x_of_t
     )'''
 
-    def func2(x): return 5 - x / 2
+    """def func2(x): return 5 - x / 2
     graph2 = graph_bobject.GraphBobject(
         func2,
         x_range = [0, 20],
@@ -613,7 +630,7 @@ def graph_test():
         start_frame = 60,
         point = point2,
         x_of_t = func
-    )
+    )"""
 
 def bcard():
     initialize_blender()
@@ -627,14 +644,14 @@ def main():
     #execute_and_time(tex_test())
     #test_molecule()
     #morph_test()
-    #graph_test()
+    graph_test()
     #color_test()
     #bcard()
     #gesture_test()
 
-    draw_scenes_from_file(replication_only)
+    #draw_scenes_from_file(replication_only)
 
-    #print_time_report()
+    print_time_report()
     finish_noise()
 
 

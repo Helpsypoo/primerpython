@@ -15,6 +15,7 @@ class GraphBobject(Bobject):
     """docstring for GraphBobject."""
     def __init__(self,
         *functions,
+        overlay_functions = False,
         x_range = 10,
         x_label = 'x',
         x_label_pos = 'along',
@@ -63,6 +64,7 @@ class GraphBobject(Bobject):
                 self.functions_coords.append(self.func_to_coords(func_index = i))
 
         self.curve_highlight_points = []
+        self.functions_curves = [] #Filled in self.add_function_curve()
 
         if 'scale' in kwargs:
             scale = kwargs['scale']
@@ -247,8 +249,13 @@ class GraphBobject(Bobject):
         )
         self.add_subbobject(label)
 
-    def add_function_curve(self):
-        #Makes a curve object with the 0th function
+    def add_function_curve(
+        self,
+        index = 0,
+        color = 3,
+        mat_modifier = None,
+        z_shift = 0
+    ):
 
         data = bpy.data.curves.new(name = 'function_curve_data', type = 'CURVE')
         data.dimensions = '3D'
@@ -256,72 +263,46 @@ class GraphBobject(Bobject):
         data.render_resolution_u = 64
         data.splines.new('NURBS')
 
-        coords = self.functions_coords[0]
+        coords = self.functions_coords[index]
+        if mat_modifier == 'fade':
+            #Reduce point density to allow more memory for more overlapping curves
+            #Keeping the final point doesn't actually seem to work quite right,
+            #but it looks good enough.
+            final = deepcopy(coords[-1])
+            coords = coords[0::25]
+            coords.append(final)
+            pass
+
+        #Add another coord to the beginning and end because NURBS curves
+        #don't draw all the way to the exteme points.
+        start_coord = [
+            coords[0][0] - (coords[1][0] - coords[0][0]),
+            coords[0][1] - (coords[1][1] - coords[0][1]),
+            coords[0][2] - (coords[1][2] - coords[0][2])
+        ]
+        coords.insert(0, start_coord)
+        end_coord = start_coord = [
+            coords[-1][0] + (coords[-2][0] - coords[-1][0]),
+            coords[-1][1] + (coords[-2][1] - coords[-1][1]),
+            coords[-1][2] + (coords[-2][2] - coords[-1][2])
+        ]
+        coords.append(end_coord)
 
         points = data.splines[0].points
         points.add(len(coords) - 1) #Spline starts with one point
         for i in range(len(coords)):
             x, y, z = coords[i]
-            if i == 0: z = -CURVE_Z_OFFSET
+            if i == 0 and mat_modifier != 'fade':
+                z = - 2 * CURVE_Z_OFFSET
+            z += z_shift
             points[i].co = (x, y, z, 1)
 
-        #Old Bezier stuff. Might delete if NURBS seems to be working out
-        '''
-        data.splines.new('BEZIER')
-        points = data.splines[0].bezier_points
-
-        for i in range(len(coords)):
-            #Splines start with one point in them, and for some reason, there's
-            #no straighforward way to delete them. (The blender-side data
-            #structures aren't python lists). So check whether the number of
-            #points is already right before adding one.
-            coord = coords[i]
-            if len(points) < i + 1:
-                points.add()
-            point = points[-1]
-            point.co = coord
-            point.handle_left_type = 'FREE'
-            point.handle_right_type = 'FREE'
-
-            #Most of this is probably unneeded for the number of points that are
-            #going to be plotted in these graphs.
-
-            #For non-endpoints, set local slope to secant line between adjacent
-            #points. For endpoints, just put handles on top of main point
-            if i - 1 >= 0 and i + 1 < len(coords):
-                point_to_left = coords[i - 1]
-                point_to_right = coords[i + 1]
-
-                #if point is local max or min, set slope to zero to avoid
-                #conspicuously wrong shape.
-                if (point_to_left[1] >= coord[1] and point_to_right[1] >= coord[1]) or \
-                    (point_to_right[1] <= coord[1] and point_to_left[1] <= coord[1]):
-                    slope = 0
-                else:
-                    slope = (point_to_right[1] - point_to_left[1]) / \
-                        (point_to_right[0] - point_to_left[0])
-
-                nudge_x_left = (point_to_left[0] - coord[0]) / 2 #negative
-                nudge_x_right = (point_to_right[0] - coord[0]) / 2
-
-                point.handle_left = [
-                    coord[0] + abs(nudge_x_left) * math.cos(math.atan2(nudge_x_left * slope, nudge_x_left)),
-                    coord[1] + abs(nudge_x_left) * math.sin(math.atan2(nudge_x_left * slope, nudge_x_left)),
-                    0
-                ]
-
-                point.handle_right = [
-                    coord[0] + abs(nudge_x_right) * math.cos(math.atan2(nudge_x_right * slope, nudge_x_right)),
-                    coord[1] + abs(nudge_x_right) * math.sin(math.atan2(nudge_x_right * slope, nudge_x_right)),
-                    0
-                ]
-            else:
-                point.handle_left = coord
-                point.handle_right = coord'''
-
-
         cur = bpy.data.objects.new(name = 'function_curve', object_data = data)
-        apply_material(cur, 'color3')
+        if mat_modifier == None:
+            mat_string = 'color' + str(color)
+        elif mat_modifier == 'fade':
+            mat_string = 'trans_color' + str(color)
+        apply_material(cur, mat_string)
 
         bpy.ops.curve.primitive_bezier_circle_add()
         cross_section = bpy.context.object
@@ -335,17 +316,41 @@ class GraphBobject(Bobject):
         cur_bobj = bobject.Bobject(objects = [cur], name = 'function_curve_container')
         #cross_section.parent = cur_bobj.ref_obj
         self.add_subbobject(cur_bobj)
-        self.function_curve = cur_bobj
+        self.functions_curves.append(cur_bobj)
+        if len(self.functions_curves) != index + 1:
+            raise Warning('Adding function curves is out of whack.')
+
+    def add_all_function_curves(self, curve_colors = 'same'):
+        if curve_colors == 'same':
+            colors = [3] * len(self.functions)
+            modifiers = [None] * len(self.functions)
+            z_shift = 0
+        elif curve_colors == 'fade_secondary':
+            colors = [3] * len(self.functions)
+            modifiers = ['fade'] * len(self.functions)
+            modifiers[0] = None
+            z_shift = [-0.05] * len(self.functions)
+            z_shift[0] = 0
+        else:
+            raise Warning('Have not implemented that color setting')
+        for i in range(len(self.functions)):
+            self.add_function_curve(
+                index = i,
+                color = colors[i],
+                mat_modifier = modifiers[i],
+                z_shift = z_shift[i]
+            )
 
     def animate_function_curve(self,
         start_frame = 0,
         end_frame = None,
-        uniform_along_x = False
+        uniform_along_x = False,
+        index = 0
     ):
         if end_frame == None:
             raise Warning('Need end frame to animate function curve, ya dick.')
 
-        data = self.function_curve.ref_obj.children[0].data
+        data = self.functions_curves[index].ref_obj.children[0].data
 
         #Insert start and end keyframes for bevel_factor_end
         data.bevel_factor_end = 0
@@ -357,6 +362,30 @@ class GraphBobject(Bobject):
             pass
         else:
             make_animations_linear(data)
+
+    def animate_all_function_curves(
+        self,
+        start_frame = 0,
+        end_frame = None,
+        uniform_along_x = False,
+        start_window = 0,
+        except_first = False
+    ):
+        if except_first == True:
+            skip = 1
+        else:
+            skip = 0
+        num_curves = len(self.functions) - skip
+        start_interval = (end_frame - start_frame) * start_window / num_curves
+
+        for i in range(num_curves):
+            self.animate_function_curve(
+                start_frame = start_frame + start_interval * i,
+                end_frame = start_frame + start_interval * i + \
+                            (end_frame - start_frame) * (1 - start_window),
+                uniform_along_x = uniform_along_x,
+                index = i + skip
+            )
 
     def evaluate_function(self, input = None, index = None):
         if input == None:
@@ -382,6 +411,17 @@ class GraphBobject(Bobject):
         if len(self.functions) == 0:
             print("Graph bobject has no function defined, which might be cool, idk.")
             return
+        #Commented this out because it doesn't seem to help in any case.
+        #If memory isn't an issue, treating the function as continuous looks
+        #good, and if memory is an issue, plotting every point still overloads
+        #things, and reducing resolution has a similar result however the coords
+        #are determined.
+        elif False: #isinstance(self.functions[func_index], list):
+            x_vals = []
+            for i in range(len(self.functions[func_index])):
+                #x_vals.append(i-0.1)
+                #x_vals.append(i+0.1)
+                x_vals.append(i)
         else:
             points_per_drawn_x_unit = PLOTTED_POINT_DENSITY * self.scale[0]
             num_drawn_points = self.width * points_per_drawn_x_unit
@@ -395,24 +435,24 @@ class GraphBobject(Bobject):
                 x_vals.append(x)
                 x += x_step
 
-            coords = []
-            for x in x_vals:
+        coords = []
+        for x in x_vals:
+            y = self.evaluate_function(input = x, index = func_index)
+            '''try:
                 y = self.evaluate_function(input = x, index = func_index)
-                '''try:
-                    y = self.evaluate_function(input = x, index = func_index)
-                except:
-                    raise Warning("It seems like fixing that off-by-one error didn't work.")
-                    #Graph draws point at end of the domain, but list functions
-                    #don't include that last point
-                    y = coords[-1][1] / self.range_scale_factor'''
+            except:
+                raise Warning("It seems like fixing that off-by-one error didn't work.")
+                #Graph draws point at end of the domain, but list functions
+                #don't include that last point
+                y = coords[-1][1] / self.range_scale_factor'''
 
-                coords.append([
-                    x * self.domain_scale_factor,
-                    y * self.range_scale_factor,
-                    CURVE_Z_OFFSET
-                ])
+            coords.append([
+                x * self.domain_scale_factor,
+                y * self.range_scale_factor,
+                CURVE_Z_OFFSET
+            ])
 
-            return coords
+        return coords
 
     def add_point_at_coord(self,
         appear_frame = 0,
@@ -505,7 +545,8 @@ class GraphBobject(Bobject):
                 frame = end_frame
             )
         else:
-            if in_place == True:
+            if in_place == True: #If point tracks curve and is just moving in
+                                 #the y direction as the curve shifts.
                 point.ref_obj.keyframe_insert(
                     data_path = 'location',
                     frame = start_frame
@@ -722,10 +763,10 @@ class GraphBobject(Bobject):
                 in_place = True
             )
 
-    def add_to_blender(self, **kwargs):
+    def add_to_blender(self, curve_colors = 'same', **kwargs):
         self.add_axes()
         if len(self.functions) > 0:
-            self.add_function_curve()
+            self.add_all_function_curves(curve_colors = curve_colors)
         super().add_to_blender(**kwargs)
 
     def move_to(

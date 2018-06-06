@@ -6,7 +6,7 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'medium'
+RENDER_QUALITY = 'high'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
@@ -160,7 +160,7 @@ CURVE_WIDTH = 0.04
 if RENDER_QUALITY == 'high':
     PLOTTED_POINT_DENSITY = 80
 else:
-    PLOTTED_POINT_DENSITY = 20
+    PLOTTED_POINT_DENSITY = 8
 CURVE_Z_OFFSET = 0.01
 AUTO_TICK_SPACING_TARGET = 2 #Blender units
 HIGHLIGHT_POINT_UPDATE_TIME = 5

@@ -115,11 +115,12 @@ class Gesture(SVGFromBlend):
                 point.handle_left[0] += params['right_extension']
                 point.handle_right[0] += params['right_extension']
 
-            for i in range(1, 23): #Happens to be the points on the right arm
+            for i in range(1, 23): #Happens to be the points on the top
                 point = points[i]
                 point.co[1] -= params['height_extension']
                 point.handle_left[1] -= params['height_extension']
                 point.handle_right[1] -= params['height_extension']
+
         elif gesture['type'] == 'arrow':
             for i in range(2, 9): #Happens to be the points on left side
                 point = points[i]
