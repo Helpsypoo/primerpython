@@ -114,16 +114,17 @@ class TexComplex(Bobject):
         #calc points from targets
         gesture_series = []
         tex_bobj = self.tex_bobjects[targets[0]]
+        label_anchor = None
         for target in targets[1]:
-            path = tex_bobj.paths[target[0]]
             bobjs = []
+            path = tex_bobj.paths[target[0]]
             for i in range(target[1], target[2] + 1):
                 bobjs.append(tex_bobj.imported_svg_data[path]['curves'][i])
 
             left_most = math.inf
             right_most = -math.inf
             y = 0
-            for i, bobj in enumerate(bobjs):
+            for bobj in bobjs:
                 cur = bobj.objects[0]
                 for spline in cur.data.splines:
                     for point in spline.bezier_points:
@@ -145,7 +146,32 @@ class TexComplex(Bobject):
                             if y > candidatey:
                                 y = candidatey
 
-            if len(bobjs) > 1: #Bracket
+            if len(target) > 3 and target[3] == None: #No bobjs, empty gesture. HEH.
+                if alignment == 'top':
+                    #y += 0 * self.scale[1] * tex_bobj.scale[1]
+                    head = ((right_most + left_most) / 2,
+                            y + length,
+                            0)
+                    rot = (0, 0, 0)
+                elif alignment == 'bottom':
+                    #y -= 0 * self.scale[1] * tex_bobj.scale[1]
+                    head = ((right_most + left_most) / 2,
+                            y - length,
+                            0)
+                    rot = (0, 0, math.pi)
+                if label_anchor == None:
+                    label_anchor = list(head)
+                gesture_series.append(
+                    {
+                        'type' : None,
+                        'points' : {
+                            'location' : head,
+                            'rotation' : rot
+                        }
+                    }
+                )
+            elif len(target) > 3 and target[3] == 'bracket' or \
+                (len(target) == 3 and len(bobjs) > 1): #Bracket
                 if alignment == 'top':
                     y += 0.2 * self.scale[1] * tex_bobj.scale[1]
                     annotation_point = ((right_most + left_most) / 2, y + length, 0)
@@ -156,7 +182,7 @@ class TexComplex(Bobject):
                     annotation_point = ((right_most + left_most) / 2, y - length, 0)
                     left_point = [right_most, y, 0]
                     right_point = [left_most, y, 0]
-                if i == 0:
+                if label_anchor == None:
                     label_anchor = list(annotation_point)
                 gesture_series.append(
                     {
@@ -169,7 +195,8 @@ class TexComplex(Bobject):
                     }
                 )
 
-            else: #Arrow
+            elif len(target) > 3 and target[3] == 'arrow' or \
+                (len(target) == 3 and len(bobjs) == 1): #Arrow
                 if alignment == 'top':
                     y += 0.4 * self.scale[1] * tex_bobj.scale[1]
                     head = ((right_most + left_most) / 2 + math.tan(angle) * 0.4,
@@ -186,7 +213,7 @@ class TexComplex(Bobject):
                     tail = ((right_most + left_most) / 2 - math.tan(angle) * length,
                             y - length,
                             0)
-                if i == 0:
+                if label_anchor == None:
                     label_anchor = list(tail)
                 gesture_series.append(
                     {
@@ -197,6 +224,8 @@ class TexComplex(Bobject):
                         }
                     }
                 )
+            else:
+                raise Warning('Something is wrong with the gesture targets.')
 
         container = bobject.Bobject(name = 'annotation')
 
@@ -225,6 +254,14 @@ class TexComplex(Bobject):
         dy = (1/2 + t_bobj_count) / 2 * line_height * scale
         if alignment == 'bottom':
             dy = -dy
+
+        #Some t_bobjs may start with empty expressions. Initial position
+        #shouldn't take empty lines into account, and position will be adjusted on morph
+        if alignment == 'top':
+            for t_bobj in t_bobjs:
+                if t_bobj.paths[0] == None:
+                    dy -= line_height * scale
+
         label_anchor[1] += dy
 
         label_text = TexComplex(

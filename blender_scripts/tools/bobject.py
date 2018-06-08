@@ -22,7 +22,7 @@ class Bobject(object):
     #Create object data
     def __init__(self, *subbobjects, **kwargs):
         super().__init__()
-        self.kwargs = kwargs #This is used in the set_from_kwargs() method
+        self.kwargs = kwargs #This is used in the get_from_kwargs() method
 
         self.name = self.get_from_kwargs('name', 'bobject')
 
@@ -45,8 +45,9 @@ class Bobject(object):
         self.objects = self.get_from_kwargs('objects', [])
         for obj in self.objects:
             obj.parent = ref_obj
+
         #Other bobject containers which handle themselves
-        self.subbobjects = []
+        self.subbobjects = self.get_from_kwargs('subbobjects', [])
         for bobj in subbobjects:
             self.add_subbobject(bobj)
 

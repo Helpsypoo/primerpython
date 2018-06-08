@@ -207,9 +207,9 @@ class SVGBobject(Bobject):
                     cur = null.ref_obj.children[0]
                     equalize_spline_count(cur, 1)
                     self.imported_svg_data[path]['curves'].append(cur)
-                    print(self.imported_svg_data[path]['curves'])
-                    print('length: ' + str(len(cur.data.splines)))
-                    print('length: ' + str(len(cur.data.splines[0].bezier_points)))
+                    #print(self.imported_svg_data[path]['curves'])
+                    #print('length: ' + str(len(cur.data.splines)))
+                    #print('length: ' + str(len(cur.data.splines[0].bezier_points)))
                     continue
 
                 previous_curves = [x for x in bpy.data.objects if x.type == 'CURVE']
@@ -296,11 +296,6 @@ class SVGBobject(Bobject):
         self.lists_of_copies = []
         for path in self.paths:
             copies = []
-            if path == None:
-                print()
-                print("IT's noen")
-                print(self.imported_svg_data[path])
-                print()
             for curve in self.imported_svg_data[path]['curves']:
                 obj = curve.ref_obj.children[0].copy()
                 obj.data = curve.ref_obj.children[0].data.copy()
@@ -866,7 +861,18 @@ class SVGFromBlend(SVGBobject):
         #For this type of object, the path list items are lists, which can
         #have multiple strings to feed to import_objects()
         for i, path in enumerate(paths):
-            name = str(path)
+            if path == None:
+                name = path
+                #null = new_null_curve()
+                #cur = null.ref_obj.children[0]
+                #equalize_spline_count(cur, 1)
+                #self.imported_svg_data[path]['curves'].append(cur)
+                #print(self.imported_svg_data[path]['curves'])
+                #print('length: ' + str(len(cur.data.splines)))
+                #print('length: ' + str(len(cur.data.splines[0].bezier_points)))
+                #continue
+            else:
+                name = str(path)
             self.imported_svg_data[name] = {'curves' : []}
             new_curve_bobj = self.import_and_modify_curve(i, path)
             #self.modify_curves(new_curve_bobj.ref_obj.children[0].children[0])
@@ -895,8 +901,8 @@ class SVGFromBlend(SVGBobject):
 
                 self.imported_svg_data[name]['curves'].append(curve_bobj)
 
-        print(self.imported_svg_data)
-        print(self.paths)
+        #print(self.imported_svg_data)
+        #print(self.paths)
 
     def import_and_modify_curve(self, index, path):
         #This just imports a curve and returns it

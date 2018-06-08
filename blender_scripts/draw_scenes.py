@@ -425,9 +425,9 @@ def tex_test():
     )
     equation.add_annotation(
         targets = [
-            2,
+            2, #tex_bobject
             [
-                [0, 3, 3],
+                [0, 3, 3],  #form, first char, last char
                 [1, 2, 6],
                 [2, 2, 8],
             ],
@@ -720,7 +720,7 @@ def bcard():
 def main():
     #test_object()
     #execute_and_time(test_sim())
-    execute_and_time(tex_test())
+    #execute_and_time(tex_test())
     #test_molecule()
     #morph_test()
     #graph_test()
@@ -728,7 +728,7 @@ def main():
     #bcard()
     #gesture_test()
 
-    #draw_scenes_from_file(replication_only)
+    draw_scenes_from_file(replication_only)
 
     #print_time_report()
     finish_noise()

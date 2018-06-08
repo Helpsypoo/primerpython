@@ -136,14 +136,14 @@ class TexBobject(SVGBobject):
                 start_frame = start_frame,
                 end_frame = start_frame + duration
             )
-        for annotation in self.annotations:
+        for i, annotation in enumerate(self.annotations):
             gesture = annotation[0].subbobjects[0]
             label = annotation[0].subbobjects[1]
-            for i, target in enumerate(annotation[1]):
-                if target[0] == final_index and i > 0:
+            for j, target in enumerate(annotation[1]):
+                if target != None and target[0] == final_index and j > 0:
                     old_loc = deepcopy(gesture.subbobjects[0].ref_obj.location)
                     gesture.morph_figure(
-                        i,
+                        j,
                         start_frame = start_frame,
                         duration = duration
                     )
@@ -152,16 +152,24 @@ class TexBobject(SVGBobject):
 
                     for t_bobj in label.tex_bobjects:
                         t_bobj.morph_figure(
-                            i,
+                            j,
                             start_frame = start_frame,
                             duration = duration
                         )
-                        if t_bobj.paths[i] == None and \
-                            annotation[2] == 'top':
-                            d_loc[1] -= 0.8 #line height as scale = 0.67 
+                        #If a t_bobj morphs to an empty expression, adjust d_loc
+                        if t_bobj.paths[j] == None and \
+                            annotation[2] == 'top' and \
+                            j > 0 and \
+                            t_bobj.paths[j-1] != None:
+                            d_loc[1] -= 0.8 #line height as scale = 0.67
                                             #Such hack.
                                             #Should make a vertical alignment
-                                            #function for TexComplex
+                                            #function for TexComplex TODO
+                        if t_bobj.paths[j] != None and \
+                            annotation[2] == 'top' and \
+                            j > 0 and \
+                            t_bobj.paths[j-1] == None:
+                            d_loc[1] += 0.8
 
                     label.move_to(
                         start_frame = start_frame,

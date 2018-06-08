@@ -17,6 +17,8 @@ import gesture
 imp.reload(gesture)
 import graph_bobject
 imp.reload(graph_bobject)
+import tex_complex
+imp.reload(tex_complex)
 
 import helpers
 imp.reload(helpers)
@@ -963,7 +965,7 @@ class EquationToFunction(Scene):
             "\\text{change}",
             centered = True
         )
-        total_change_annotation = tex_tex_complex.TexComplex(
+        total_change_annotation = tex_complex.TexComplex(
             tot, exp, cha,
             location = (-11.5, 0, 0),
             centered = True,
@@ -1152,7 +1154,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        birth_annotation = tex_tex_complex.TexComplex(
+        birth_annotation = tex_complex.TexComplex(
             tot, br,
             location = (-3.7, 4, 0),
             centered = True,
@@ -1194,7 +1196,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        spont_annotation = tex_tex_complex.TexComplex(
+        spont_annotation = tex_complex.TexComplex(
             spont, br,
             location = (-6.9, -4.2, 0),
             centered = True,
@@ -1296,7 +1298,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        rep_annotation = tex_tex_complex.TexComplex(
+        rep_annotation = tex_complex.TexComplex(
             rep, br,
             location = (-1.6, -4.2, 0),
             centered = True,
@@ -1342,7 +1344,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        death_annotation = tex_tex_complex.TexComplex(
+        death_annotation = tex_complex.TexComplex(
             tot, dth,
             location = (6.9, 4, 0),
             centered = True,
@@ -1436,7 +1438,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        net_annotation = tex_tex_complex.TexComplex(
+        net_annotation = tex_complex.TexComplex(
             net_ex, ch_pr, cre,
             location = (1.6, 4.6, 0),
             centered = True,
@@ -1484,7 +1486,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        total_change_annotation = tex_tex_complex.TexComplex(
+        total_change_annotation = tex_complex.TexComplex(
             tot, exp, cha,
             location = (-10, 4.6, 0),
             centered = True,
@@ -1518,7 +1520,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        num_annotation = tex_tex_complex.TexComplex(
+        num_annotation = tex_complex.TexComplex(
             num, o_cre,
             location = (9, -4.2, 0),
             centered = True,
@@ -1665,54 +1667,66 @@ class FirstRateCurve(Scene):
             scale = 1,
             centered = True
         )
+        equation.add_annotation(
+            targets = [
+                2, #tex_bobject
+                [
+                    [0, 0, 0],  #form, first char, last char
+                    [1, 0, 0],
+                    [2, 0, 0],
+                    [3, 0, 0],
+                ],
+            ],
+            labels = [
+                ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
+                ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
+                ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
+                ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
+            ],
+            alignment = 'bottom'
+        )
+        equation.add_annotation(
+            targets = [
+                2, #tex_bobject
+                [
+                    [0, 2, 6],  #form, first char, last char
+                    [1, 2, 6],
+                    [2, 2, 8],
+                    [3, 2, 8],
+                ],
+            ],
+            labels = [
+                ['\\text{Net expected}', '\\text{change per}', '\\text{creature}'],
+                ['\\text{Net expected}', '\\text{change per}', '\\text{creature}'],
+                ['\\text{Net expected}', '\\text{change per}', '\\text{creature}'],
+                ['\\text{Net expected}', '\\text{change per}', '\\text{creature}'],
+            ],
+            alignment = 'top'
+        )
+        equation.add_annotation(
+            targets = [
+                2, #tex_bobject
+                [
+                    [0, 5, 5, None],  #form, first char, last char
+                    [1, 5, 5, None],
+                    [2, 5, 7, 'arrow'],
+                    [3, 5, 7, 'arrow'],
+                ],
+            ],
+            labels = [
+                [],
+                [],
+                ['\\text{Death chance}', '\\text{per creature}'],
+                ['\\text{Death chance}', '\\text{per creature}'],
+            ],
+            alignment = 'bottom'
+        )
         equation.add_to_blender(
             appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME,
             animate = False
         )
 
-        spont = tex_bobject.TexBobject(
-            "\\text{Spontaneous}",
-            centered = True,
-            color = 'color2'
-        )
-        br = tex_bobject.TexBobject(
-            "\\text{birth rate} \\phantom{blurghh}",
-            centered = True,
-            color = 'color2'
-        )
-        spont_annotation = tex_tex_complex.TexComplex(
-            spont, br,
-            location = (4.8, -3.1, 0),
-            centered = True,
-            scale = 0.67,
-            multiline = True
-        )
-        spont_annotation.add_to_blender(
-            appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME
-        )
-        spont_arrow = gesture.Gesture(
-            gesture_series = [
-                {
-                    'type': 'arrow',
-                    'points': {
-                        'head': (4.8, -0.8, 0),
-                        'tail': (4.8, -2.3, 0)
-                    }
-                },
-                {
-                    'type': 'arrow',
-                    'points': {
-                        'head': (4.55, -0.8, 0),
-                        'tail': (4.55, -2.3, 0)
-                    }
-                }
-            ],
-            color = 'color2'
-        )
-        spont_arrow.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
-
-
-        net_ex = tex_bobject.TexBobject(
+        '''net_ex = tex_bobject.TexBobject(
             "\\text{Net expected}",
             centered = True,
             color = 'color2'
@@ -1727,7 +1741,7 @@ class FirstRateCurve(Scene):
             centered = True,
             color = 'color2'
         )
-        net_annotation = tex_tex_complex.TexComplex(
+        net_annotation = tex_complex.TexComplex(
             net_ex, ch_pr, cre,
             location = (8.5, 3.2, 0),
             centered = True,
@@ -1759,13 +1773,12 @@ class FirstRateCurve(Scene):
             color = 'color2'
         )
         net_bracket.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
-
-
+        '''
         #Morph to example
         rhs.morph_figure(1, start_frame = cues['graph']['start'] + 60)
 
         rhs.morph_figure(2, start_frame = cues['graph']['start'] + 120)
-        dc = tex_bobject.TexBobject(
+        '''dc = tex_bobject.TexBobject(
             "\\text{Death chance}",
             centered = True,
             color = 'color2'
@@ -1775,7 +1788,7 @@ class FirstRateCurve(Scene):
             centered = True,
             color = 'color2'
         )
-        death_annotation = tex_tex_complex.TexComplex(
+        death_annotation = tex_complex.TexComplex(
             dc, pc,
             location = (9.6, -3.1, 0),
             centered = True,
@@ -1797,12 +1810,12 @@ class FirstRateCurve(Scene):
             ],
             color = 'color2'
         )
-        death_arrow.add_to_blender(appear_frame = cues['graph']['start'] + 120)
-        spont_annotation.move_to(
+        death_arrow.add_to_blender(appear_frame = cues['graph']['start'] + 120)'''
+        '''spont_annotation.move_to(
             new_location = (4.55, -3.1, 0),
             start_frame = cues['graph']['start'] + 120
         )
-        spont_arrow.morph_figure(1, start_frame = cues['graph']['start'] + 120)
+        spont_arrow.morph_figure(1, start_frame = cues['graph']['start'] + 120)'''
 
 
 

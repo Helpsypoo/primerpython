@@ -1,4 +1,5 @@
 import math
+import svg_bobject
 from svg_bobject import SVGFromBlend
 from helpers import *
 
@@ -25,6 +26,8 @@ class Gesture(SVGFromBlend):
                 paths.append('bracket ' + str(i))
             if gesture['type'] == 'arrow':
                 paths.append('arrow' + str(i))
+            if gesture['type'] == None:
+                paths.append(None)
 
         kwargs['reindex_points_before_morph'] = reindex_points_before_morph
 
@@ -94,6 +97,12 @@ class Gesture(SVGFromBlend):
                         'extension': extension
                     }
 
+        elif gesture['type'] == None:
+            return {
+                        'location': gesture['points']['location'],
+                        'angle': gesture['points']['rotation'][2]
+                    }
+
     def deform(self, curve, gesture):
         #curve = self.ref_obj.children[0].children[0]
         #curve = self.imported_svg_data[self.paths[0]]['curves'][0].ref_obj.children[0]
@@ -128,6 +137,13 @@ class Gesture(SVGFromBlend):
                 point.handle_left[1] -= params['extension']
                 point.handle_right[1] -= params['extension']
 
+        '''elif gesture['type'] == None:
+            for i in range(2, 9): #Happens to be the points on left side
+                point = points[i]
+                point.co[1] -= params['extension']
+                point.handle_left[1] -= params['extension']
+                point.handle_right[1] -= params['extension']'''
+
         curve.rotation_euler = (0, 0, params['angle'])
 
     def import_and_modify_curve(self, index, path):
@@ -151,6 +167,14 @@ class Gesture(SVGFromBlend):
             self.deform(curve, gesture)
             curve.location = gesture['points']['tail']
 
-
+        elif gesture['type'] == None:
+            null = svg_bobject.new_null_curve()
+            curve = null.ref_obj.children[0]
+            '''self.deform(curve, gesture)'''
+            curve.location = gesture['points']['location']
+            curve.rotation_euler = gesture['points']['rotation']
+            svg_bobject.equalize_spline_count(curve, 1)
+            new_curve_bobj = bobject.Bobject()
+            null.ref_obj.parent = new_curve_bobj.ref_obj
 
         return new_curve_bobj
