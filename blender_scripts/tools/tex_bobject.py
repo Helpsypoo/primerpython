@@ -21,6 +21,9 @@ import helpers
 imp.reload(helpers)
 from helpers import *
 
+import tex_complex
+imp.reload(tex_complex)
+
 import draw_scenes
 
 import clear
@@ -36,6 +39,7 @@ class TexBobject(SVGBobject):
         #paths = get_svg_file_paths(expressions)
         super().__init__(*expressions, **kwargs)
         self.active_expression_path = self.paths[0]
+        self.annotations = []
         #self.align()
 
         #Process expressions to make find file paths for svg_bobject methods
@@ -66,8 +70,10 @@ class TexBobject(SVGBobject):
                 curve_list[i].ref_obj.location = new_loc
                 curve_list[i].ref_obj.parent = self.ref_obj
 
-
-            self.imported_svg_data[expr]['curves'] = curve_list[1:]
+            if expr == None:
+                self.imported_svg_data[expr]['curves'] = curve_list
+            else:
+                self.imported_svg_data[expr]['curves'] = curve_list[1:]
 
         #bpy.context.scene.update()
 
@@ -75,7 +81,10 @@ class TexBobject(SVGBobject):
         for expr in self.imported_svg_data:
             right_most_x = -math.inf
             #ref_H = expr['curves'][0]
-            curves = self.imported_svg_data[expr]['curves'][1:]
+            if expr == None:
+                curves = self.imported_svg_data[expr]['curves']
+            else:
+                curves = self.imported_svg_data[expr]['curves'][1:]
             for char in curves:
                 #char is a bobject, so reassign to the contained curve
                 char = char.objects[0]
@@ -121,17 +130,51 @@ class TexBobject(SVGBobject):
         #the counters morph over 3 frames rather than the standard 10.
         #For now, this just checks whether the superbobject TexComplex is a
         #counter, and then skips if so.
-        if isinstance(self.superbobject, bobject.TexComplex) \
+        if isinstance(self.superbobject, tex_complex.TexComplex) \
             and 'sim_counter' not in self.superbobject.name:
             self.superbobject.arrange_tex_bobjects(
                 start_frame = start_frame,
                 end_frame = start_frame + duration
             )
+        for annotation in self.annotations:
+            gesture = annotation[0].subbobjects[0]
+            label = annotation[0].subbobjects[1]
+            for i, target in enumerate(annotation[1]):
+                if target[0] == final_index and i > 0:
+                    old_loc = deepcopy(gesture.subbobjects[0].ref_obj.location)
+                    gesture.morph_figure(
+                        i,
+                        start_frame = start_frame,
+                        duration = duration
+                    )
+                    new_loc = deepcopy(gesture.subbobjects[0].ref_obj.location)
+                    d_loc = new_loc - old_loc
+
+                    for t_bobj in label.tex_bobjects:
+                        t_bobj.morph_figure(
+                            i,
+                            start_frame = start_frame,
+                            duration = duration
+                        )
+                        if t_bobj.paths[i] == None and \
+                            annotation[2] == 'top':
+                            d_loc[1] -= 0.8 #line height as scale = 0.67 
+                                            #Such hack.
+                                            #Should make a vertical alignment
+                                            #function for TexComplex
+
+                    label.move_to(
+                        start_frame = start_frame,
+                        displacement = d_loc
+                    )
+                    break
 
     def get_file_paths(self, expressions):
         self.paths = []
         for expr in expressions:
-            self.paths.append(tex_to_svg_file(expr, TEMPLATE_TEX_FILE))
+            if expr == None:
+                self.paths.append(expr)
+            else: self.paths.append(tex_to_svg_file(expr, TEMPLATE_TEX_FILE))
 
 def tex_to_svg_file(expression, template_tex_file):
     path = os.path.join(

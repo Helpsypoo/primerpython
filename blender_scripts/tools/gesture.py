@@ -85,7 +85,7 @@ class Gesture(SVGFromBlend):
                                             subtract = True)
             length = vec_len(length_vec)
 
-            angle = math.atan2(length_vec[1], length_vec[0])
+            angle = math.atan2(length_vec[1], length_vec[0]) + math.pi / 2
 
             default_length = 2
             extension = length - default_length
@@ -124,9 +124,9 @@ class Gesture(SVGFromBlend):
         elif gesture['type'] == 'arrow':
             for i in range(2, 9): #Happens to be the points on left side
                 point = points[i]
-                point.co[0] += params['extension']
-                point.handle_left[0] += params['extension']
-                point.handle_right[0] += params['extension']
+                point.co[1] -= params['extension']
+                point.handle_left[1] -= params['extension']
+                point.handle_right[1] -= params['extension']
 
         curve.rotation_euler = (0, 0, params['angle'])
 

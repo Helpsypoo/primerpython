@@ -409,7 +409,7 @@ class RaindropsAndPlanets(Scene):
             name = "exist",
             centered = True
         )
-        text = bobject.TexComplex(
+        text = tex_complex.TexComplex(
             whydo, things, exist,
             name = 'Why do things exist',
             location = (0, 0.5, 0),
@@ -841,7 +841,7 @@ class HowToBeGoodAtExisting(Scene):
             name = "How to",
             centered = True
         )
-        how_container = bobject.TexComplex(
+        how_container = tex_complex.TexComplex(
             how_text,
             name = 'How to container',
             location = (0, 5, 0),
@@ -1433,7 +1433,7 @@ class Equation(Scene):
             centered = True
         )
 
-        equation = bobject.TexComplex(
+        equation = tex_complex.TexComplex(
             lhs, equals, rhs,
             centered = True,
             scale = 1.5
@@ -1935,7 +1935,7 @@ class EquationWithReplication(Scene):
             centered = True
         )
 
-        equation = bobject.TexComplex(
+        equation = tex_complex.TexComplex(
             lhs, equals, rhs,
             centered = True,
             scale = 1.5

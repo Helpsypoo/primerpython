@@ -199,9 +199,18 @@ class SVGBobject(Bobject):
         for path in self.paths:
             #Import svg and get list of new curves in Blender
             if path not in self.imported_svg_data.keys():
+                self.imported_svg_data[path] = {'curves' : []}
                 #This is a dict of dicts for metadata, e.g., center and length
                 #of tex expressions
-                self.imported_svg_data[path] = {'curves' : []}
+                if path == None:
+                    null = new_null_curve()
+                    cur = null.ref_obj.children[0]
+                    equalize_spline_count(cur, 1)
+                    self.imported_svg_data[path]['curves'].append(cur)
+                    print(self.imported_svg_data[path]['curves'])
+                    print('length: ' + str(len(cur.data.splines)))
+                    print('length: ' + str(len(cur.data.splines[0].bezier_points)))
+                    continue
 
                 previous_curves = [x for x in bpy.data.objects if x.type == 'CURVE']
                 bpy.ops.import_curve.svg(filepath = path)
@@ -231,8 +240,7 @@ class SVGBobject(Bobject):
                     curve.select = True
                     bpy.ops.object.origin_set(type = "ORIGIN_GEOMETRY")
 
-                    #This partis just meant for tex_objects
-
+                    #This part is just meant for tex_objects
                     if self.vert_align_centers == True:
                         loc = curve.location
                         new_y = new_curves[0].location[1]
@@ -246,8 +254,8 @@ class SVGBobject(Bobject):
                 self.imported_svg_data[path]['curves'] = new_curves
 
         #Make imported curve objects into bobjects
-        for svg in self.imported_svg_data:
-            for i, curve in enumerate(self.imported_svg_data[svg]['curves']):
+        for path in self.imported_svg_data:
+            for i, curve in enumerate(self.imported_svg_data[path]['curves']):
                 curve_bobj = bobject.Bobject(objects = [curve])
                 #Make the bobject's ref_obj handle location
                 curve_bobj.ref_obj.location = curve.location
@@ -255,8 +263,13 @@ class SVGBobject(Bobject):
 
                 #curve_bobj.add_to_blender(appear_frame = 0)
 
-                self.imported_svg_data[svg]['curves'][i] = curve_bobj
+                self.imported_svg_data[path]['curves'][i] = curve_bobj
 
+                if path == None:
+                    print()
+                    print(self.imported_svg_data[path])
+                    print()
+                #if path == None:
                 #self.add_subbobject(curve_bobj)
 
         #print(self.imported_svg_data)
@@ -283,6 +296,11 @@ class SVGBobject(Bobject):
         self.lists_of_copies = []
         for path in self.paths:
             copies = []
+            if path == None:
+                print()
+                print("IT's noen")
+                print(self.imported_svg_data[path])
+                print()
             for curve in self.imported_svg_data[path]['curves']:
                 obj = curve.ref_obj.children[0].copy()
                 obj.data = curve.ref_obj.children[0].data.copy()
@@ -797,13 +815,17 @@ class SVGBobject(Bobject):
                         " which is not the same number.")
                 print("#This means something went wrong when processing morph chains.")
                 print('#I gotchu this time, but you might wanna take a look back and fix the underlying issue.')
+                num_points = max(len(final_points), len(initial_points))
                 if len(initial_points) < len(final_points):
-                    raise Warning("Oh dang. I actually don't gotchu. The rendered " + \
-                                    "curve is missing points, I think.")
-
-                bpy.context.scene.objects.link(final)
-                add_points_to_curve_splines(final)
-                bpy.context.scene.objects.unlink(final)
+                    #bpy.context.scene.objects.link(initial)
+                    add_points_to_curve_splines(initial, total_points = num_points)
+                    #bpy.context.scene.objects.unlink(initial)
+                    #raise Warning("Oh dang. I actually don't gotchu. The rendered " + \
+                    #                "curve is missing points, I think.")
+                else:
+                    bpy.context.scene.objects.link(final)
+                    add_points_to_curve_splines(final, total_points = num_points)
+                    bpy.context.scene.objects.unlink(final)
 
             #Assign final_points values to initial_points
             for j in range(len(initial_points)):
@@ -1008,8 +1030,8 @@ def get_spline_length(spline):
 
 def new_null_curve(
     parent = None,
-    location = None,
-    rotation = None,
+    location = (0, 0, 0),
+    rotation = (0, 0, 0),
     #color = 'color5',
     reuse_object = None
 ):

@@ -83,7 +83,7 @@ class TheGoal(Scene):
             "N",
             centered = True
         )
-        equation = bobject.TexComplex(
+        equation = tex_complex.TexComplex(
             lhs, equals, rhs,
             centered = True,
             scale = 1.5,
@@ -868,7 +868,7 @@ class EquationToFunction(Scene):
             centered = True
         )
 
-        equation = bobject.TexComplex(
+        equation = tex_complex.TexComplex(
             lhs, equals, rhs,
             centered = True,
             location = (0, 0, 0),
@@ -963,7 +963,7 @@ class EquationToFunction(Scene):
             "\\text{change}",
             centered = True
         )
-        total_change_annotation = tex_bobject.TexComplex(
+        total_change_annotation = tex_tex_complex.TexComplex(
             tot, exp, cha,
             location = (-11.5, 0, 0),
             centered = True,
@@ -1041,7 +1041,7 @@ class EquationToFunction(Scene):
         )
         arrow.morph_figure(1, start_frame = cues['equation']['start'] + 420)
 '''
-#'''
+'''
 class InTermsOfN(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -1075,7 +1075,7 @@ class InTermsOfN(Scene):
             centered = True
         )
 
-        equation = bobject.TexComplex(
+        equation = tex_complex.TexComplex(
             lhs, equals, rhs,
             location = (0, 6.5, 0),
             scale = 1.5,
@@ -1152,7 +1152,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        birth_annotation = tex_bobject.TexComplex(
+        birth_annotation = tex_tex_complex.TexComplex(
             tot, br,
             location = (-3.7, 4, 0),
             centered = True,
@@ -1194,7 +1194,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        spont_annotation = tex_bobject.TexComplex(
+        spont_annotation = tex_tex_complex.TexComplex(
             spont, br,
             location = (-6.9, -4.2, 0),
             centered = True,
@@ -1296,7 +1296,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        rep_annotation = tex_bobject.TexComplex(
+        rep_annotation = tex_tex_complex.TexComplex(
             rep, br,
             location = (-1.6, -4.2, 0),
             centered = True,
@@ -1342,7 +1342,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        death_annotation = tex_bobject.TexComplex(
+        death_annotation = tex_tex_complex.TexComplex(
             tot, dth,
             location = (6.9, 4, 0),
             centered = True,
@@ -1436,7 +1436,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        net_annotation = tex_bobject.TexComplex(
+        net_annotation = tex_tex_complex.TexComplex(
             net_ex, ch_pr, cre,
             location = (1.6, 4.6, 0),
             centered = True,
@@ -1484,7 +1484,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        total_change_annotation = tex_bobject.TexComplex(
+        total_change_annotation = tex_tex_complex.TexComplex(
             tot, exp, cha,
             location = (-10, 4.6, 0),
             centered = True,
@@ -1518,7 +1518,7 @@ class InTermsOfN(Scene):
             centered = True,
             color = 'color2'
         )
-        num_annotation = tex_bobject.TexComplex(
+        num_annotation = tex_tex_complex.TexComplex(
             num, o_cre,
             location = (9, -4.2, 0),
             centered = True,
@@ -1613,6 +1613,197 @@ class InTermsOfN(Scene):
                 shift_time = OBJECT_APPEARANCE_TIME / 2,
                 color = COLORS_SCALED[3]
             )"""
+'''
+#'''
+class FirstRateCurve(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('graph', {'duration': 300}),
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        graph = graph_bobject.GraphBobject(
+            #func,
+            x_range = [0, 10],
+            y_range = [-1, 2],
+            tick_step = [5, 1],
+            width = 10,
+            height = 10,
+            x_label = 'N',
+            x_label_pos = 'end',
+            y_label = '\\Delta',
+            y_label_pos = 'end',
+            location = (-7.5, -1, 0),
+            centered = True,
+            arrows = True,
+        )
+        graph.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
+
+        rhs = tex_bobject.TexBobject(
+            "B + (R-D) \\times N",
+            "1 + (R-D) \\times N",
+            "1 + (R-0.1) \\times N",
+            "1 + (0-0.1) \\times N",
+            centered = True
+        )
+        equals = tex_bobject.TexBobject(
+            "\!=",
+            centered = True
+        )
+        lhs = tex_bobject.TexBobject(
+            "\\Delta",
+            centered = True
+        )
+        equation = tex_complex.TexComplex(
+            lhs, equals, rhs,
+            location = (7.5, 0, 0),
+            scale = 1,
+            centered = True
+        )
+        equation.add_to_blender(
+            appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME,
+            animate = False
+        )
+
+        spont = tex_bobject.TexBobject(
+            "\\text{Spontaneous}",
+            centered = True,
+            color = 'color2'
+        )
+        br = tex_bobject.TexBobject(
+            "\\text{birth rate} \\phantom{blurghh}",
+            centered = True,
+            color = 'color2'
+        )
+        spont_annotation = tex_tex_complex.TexComplex(
+            spont, br,
+            location = (4.8, -3.1, 0),
+            centered = True,
+            scale = 0.67,
+            multiline = True
+        )
+        spont_annotation.add_to_blender(
+            appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME
+        )
+        spont_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (4.8, -0.8, 0),
+                        'tail': (4.8, -2.3, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (4.55, -0.8, 0),
+                        'tail': (4.55, -2.3, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        spont_arrow.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
+
+
+        net_ex = tex_bobject.TexBobject(
+            "\\text{Net expected}",
+            centered = True,
+            color = 'color2'
+        )
+        ch_pr = tex_bobject.TexBobject(
+            "\\text{change per}",
+            centered = True,
+            color = 'color2'
+        )
+        cre = tex_bobject.TexBobject(
+            "\\text{creature}",
+            centered = True,
+            color = 'color2'
+        )
+        net_annotation = tex_tex_complex.TexComplex(
+            net_ex, ch_pr, cre,
+            location = (8.5, 3.2, 0),
+            centered = True,
+            scale = 0.67,
+            multiline = True
+        )
+        net_annotation.add_to_blender(
+            appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME
+        )
+        net_bracket = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'bracket',
+                    'points': {
+                        'annotation_point': (8.5, 5/3, 0),
+                        'left_point': (6.8, 2/3, 0),
+                        'right_point': (10.4, 2/3, 0)
+                    }
+                },
+                {
+                    'type': 'bracket',
+                    'points': {
+                        'annotation_point': (8.5, 5/3, 0),
+                        'left_point': (6.55, 2/3, 0),
+                        'right_point': (10.4, 2/3, 0)
+                    }
+                },
+            ],
+            color = 'color2'
+        )
+        net_bracket.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
+
+
+        #Morph to example
+        rhs.morph_figure(1, start_frame = cues['graph']['start'] + 60)
+
+        rhs.morph_figure(2, start_frame = cues['graph']['start'] + 120)
+        dc = tex_bobject.TexBobject(
+            "\\text{Death chance}",
+            centered = True,
+            color = 'color2'
+        )
+        pc = tex_bobject.TexBobject(
+            "\\text{per creature} \\phantom{blurghh}",
+            centered = True,
+            color = 'color2'
+        )
+        death_annotation = tex_tex_complex.TexComplex(
+            dc, pc,
+            location = (9.6, -3.1, 0),
+            centered = True,
+            scale = 0.67,
+            multiline = True
+        )
+        death_annotation.add_to_blender(
+            appear_frame = cues['graph']['start'] + 120
+        )
+        death_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (9.6, -0.8, 0),
+                        'tail': (9.6, -2.3, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        death_arrow.add_to_blender(appear_frame = cues['graph']['start'] + 120)
+        spont_annotation.move_to(
+            new_location = (4.55, -3.1, 0),
+            start_frame = cues['graph']['start'] + 120
+        )
+        spont_arrow.morph_figure(1, start_frame = cues['graph']['start'] + 120)
+
 
 
 

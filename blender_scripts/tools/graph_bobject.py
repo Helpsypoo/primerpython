@@ -108,7 +108,7 @@ class GraphBobject(Bobject):
 
         #x axis label
         x_lab = tex_bobject.TexBobject(self.x_label, name = 'x_lab', centered = True)
-        #x_lab_container = bobject.TexComplex(x_lab, centered = True, name = 'x_lab_container')
+        #x_lab_container = tex_complex.TexComplex(x_lab, centered = True, name = 'x_lab_container')
         if self.x_label_pos == 'along':
             x_lab.ref_obj.location = ((self.x_range[1] + self.x_range[0]) * self.domain_scale_factor / 2, -2, 0)
         elif self.x_label_pos == 'end':
@@ -147,7 +147,7 @@ class GraphBobject(Bobject):
 
         #y axis label
         y_lab = tex_bobject.TexBobject(self.y_label, name = 'y_lab', centered = True)
-        #y_lab_container = bobject.TexComplex(y_lab, centered = True, name = 'y_lab_container')
+        #y_lab_container = tex_complex.TexComplex(y_lab, centered = True, name = 'y_lab_container')
         if self.y_label_pos == 'along':
             y_lab.ref_obj.location = ( -2, self.y_range[1] * self.range_scale_factor / 2, 0)
         elif self.y_label_pos == 'end':

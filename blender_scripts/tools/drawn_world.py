@@ -325,7 +325,7 @@ class DrawnWorld(TwoDWorld, Bobject):
         #Lazy morphing is too intensive for a counter that switches to many
         #values, and the counting happens too fast for it to be appeciated
         #anyway.
-        counter = bobject.TexComplex(
+        counter = tex_complex.TexComplex(
             label_tex, count_tex,
             name = 'sim_counter ' + label
         )

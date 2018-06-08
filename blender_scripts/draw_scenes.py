@@ -54,6 +54,10 @@ import gesture
 imp.reload(gesture)
 from gesture import *
 
+import tex_complex
+imp.reload(tex_complex)
+from tex_complex import TexComplex
+
 '''
 Workflow improvements
 - Make a decision about specifying start/end or start/duration and make
@@ -239,7 +243,7 @@ def test_object():
                 apply_material(child, 'creature_color4')
 
     '''birth_chance_tex2 = tex_bobject.TexBobject('\\text{Birth chance each frame} = 10\\%')
-    birth_tex_container2 = bobject.TexComplex(
+    birth_tex_container2 = tex_complex.TexComplex(
         birth_chance_tex2,
         centered= True,
         location = (7, -4, 0),
@@ -250,7 +254,7 @@ def test_object():
         animate = True
     )
     death_chance_tex2 = tex_bobject.TexBobject('\\text{Survival chance each frame} = 99\\%')
-    death_tex_container2 = bobject.TexComplex(
+    death_tex_container2 = tex_complex.TexComplex(
         death_chance_tex2,
         centered= True,
         location = (7, -5, 0),
@@ -397,12 +401,87 @@ def test_sim():
 def tex_test():
     initialize_blender(total_duration = 350)
 
-    slogan = tex_bobject.TexBobject(
-        '\\rightarrow',
+    rhs = tex_bobject.TexBobject(
+        "B + (R-D) \\times N",
+        "1 + (R-D) \\times N",
+        "1 + (R-0.1) \\times N",
+        "1 + (0-0.1) \\times N",
         centered = True
     )
+    equals = tex_bobject.TexBobject(
+        "\!=",
+        centered = True
+    )
+    lhs = tex_bobject.TexBobject(
+        "\\Delta",
+        centered = True
+    )
+    equation = tex_complex.TexComplex(
+        lhs, equals,
+        rhs,
+        location = (0, 0, 0),
+        scale = 1,
+        centered = True
+    )
+    equation.add_annotation(
+        targets = [
+            2,
+            [
+                [0, 3, 3],
+                [1, 2, 6],
+                [2, 2, 8],
+            ],
+        ],
+        labels = [
+            ['\\text{Reproduction}', '\\text{chance per}', '\\text{creature}'],
+            ['\\text{Net change}', '\\text{per creature}', 'banana'],
+            ['\\text{Net change}', '\\text{per creature}']
+        ],
+        alignment = 'top',
+        angle = math.pi / 6
+    )
+    equation.add_to_blender(
+        appear_frame = 0,
+        animate = False
+    )
 
-    slogan.add_to_blender(appear_frame = 0)
+    rhs.morph_figure(1, start_frame = 60)
+    rhs.morph_figure(2, start_frame = 120)
+
+    equation.move_to(
+        new_location = (1, 1, 1),
+        start_frame = 180
+    )
+
+    '''rhs.imported_svg_data[rhs.paths[0]]['curves'][2].add_to_blender(
+        appear_frame = 0
+    )'''
+    #obj = rhs.imported_svg_data[rhs.paths[0]]['curves'][2].objects[0]
+    #bpy.context.scene.objects.link(obj)
+
+    '''net_bracket = gesture.Gesture(
+        gesture_series = [
+            {
+                'type': 'bracket',
+                'points': {
+                    'annotation_point': (8.5, 5/3, 0),
+                    'left_point': (6.8, 2/3, 0),
+                    'right_point': (10.4, 2/3, 0)
+                }
+            },
+            {
+                'type': 'bracket',
+                'points': {
+                    'annotation_point': (8.5, 5/3, 0),
+                    'left_point': (6.55, 2/3, 0),
+                    'right_point': (10.4, 2/3, 0)
+                }
+            },
+        ],
+        color = 'color2'
+    )
+    net_bracket.add_to_blender(appear_frame = 120)'''
+
 
     print_time_report()
 
@@ -641,17 +720,17 @@ def bcard():
 def main():
     #test_object()
     #execute_and_time(test_sim())
-    #execute_and_time(tex_test())
+    execute_and_time(tex_test())
     #test_molecule()
     #morph_test()
-    graph_test()
+    #graph_test()
     #color_test()
     #bcard()
     #gesture_test()
 
     #draw_scenes_from_file(replication_only)
 
-    print_time_report()
+    #print_time_report()
     finish_noise()
 
 

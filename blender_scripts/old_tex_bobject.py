@@ -95,7 +95,7 @@ class TexBobject(SVGBobject):
         #Possible todo: This makes it so start_frame and end_frame are needed,
         #instead of going with a default value. The start and end frames are
         #the main things to specify, so maybe this is fine.
-        if isinstance(self.superbobject, bobject.TexComplex):
+        if isinstance(self.superbobject, tex_complex.TexComplex):
             self.superbobject.arrange_tex_bobjects(
                 start_frame = kwargs['start_frame'],
                 end_frame = kwargs['end_frame']
@@ -454,7 +454,7 @@ class TexBobject(SVGBobject):
         #the counters morph over 3 frames rather than the standard 10.
         #For now, this just checks whether the superbobject TexComplex is a
         #counter, and then skips if so.
-        if isinstance(self.superbobject, bobject.TexComplex) \
+        if isinstance(self.superbobject, tex_complex.TexComplex) \
             and 'sim_counter' not in self.superbobject.name:
             self.superbobject.arrange_tex_bobjects(
                 start_frame = start_frame,
