@@ -106,7 +106,7 @@ def make_translucent_material(rgb = None, name = None):
         #Range exactly 3 so a fourth component (alpha) isn't affected
         rgb[i] /= 255
 
-    strength = 2 #Arbitrary, could make this a constant
+    strength = 4 #Arbitrary, could make this a constant
 
     color = bpy.data.materials.new(name = name)
     color.use_nodes = True
@@ -482,9 +482,10 @@ def finish_noise():
     duration = mspb #Quarter note
     freq = 523  # C
     winsound.Beep(freq, duration)'''
-    winsound.MessageBeep()
+    #winsound.MessageBeep()
     #If you're using this and aren't using windows, here's a resource:
     #https://stackoverflow.com/questions/16573051/python-sound-alarm-when-code-finishes
+    print('\007')
 
 def main():
     import_object('boerd_blob')

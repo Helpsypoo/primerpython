@@ -265,10 +265,10 @@ class SVGBobject(Bobject):
 
                 self.imported_svg_data[path]['curves'][i] = curve_bobj
 
-                if path == None:
-                    print()
-                    print(self.imported_svg_data[path])
-                    print()
+                #if path == None:
+                #    print()
+                #    print(self.imported_svg_data[path])
+                #    print()
                 #if path == None:
                 #self.add_subbobject(curve_bobj)
 

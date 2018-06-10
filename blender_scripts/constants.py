@@ -6,7 +6,7 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'medium'
+RENDER_QUALITY = 'high'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
@@ -150,22 +150,6 @@ DEFAULT_WORLD_DURATION = 100
 WORLD_RADIUS = 10
 
 '''
-Graph constants
-'''
-AXIS_WIDTH = 0.05
-AXIS_DEPTH = 0.01
-ARROW_SCALE = [0.3, 0.3, 0.4]
-GRAPH_PADDING = 1
-CURVE_WIDTH = 0.04
-if RENDER_QUALITY == 'high':
-    PLOTTED_POINT_DENSITY = 80
-else:
-    PLOTTED_POINT_DENSITY = 8
-CURVE_Z_OFFSET = 0.01
-AUTO_TICK_SPACING_TARGET = 2 #Blender units
-HIGHLIGHT_POINT_UPDATE_TIME = 5
-
-'''
 Camera and lighting constants
 '''
 CAMERA_LOCATION = (0, 0, 32.8)
@@ -189,3 +173,19 @@ FLOOR_APPEARANCE_TIME = OBJECT_APPEARANCE_TIME #time for floor to appear in a ne
 TEXT_APPEARANCE_TIME = OBJECT_APPEARANCE_TIME
 DEFAULT_SCENE_DURATION = 150
 DEFAULT_SCENE_BUFFER = 30 #frames
+
+'''
+Graph constants
+'''
+AXIS_WIDTH = 0.05
+AXIS_DEPTH = 0.01
+ARROW_SCALE = [0.3, 0.3, 0.4]
+GRAPH_PADDING = 1
+CURVE_WIDTH = 0.04
+if RENDER_QUALITY == 'high':
+    PLOTTED_POINT_DENSITY = 80
+else:
+    PLOTTED_POINT_DENSITY = 8
+CURVE_Z_OFFSET = 0.01
+AUTO_TICK_SPACING_TARGET = 2 #Blender units
+HIGHLIGHT_POINT_UPDATE_TIME = OBJECT_APPEARANCE_TIME

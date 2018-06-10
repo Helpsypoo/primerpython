@@ -276,8 +276,8 @@ class TwoDWorld(Population):
     def blob_stuff(self):
         creatures = self.creatures
         for creature in creatures:
-            creature.head_angle = [None] * self.duration
-            creature.head_angle_vel = [None] * self.duration
+            creature.head_angle = [None] * (self.duration + 1)
+            creature.head_angle_vel = [None] * (self.duration + 1)
             for t in range(self.duration):
                 if t < creature.birthday:
                     pass

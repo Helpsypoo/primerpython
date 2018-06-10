@@ -1620,7 +1620,8 @@ class InTermsOfN(Scene):
 class FirstRateCurve(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('graph', {'duration': 300}),
+            ('graph', {'duration': 1200}),
+            ('ntgraph', {'duration': 1000}),
         ])
         super().__init__()
 
@@ -1629,8 +1630,11 @@ class FirstRateCurve(Scene):
         cues = self.subscenes
         scene_end = self.duration
 
+        def func(x):
+            return 1 - 0.2 * x
+
         graph = graph_bobject.GraphBobject(
-            #func,
+            func,
             x_range = [0, 10],
             y_range = [-1, 2],
             tick_step = [5, 1],
@@ -1649,8 +1653,9 @@ class FirstRateCurve(Scene):
         rhs = tex_bobject.TexBobject(
             "B + (R-D) \\times N",
             "1 + (R-D) \\times N",
-            "1 + (R-0.1) \\times N",
-            "1 + (0-0.1) \\times N",
+            "1 + (R-0.2) \\times N",
+            "1 + (0-0.2) \\times N",
+            "1 + (0-0.2) \\times N",
             centered = True
         )
         equals = tex_bobject.TexBobject(
@@ -1675,6 +1680,7 @@ class FirstRateCurve(Scene):
                     [1, 0, 0],
                     [2, 0, 0],
                     [3, 0, 0],
+                    [4, 0, 0, None],
                 ],
             ],
             labels = [
@@ -1682,6 +1688,7 @@ class FirstRateCurve(Scene):
                 ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
                 ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
                 ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
+                [],
             ],
             alignment = 'bottom'
         )
@@ -1692,14 +1699,16 @@ class FirstRateCurve(Scene):
                     [0, 2, 6],  #form, first char, last char
                     [1, 2, 6],
                     [2, 2, 8],
-                    [3, 2, 8],
+                    [3, 3, 3],
+                    [4, 3, 3, None],
                 ],
             ],
             labels = [
                 ['\\text{Net expected}', '\\text{change per}', '\\text{creature}'],
                 ['\\text{Net expected}', '\\text{change per}', '\\text{creature}'],
                 ['\\text{Net expected}', '\\text{change per}', '\\text{creature}'],
-                ['\\text{Net expected}', '\\text{change per}', '\\text{creature}'],
+                ['\\text{Replication chance}', '\\text{per creature}'],
+                [],
             ],
             alignment = 'top'
         )
@@ -1711,6 +1720,7 @@ class FirstRateCurve(Scene):
                     [1, 5, 5, None],
                     [2, 5, 7, 'arrow'],
                     [3, 5, 7, 'arrow'],
+                    [4, 5, 7, None],
                 ],
             ],
             labels = [
@@ -1718,6 +1728,7 @@ class FirstRateCurve(Scene):
                 [],
                 ['\\text{Death chance}', '\\text{per creature}'],
                 ['\\text{Death chance}', '\\text{per creature}'],
+                [],
             ],
             alignment = 'bottom'
         )
@@ -1726,98 +1737,292 @@ class FirstRateCurve(Scene):
             animate = False
         )
 
-        '''net_ex = tex_bobject.TexBobject(
-            "\\text{Net expected}",
-            centered = True,
-            color = 'color2'
-        )
-        ch_pr = tex_bobject.TexBobject(
-            "\\text{change per}",
-            centered = True,
-            color = 'color2'
-        )
-        cre = tex_bobject.TexBobject(
-            "\\text{creature}",
-            centered = True,
-            color = 'color2'
-        )
-        net_annotation = tex_complex.TexComplex(
-            net_ex, ch_pr, cre,
-            location = (8.5, 3.2, 0),
-            centered = True,
-            scale = 0.67,
-            multiline = True
-        )
-        net_annotation.add_to_blender(
-            appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME
-        )
-        net_bracket = gesture.Gesture(
-            gesture_series = [
-                {
-                    'type': 'bracket',
-                    'points': {
-                        'annotation_point': (8.5, 5/3, 0),
-                        'left_point': (6.8, 2/3, 0),
-                        'right_point': (10.4, 2/3, 0)
-                    }
-                },
-                {
-                    'type': 'bracket',
-                    'points': {
-                        'annotation_point': (8.5, 5/3, 0),
-                        'left_point': (6.55, 2/3, 0),
-                        'right_point': (10.4, 2/3, 0)
-                    }
-                },
-            ],
-            color = 'color2'
-        )
-        net_bracket.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
-        '''
         #Morph to example
         rhs.morph_figure(1, start_frame = cues['graph']['start'] + 60)
-
         rhs.morph_figure(2, start_frame = cues['graph']['start'] + 120)
-        '''dc = tex_bobject.TexBobject(
-            "\\text{Death chance}",
-            centered = True,
-            color = 'color2'
+        rhs.morph_figure(3, start_frame = cues['graph']['start'] + 180)
+
+        appear_coord = [0, 0, 0]
+        point = graph.add_point_at_coord(
+            coord = appear_coord,
+            appear_frame = cues['graph']['start'] + 240,
+            axis_projections = True,
+            track_curve = 0
         )
-        pc = tex_bobject.TexBobject(
-            "\\text{per creature} \\phantom{blurghh}",
-            centered = True,
-            color = 'color2'
+        sbr = rhs.lookup_table[3][0]
+        sbr.color_shift(
+            start_frame = cues['graph']['start'] + 240
         )
-        death_annotation = tex_complex.TexComplex(
-            dc, pc,
-            location = (9.6, -3.1, 0),
-            centered = True,
-            scale = 0.67,
-            multiline = True
+        graph.animate_function_curve(
+            start_frame = cues['graph']['start'] + 300,
+            end_frame = cues['graph']['start'] + 360,
+            uniform_along_x = True,
+            index = 0
         )
-        death_annotation.add_to_blender(
-            appear_frame = cues['graph']['start'] + 120
+        graph.animate_point(
+            end_coord = [10, 0, 0],
+            start_frame = cues['graph']['start'] + 300,
+            end_frame = cues['graph']['start'] + 360,
+            point = point
         )
-        death_arrow = gesture.Gesture(
+        ncpc = []
+        for i in range(2, 9):
+            ncpc.append(rhs.lookup_table[3][i])
+        for bobj in ncpc:
+            bobj.color_shift(
+                start_frame = cues['graph']['start'] + 300
+            )
+
+        graph.animate_point(
+            end_coord = [5, 0, 0],
+            start_frame = cues['graph']['start'] + 420,
+            end_frame = cues['graph']['start'] + 480,
+            point = point
+        )
+        eq_arrow = gesture.Gesture(
             gesture_series = [
                 {
                     'type': 'arrow',
                     'points': {
-                        'head': (9.6, -0.8, 0),
-                        'tail': (9.6, -2.3, 0)
+                        'tail': (-7, 0, 0),
+                        'head': (-7.4, -1.8, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-7, -1.5, 0),
+                        'head': (-7.4, -3.3, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-9.5, -1.1, 0),
+                        'head': (-9.9, -2.9, 0)
                     }
                 }
-            ],
-            color = 'color2'
+            ]
         )
-        death_arrow.add_to_blender(appear_frame = cues['graph']['start'] + 120)'''
-        '''spont_annotation.move_to(
-            new_location = (4.55, -3.1, 0),
-            start_frame = cues['graph']['start'] + 120
+        eq_arrow.add_to_blender(
+            appear_frame = cues['graph']['start'] + 420
         )
-        spont_arrow.morph_figure(1, start_frame = cues['graph']['start'] + 120)'''
+        equilibrium = tex_bobject.TexBobject(
+            '\\substack{\\text{Equilibrium} \\\\ \\text{point}}',
+            '\\substack{\\text{"Stable"} \\\\ \\text{Equilibrium} \\\\ \\text{point}}',
+            location = (-6.8, 1.2, 0),
+            centered = True
+        )
+        equilibrium.add_to_blender(appear_frame = cues['graph']['start'] + 480)
+
+        #Below equilibrium
+        graph.animate_point(
+            end_coord = [2.5, 0, 0],
+            start_frame = cues['graph']['start'] + 540,
+            end_frame = cues['graph']['start'] + 570,
+            point = point,
+            track_curve = False
+        )
+        graph.animate_point(
+            end_coord = [2.5, 0.5, 0],
+            start_frame = cues['graph']['start'] + 600,
+            end_frame = cues['graph']['start'] + 630,
+            point = point,
+            track_curve = False
+        )
+        graph.animate_point(
+            end_coord = [5, 0, 0],
+            start_frame = cues['graph']['start'] + 600,
+            end_frame = cues['graph']['start'] + 630,
+            point = point,
+            track_curve = True
+        )
+        #Above equilibrium
+        graph.animate_point(
+            end_coord = [7.5, 0, 0],
+            start_frame = cues['graph']['start'] + 660,
+            end_frame = cues['graph']['start'] + 690,
+            point = point,
+            track_curve = False
+        )
+        graph.animate_point(
+            end_coord = [7.5, -0.5, 0],
+            start_frame = cues['graph']['start'] + 720,
+            end_frame = cues['graph']['start'] + 750,
+            point = point,
+            track_curve = False
+        )
+        graph.animate_point(
+            end_coord = [5, 0, 0],
+            start_frame = cues['graph']['start'] + 780,
+            end_frame = cues['graph']['start'] + 810,
+            point = point,
+            track_curve = True
+        )
+
+        stable = tex_bobject.TexBobject(
+            '\\text{"Stable"}',
+            location = (-6.8, 2.5, 0),
+            centered = True,
+            scale = 0.67
+        )
+        stable.add_to_blender(appear_frame = cues['graph']['start'] + 840)
+
+        x_of_t = [4, 6, 4, 6, 5]
+        graph.multi_animate_point(
+            point = point,
+            x_of_t = x_of_t,
+            frames_per_time_step = 30,
+            start_frame = 900
+        )
+
+        #Transition to N-t graph
+
+        #Prep sim so its functions can b
 
 
+        rhs.morph_figure(4, start_frame = cues['graph']['start'] + 900)
+        equation.move_to(
+            start_frame = cues['graph']['start'] + 900,
+            new_scale = 1.5,
+            new_location = (0, 6, 0)
+        )
+        graph.move_to(
+            start_frame = cues['graph']['start'] + 900,
+            new_scale = 0.9,
+            new_location = (-7.5, -2.5, 0)
+        )
+        eq_arrow.morph_figure(1, start_frame = cues['graph']['start'] + 900)
+        equilibrium.move_to(
+            start_frame = cues['graph']['start'] + 900,
+            new_location = (-6.8, -0.3, 0)
+        )
+        stable.move_to(
+            start_frame = cues['graph']['start'] + 900,
+            new_location = (-6.8, 1, 0)
+        )
+
+        def func2(x): return 5
+        graph2 = graph_bobject.GraphBobject(
+            func2,
+            x_range = [0, 100],
+            y_range = [0, 10],
+            tick_step = [20, 5],
+            width = 10,
+            height = 10,
+            x_label = 't',
+            x_label_pos = 'end',
+            y_label = 'N',
+            y_label_pos = 'end',
+            location = (6.5, -2.5, 0),
+            centered = True,
+            arrows = True,
+            scale = 0.9
+        )
+        graph2.add_to_blender(appear_frame = cues['ntgraph']['start'])
+        graph2.animate_function_curve(
+            start_frame = cues['ntgraph']['start'] + 60,
+            end_frame = cues['ntgraph']['start'] + 120,
+            #uniform_along_x = True,
+            index = 0
+        )
+
+        frames_per_time_step = 3
+        start_delay = 60
+        sim_duration = 100
+
+        initial_creature_count = 5
+        initial_creatures = []
+        for i in range(initial_creature_count):
+            new_creature = creature.Creature()
+            initial_creatures.append(new_creature)
+        sim = drawn_world.DrawnWorld(
+            name = 'blob1_sim',
+            location = [0, -2.5, 0],
+            scale = 0.4,
+            appear_frame = cues['ntgraph']['start'] + 180,
+            start_delay = start_delay,
+            frames_per_time_step = frames_per_time_step,
+            #save = True,
+            #load = 'wte_eq_replication',
+            sim_duration = sim_duration,
+            initial_creatures = initial_creatures,
+            gene_updates = [
+                ['color', 'creature_color_1', 'birth_modifier', 1000, 0],
+                ['shape', 'shape1', 'birth_modifier', 1, 0],
+                ['size', '1', 'birth_modifier', 1, 0],
+                ['color', 'creature_color_1', 'mutation_chance', 0, 0],
+                ['shape', 'shape1', 'mutation_chance', 0, 0],
+                ['size', '1', 'mutation_chance', 0, 0],
+                ['color', 'creature_color_1', 'death_modifier', 200, 0],
+                #['color', 'creature_color_1', 'replication_modifier', 10, 0],
+            ]
+        )
+        sim.add_to_blender(appear_frame = cues['ntgraph']['start'] + 180)
+        equation.move_to(
+            start_frame = cues['ntgraph']['start'] + 180,
+            new_location = (0, 5, 0)
+        )
+        graph.move_to(
+            start_frame = cues['ntgraph']['start'] + 180,
+            new_scale = 0.6,
+            new_location = (-10, -2.5, 0)
+        )
+        eq_arrow.morph_figure(2, start_frame = cues['ntgraph']['start'] + 180)
+        equilibrium.move_to(
+            start_frame = cues['ntgraph']['start'] + 180,
+            new_location = (-9.3, 0.1, 0)
+        )
+        stable.move_to(
+            start_frame = cues['ntgraph']['start'] + 180,
+            new_location = (-9.3, 1.4, 0)
+        )
+        graph2.move_to(
+            start_frame = cues['ntgraph']['start'] + 180,
+            new_scale = 0.6,
+            new_location = (9, -2.5, 0)
+        )
+
+        func3 = sim.get_creature_count_by_t()
+        graph2.add_new_function_and_curve(func3)
+
+        graph2.animate_function_curve(
+            start_frame = cues['ntgraph']['start'] + 240,
+            end_frame = cues['ntgraph']['start'] + 540,
+            uniform_along_x = True,
+            index = 1
+        )
+        appear_coord2 = [0, func3[0], 0]
+        point2 = graph2.add_point_at_coord(
+            coord = appear_coord2,
+            appear_frame = cues['ntgraph']['start'] + 180,
+            axis_projections = True,
+            track_curve = 1
+        )
+        graph2.animate_point(
+            end_coord = [100, 0, 0],
+            start_frame = cues['ntgraph']['start'] + 240,
+            end_frame = cues['ntgraph']['start'] + 540,
+            point = point2
+        )
+
+        #Many sims
+        num_sims = 20
+        for i in range(num_sims):
+            sim.simulate()
+            func = sim.get_creature_count_by_t()
+            graph2.add_new_function_and_curve(
+                func,
+                curve_mat_modifier = 'fade',
+                z_shift = -0.05
+            )
+        graph2.animate_all_function_curves(
+            start_frame = cues['ntgraph']['start'] + 600,
+            end_frame = cues['ntgraph']['start'] + 900,
+            start_window = 0.5,
+            uniform_along_x = True,
+            skip = 2
+        )
 
 
 #'''

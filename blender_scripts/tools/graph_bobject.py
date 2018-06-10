@@ -56,7 +56,7 @@ class GraphBobject(Bobject):
 
         self.arrows = arrows
 
-        self.functions = functions
+        self.functions = list(functions)
         self.active_function_index = 0
         self.functions_coords = []
         if len(self.functions) > 0:
@@ -201,6 +201,23 @@ class GraphBobject(Bobject):
                 self.add_tick_y(current_tick)
                 current_tick -= y_tick_step
 
+    def add_new_function_and_curve(
+        self,
+        func,
+        curve_mat_modifier = None,
+        z_shift = 0,
+        color = 3
+    ):
+        self.functions.append(func)
+        self.functions_coords.append(self.func_to_coords(func_index = -1))
+        self.add_function_curve(
+            index = -1,
+            mat_modifier = curve_mat_modifier,
+            z_shift = z_shift,
+            color = color
+        )
+        self.functions_curves[-1].add_to_blender(appear_frame = 0)
+
     def add_tick_x(self, value):
         tick_scale = min(self.width, self.height) / 20
         cyl_bobj = import_object('cylinder', 'primitives', name = 'x_tick')
@@ -257,45 +274,75 @@ class GraphBobject(Bobject):
         z_shift = 0
     ):
 
+        coords = self.functions_coords[index]
+
+
         data = bpy.data.curves.new(name = 'function_curve_data', type = 'CURVE')
-        data.dimensions = '3D'
+        data.dimensions = '2D'
         data.resolution_u = 64
         data.render_resolution_u = 64
-        data.splines.new('NURBS')
 
-        coords = self.functions_coords[index]
-        if mat_modifier == 'fade':
-            #Reduce point density to allow more memory for more overlapping curves
-            #Keeping the final point doesn't actually seem to work quite right,
-            #but it looks good enough.
-            final = deepcopy(coords[-1])
-            coords = coords[0::25]
-            coords.append(final)
-            pass
+        if isinstance(self.functions[index], list):
+            #Make bezier curve for discrete functions.
+            #raise Warning("FUCK ALL Y'ALL")
+            data.splines.new('BEZIER')
+            points = data.splines[0].bezier_points
+            points.add(len(coords) - 1) #Spline starts with one point
+            for i in range(len(points)):
+                point = points[i]
+                point.handle_left_type = 'VECTOR'
+                point.handle_right_type = 'VECTOR'
 
-        #Add another coord to the beginning and end because NURBS curves
-        #don't draw all the way to the exteme points.
-        start_coord = [
-            coords[0][0] - (coords[1][0] - coords[0][0]),
-            coords[0][1] - (coords[1][1] - coords[0][1]),
-            coords[0][2] - (coords[1][2] - coords[0][2])
-        ]
-        coords.insert(0, start_coord)
-        end_coord = start_coord = [
-            coords[-1][0] + (coords[-2][0] - coords[-1][0]),
-            coords[-1][1] + (coords[-2][1] - coords[-1][1]),
-            coords[-1][2] + (coords[-2][2] - coords[-1][2])
-        ]
-        coords.append(end_coord)
+                x, y, z = coords[i]
+                if i == 0 and mat_modifier != 'fade':
+                    z = - 2 * CURVE_Z_OFFSET
+                z += z_shift
+                point.co = (x, y, z)
 
-        points = data.splines[0].points
-        points.add(len(coords) - 1) #Spline starts with one point
-        for i in range(len(coords)):
-            x, y, z = coords[i]
-            if i == 0 and mat_modifier != 'fade':
-                z = - 2 * CURVE_Z_OFFSET
-            z += z_shift
-            points[i].co = (x, y, z, 1)
+                if i > 0:
+                    point.handle_left = coords[i - 1]
+                else:
+                    point.handle_left = coords[i]
+                if i < len(points) - 1:
+                    point.handle_right = coords[i + 1]
+                else:
+                    point.handle_right = coords[i]
+
+        else:
+            data.splines.new('NURBS')
+
+            '''if mat_modifier == 'fade':
+                #Reduce point density to allow more memory for more overlapping curves
+                #Keeping the final point doesn't actually seem to work quite right,
+                #but it looks good enough.
+                final = deepcopy(coords[-1])
+                #coords = coords[0::10]
+                coords.append(final)
+                pass'''
+
+            #Add another coord to the beginning and end because NURBS curves
+            #don't draw all the way to the exteme points.
+            start_coord = [
+                coords[0][0] - (coords[1][0] - coords[0][0]),
+                coords[0][1] - (coords[1][1] - coords[0][1]),
+                coords[0][2] - (coords[1][2] - coords[0][2])
+            ]
+            coords.insert(0, start_coord)
+            end_coord = start_coord = [
+                coords[-1][0] + (coords[-2][0] - coords[-1][0]),
+                coords[-1][1] + (coords[-2][1] - coords[-1][1]),
+                coords[-1][2] + (coords[-2][2] - coords[-1][2])
+            ]
+            coords.append(end_coord)
+
+            points = data.splines[0].points
+            points.add(len(coords) - 1) #Spline starts with one point
+            for i in range(len(points)):
+                x, y, z = coords[i]
+                if i == 0 and mat_modifier != 'fade':
+                    z = - 2 * CURVE_Z_OFFSET
+                z += z_shift
+                points[i].co = (x, y, z, 1)
 
         cur = bpy.data.objects.new(name = 'function_curve', object_data = data)
         if mat_modifier == None:
@@ -309,22 +356,23 @@ class GraphBobject(Bobject):
         cross_section.scale = [CURVE_WIDTH, CURVE_WIDTH, 0]
         bpy.context.scene.objects.unlink(cross_section)
 
-
         cur.data.bevel_object = cross_section
-
 
         cur_bobj = bobject.Bobject(objects = [cur], name = 'function_curve_container')
         #cross_section.parent = cur_bobj.ref_obj
         self.add_subbobject(cur_bobj)
         self.functions_curves.append(cur_bobj)
+
+        #Double check that the number of curves is in sync with the index given
+        if index < 0: index += len(self.functions_curves) #In case index == -1
         if len(self.functions_curves) != index + 1:
-            raise Warning('Adding function curves is out of whack.')
+            raise Warning('Function count and index are out of sync.')
 
     def add_all_function_curves(self, curve_colors = 'same'):
         if curve_colors == 'same':
             colors = [3] * len(self.functions)
             modifiers = [None] * len(self.functions)
-            z_shift = 0
+            z_shift = [0] * len(self.functions)
         elif curve_colors == 'fade_secondary':
             colors = [3] * len(self.functions)
             modifiers = ['fade'] * len(self.functions)
@@ -369,12 +417,8 @@ class GraphBobject(Bobject):
         end_frame = None,
         uniform_along_x = False,
         start_window = 0,
-        except_first = False
+        skip = 0
     ):
-        if except_first == True:
-            skip = 1
-        else:
-            skip = 0
         num_curves = len(self.functions) - skip
         start_interval = (end_frame - start_frame) * start_window / num_curves
 
@@ -393,7 +437,11 @@ class GraphBobject(Bobject):
         if index == None:
             index = self.active_function_index
 
-        func = self.functions[index]
+        try:
+            func = self.functions[index]
+        except:
+            raise Warning("You might be trying to evaluate a non-existent " + \
+                          "function. Make sure the graph bobject has a function.")
 
         if isinstance(func, list):
             try:
@@ -411,17 +459,42 @@ class GraphBobject(Bobject):
         if len(self.functions) == 0:
             print("Graph bobject has no function defined, which might be cool, idk.")
             return
-        #Commented this out because it doesn't seem to help in any case.
-        #If memory isn't an issue, treating the function as continuous looks
-        #good, and if memory is an issue, plotting every point still overloads
-        #things, and reducing resolution has a similar result however the coords
-        #are determined.
-        elif False: #isinstance(self.functions[func_index], list):
-            x_vals = []
-            for i in range(len(self.functions[func_index])):
-                #x_vals.append(i-0.1)
-                #x_vals.append(i+0.1)
-                x_vals.append(i)
+
+        func = self.functions[func_index]
+        coords = []
+        if isinstance(func, list):
+            #Discrete functions will be made from bezier curves
+            #Assumes index can be treated as function input.
+            condensed_func = []
+            current_y = -math.inf
+            for x, y in enumerate(func):
+                if y != current_y:
+                    condensed_func.append([x, y])
+                    current_y = y
+
+            for i, (x, y) in enumerate(condensed_func):
+                #For value changes other than the first, add a point at the
+                #previous y value to serve as base of the "step up" or the edge
+                #of the "step down"
+                if x != 0:
+                    coords.append([
+                        x * self.domain_scale_factor,
+                        condensed_func[i -1][1] * self.range_scale_factor,
+                        CURVE_Z_OFFSET
+                    ])
+                coords.append([
+                    x * self.domain_scale_factor,
+                    y * self.range_scale_factor,
+                    CURVE_Z_OFFSET
+                ])
+                #Add final point at end of domain
+                if i == len(condensed_func) - 1 and x < len(func) - 1:
+                    coords.append([
+                        (len(func) - 1) * self.domain_scale_factor,
+                        y * self.range_scale_factor,
+                        CURVE_Z_OFFSET
+                    ])
+
         else:
             points_per_drawn_x_unit = PLOTTED_POINT_DENSITY * self.scale[0]
             num_drawn_points = self.width * points_per_drawn_x_unit
@@ -435,29 +508,28 @@ class GraphBobject(Bobject):
                 x_vals.append(x)
                 x += x_step
 
-        coords = []
-        for x in x_vals:
-            y = self.evaluate_function(input = x, index = func_index)
-            '''try:
+            for x in x_vals:
                 y = self.evaluate_function(input = x, index = func_index)
-            except:
-                raise Warning("It seems like fixing that off-by-one error didn't work.")
-                #Graph draws point at end of the domain, but list functions
-                #don't include that last point
-                y = coords[-1][1] / self.range_scale_factor'''
+                '''try:
+                    y = self.evaluate_function(input = x, index = func_index)
+                except:
+                    raise Warning("It seems like fixing that off-by-one error didn't work.")
+                    #Graph draws point at end of the domain, but list functions
+                    #don't include that last point
+                    y = coords[-1][1] / self.range_scale_factor'''
 
-            coords.append([
-                x * self.domain_scale_factor,
-                y * self.range_scale_factor,
-                CURVE_Z_OFFSET
-            ])
+                coords.append([
+                    x * self.domain_scale_factor,
+                    y * self.range_scale_factor,
+                    CURVE_Z_OFFSET
+                ])
 
         return coords
 
     def add_point_at_coord(self,
         appear_frame = 0,
         coord = [0, 0, 0],
-        track_curve = False,
+        track_curve = None,
         axis_projections = False
     ):
         draw_space_coord = [
@@ -473,16 +545,21 @@ class GraphBobject(Bobject):
 
         point.coord = coord
         point.track_curve = track_curve
-        if point.track_curve == True:
+        #This used to be boolean, so adding a check to remind myself to change
+        #old scenes.
+        if isinstance(point.track_curve, bool):
+            raise Warning("point.track_curve must be an int or None")
+        if point.track_curve != None:
             self.curve_highlight_points.append(point)
             #Correct the y value
-            point.coord[1] = self.evaluate_function(input = point.coord[0])
+            point.coord[1] = self.evaluate_function(
+                input = point.coord[0],
+                index = point.track_curve
+            )
             point.ref_obj.location[1] = point.coord[1] * self.range_scale_factor
         apply_material(point.ref_obj.children[0], 'color4')
         point.add_to_blender(appear_frame = appear_frame)
         self.add_subbobject(point)
-
-
 
         if axis_projections == True:
             x_tracker = import_object('one_side_cylinder', 'primitives', name = 'x_tracker')
@@ -515,7 +592,8 @@ class GraphBobject(Bobject):
         start_frame = 0,
         end_frame = None,
         point = None,
-        in_place = False
+        in_place = False,
+        track_curve = True
     ):
         if point == None:
             point = self.add_point_at_coord(
@@ -529,21 +607,66 @@ class GraphBobject(Bobject):
             #raise Warning('Need end frame to animate a point in the graph. ' + \
             #              'You are a terrible person.')
 
-        if point.track_curve == False:
+        #This condition is a bit goofy but it allows points that normally track
+        #the curve to deviate from the curve if desited, using this method's
+        #track_curve parameter to confirm that a curve should be tracked.
+        #(Defaults to True.)
+        if point.track_curve == None or track_curve == False:
             point.ref_obj.keyframe_insert(
                 data_path = 'location',
                 frame = start_frame
             )
             point.coord = end_coord
-            point.ref_obj.location = [
+            drawn_coord = [
                 point.coord[0] * self.domain_scale_factor,
                 point.coord[1] * self.range_scale_factor,
                 point.coord[2]
             ]
+            point.ref_obj.location = drawn_coord
             point.ref_obj.keyframe_insert(
                 data_path = 'location',
                 frame = end_frame
             )
+            if hasattr(point, 'axis_projections'):
+                x_tracker = point.axis_projections[0].ref_obj
+                x_tracker.keyframe_insert(
+                    data_path = 'location',
+                    frame = start_frame
+                )
+                x_tracker.location = drawn_coord
+                x_tracker.keyframe_insert(
+                    data_path = 'location',
+                    frame = end_frame
+                )
+                x_tracker.children[0].keyframe_insert(
+                    data_path = 'scale',
+                    frame = start_frame
+                )
+                x_tracker.children[0].scale[2] = drawn_coord[1] / 2
+                x_tracker.children[0].keyframe_insert(
+                    data_path = 'scale',
+                    frame = end_frame
+                )
+
+                y_tracker = point.axis_projections[1].ref_obj
+                y_tracker.keyframe_insert(
+                    data_path = 'location',
+                    frame = start_frame
+                )
+                y_tracker.location = drawn_coord
+                y_tracker.keyframe_insert(
+                    data_path = 'location',
+                    frame = end_frame
+                )
+                y_tracker.children[0].keyframe_insert(
+                    data_path = 'scale',
+                    frame = start_frame
+                )
+                y_tracker.children[0].scale[2] = drawn_coord[0] / 2
+                y_tracker.children[0].keyframe_insert(
+                    data_path = 'scale',
+                    frame = end_frame
+                )
         else:
             if in_place == True: #If point tracks curve and is just moving in
                                  #the y direction as the curve shifts.
@@ -551,7 +674,10 @@ class GraphBobject(Bobject):
                     data_path = 'location',
                     frame = start_frame
                 )
-                point.coord[1] = self.evaluate_function(input = point.coord[0])
+                point.coord[1] = self.evaluate_function(
+                    input = point.coord[0],
+                    index = point.track_curve
+                )
                 drawn_coord = [
                     point.coord[0] * self.domain_scale_factor,
                     point.coord[1] * self.range_scale_factor,
@@ -607,6 +733,7 @@ class GraphBobject(Bobject):
                 x_distance = end_coord[0] - point.coord[0]
                 num_frames = end_frame - start_frame + 1
                 x_step = x_distance / num_frames
+
                 for i in range(num_frames + 1):
                     drawn_coord = [
                         point.coord[0] * self.domain_scale_factor,
@@ -649,7 +776,10 @@ class GraphBobject(Bobject):
                     #the loop more thoughtfully. ¯\_(ツ)_/¯
                     if i < num_frames:
                         point.coord[0] += x_step
-                        point.coord[1] = self.evaluate_function(input = point.coord[0])
+                        point.coord[1] = self.evaluate_function(
+                            input = point.coord[0],
+                            index = point.track_curve
+                        )
 
     def multi_animate_point(
         self,
@@ -676,7 +806,7 @@ class GraphBobject(Bobject):
         for i, (t, x) in enumerate(x_of_t):
             try:
                 update_time = min(HIGHLIGHT_POINT_UPDATE_TIME,
-                                  x_of_t[i+1][0] - t)
+                                  (x_of_t[i+1][0] - t) * frames_per_time_step)
             except: #Should only run for last element
                 update_time = HIGHLIGHT_POINT_UPDATE_TIME
 

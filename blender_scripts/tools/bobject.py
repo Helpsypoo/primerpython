@@ -292,13 +292,14 @@ class Bobject(object):
 
     def color_shift(
         self,
-        color = None,
+        color = COLORS_SCALED[3],
         start_frame = 0,
-        duration = None,
+        duration = OBJECT_APPEARANCE_TIME * 2,
         shift_time = OBJECT_APPEARANCE_TIME
     ):
-        if color == None:
-            raise Warning('Missing required arg \'color\' in color_shift.')
+        if duration < shift_time * 2:
+            shift_time = duration / 2
+            print('Adjusted shift time')
 
         #For now, only works for simple bobjects
         obj = self.ref_obj.children[0]

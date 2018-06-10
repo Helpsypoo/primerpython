@@ -602,7 +602,7 @@ def graph_test():
     '''
 
     def func(x):
-        return 10 #+ math.sin(5*x)
+        return x / 5 #+ math.sin(5*x)
         #return 3 + 5 * x - 1.5 * x * x + (x ** 3) / 9.2
         #return 10 - (9 * (10 ** (10 - x)) / (10 ** 10))
         #return - x * x / 10 + 10
@@ -613,7 +613,7 @@ def graph_test():
         new_creature = creature.Creature(color = 'creature_color_1', shape = 'shape1')
         initial_creatures.append(new_creature)
     pop = population.Population(
-        duration = 10 * DEFAULT_WORLD_DURATION,
+        duration = DEFAULT_WORLD_DURATION,
         initial_creatures = initial_creatures,
         gene_updates = [
             ['color', 'creature_color_1', 'birth_modifier', 50, 0],
@@ -623,17 +623,18 @@ def graph_test():
             ['color', 'creature_color_1', 'death_modifier', 5, 0],
         ]
     )
-    num_sims = 40
-    funcs = [func]
+    num_sims = 100
+    funcs = []
     for i in range(num_sims):
         pop.simulate()
         funcs.append(pop.get_creature_count_by_t())
+        #funcs.append(pop.get_creature_count_by_t())
 
     graph = graph_bobject.GraphBobject(
         *funcs,
-        x_range = [0, 1000],
+        x_range = [0, 100],
         y_range = [0, 20],
-        tick_step = [200, 5],
+        tick_step = [20, 5],
         width = 10,
         height = 10,
         x_label = '\\text{Time}',
@@ -655,7 +656,7 @@ def graph_test():
         start_frame = 180,
         end_frame = 1060,
         uniform_along_x = True,
-        except_first = True,
+        skip = 1,
         start_window = 0.5
     )
     try:
@@ -666,10 +667,10 @@ def graph_test():
         coord = appear_coord,
         appear_frame = 30,
         axis_projections = True,
-        track_curve = True
+        track_curve = 0
     )
     graph.animate_point(
-        end_coord = [1000, 0, 0],
+        end_coord = [100, 0, 0],
         start_frame = 60,
         end_frame = 180,
         point = point
