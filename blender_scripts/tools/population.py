@@ -121,25 +121,20 @@ class Population(object):
                 self.creatures.append(cre)
                 num += 1
 
-        self.apply_updates(0) #Catches any gene property changes at time 0
-        self.duration = int(self.duration)
-        for t in range(1, self.duration + 1): #self.duration steps, leaving
-                                              #the initial state untouched.
+        #self.apply_updates(0) #Catches any gene property changes at time 0
+        self.duration = int(self.duration) #Might be a float if calculated, idk.
+        for t in range(0, self.duration):
             self.apply_updates(t)
 
-            #The order here allows creatures to be elligible for replication or
-            #death as soon as they are born. This simplifies calculations of
-            #average population size. (Though creatures born through replication
-            #might not be allowed to replicate immediately. I'd have to check.)
-            self.spontaneous_birth(t)
-            self.replicate(t)
             self.death(t)
+            self.replicate(t)
+            self.spontaneous_birth(t)
 
         #Make sure all creatures die at the end. :(
         #This makes things smoother elsewhere by ensuring deathday is a number
         for cre in self.creatures:
             if cre.deathday == None:
-                cre.deathday = self.duration
+                cre.deathday = self.duration + 1
 
         print("There are " + str(len(self.creatures)) + " creatures total in " + \
                 self.name)
@@ -175,12 +170,12 @@ class Population(object):
             #as an additional sure birth
             while birth_chance > 1:
                 sibling = deepcopy(candidate)
-                self.birth(sibling, t)
+                self.birth(sibling, t + 1)
                 birth_chance -= 1
 
             birth_roll = random()
             if birth_roll < birth_chance:
-                self.birth(candidate, t)
+                self.birth(candidate, t + 1)
 
     def birth(self, baby, t):
         self.creatures.append(baby)
@@ -200,10 +195,8 @@ class Population(object):
                 break
 
     def replicate(self, t):
-        #Because this is called at time t during a simulation, any live
-        #creatures at time t will have a deathday of none when this function
-        #is called
-        alive = [cre for cre in self.creatures if cre.deathday == None]
+        alive = [cre for cre in self.creatures if \
+            cre.deathday == None or cre.deathday > t]
         for cre in alive:
             replication_chance = BASE_REPLICATION_CHANCE
             for gene in cre.alleles:
@@ -228,7 +221,7 @@ class Population(object):
                     else:
                         baby.alleles[gene] = cre.alleles[gene]
 
-                baby.birthday = t
+                baby.birthday = t + 1
                 baby.parent = cre
 
                 #Give creature a color+shape name with unique number
@@ -245,8 +238,12 @@ class Population(object):
                         break
 
     def death(self, t):
-        alive = [creature for creature in self.creatures if \
-                                                    creature.deathday == None]
+        alive = [cre for cre in self.creatures if \
+                    cre.deathday == None and cre.birthday <= t]
+                    #birthday requirement is unnecessary for now, since death
+                    #death() is called before birth functions, so no creature
+                    #could have a birthday greater than t. But makes this more
+                    #resilient.
 
         pop_size = self.count_creatures_at_t(t)
         #Simple function that ramps death chance up around the population cap
@@ -259,7 +256,7 @@ class Population(object):
                     self.genes[gene][creature.alleles[gene]]['death_modifier']
             death_roll = random()
             if death_roll < death_chance:
-                creature.deathday = t
+                creature.deathday = t + 1
 
     def get_creature_names(self):
         name_list = [creature.name for creature in self.creatures]
@@ -273,7 +270,7 @@ class Population(object):
             if creature.birthday <= t:
                 count += 1
             #print(creature.deathday)
-            if creature.deathday != None and creature.deathday < t:
+            if creature.deathday != None and creature.deathday <= t:
                 count -= 1
 
         return count

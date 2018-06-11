@@ -66,6 +66,7 @@ class GraphBobject(Bobject):
 
         self.curve_highlight_points = []
         self.functions_curves = [] #Filled in self.add_function_curve()
+        self.overlay_functions = overlay_functions
         #Discrete functions usually use few points, but if they are animated
         #with highlight points, it's helpful to have more points.
         self.high_res_curve_indices = high_res_curve_indices
@@ -846,7 +847,7 @@ class GraphBobject(Bobject):
 
         self.active_function_index = to_curve_index
 
-        curve_object = self.function_curve.ref_obj.children[0]
+        curve_object = self.functions_curves[0].ref_obj.children[0]
         bpy.context.scene.objects.active = curve_object
         #bpy.ops.object.mode_set(mode = 'OBJECT')
         #If absolute shape keys exist, set eval_time to zero
@@ -854,7 +855,7 @@ class GraphBobject(Bobject):
             curve_object.data.shape_keys.eval_time = 0
         except:
             pass
-        bpy.ops.object.shape_key_add(from_mix=False)
+        bpy.ops.object.shape_key_add(from_mix = False)
         curve_object.data.shape_keys.use_relative = False
         #For some reason, the default 'CARDINAL' interpolation setting caused
         #bouncing, which would occasionally enlarge splines that should have
@@ -868,6 +869,20 @@ class GraphBobject(Bobject):
             curve_object.data.shape_keys.key_blocks[-1].interpolation = 'KEY_LINEAR'
 
         final_coords = self.functions_coords[to_curve_index]
+        #Add another coord to the beginning and end because NURBS curves
+        #don't draw all the way to the exteme points.
+        start_coord = [
+            final_coords[0][0] - (final_coords[1][0] - final_coords[0][0]),
+            final_coords[0][1] - (final_coords[1][1] - final_coords[0][1]),
+            final_coords[0][2] - (final_coords[1][2] - final_coords[0][2])
+        ]
+        final_coords.insert(0, start_coord)
+        end_coord = start_coord = [
+            final_coords[-1][0] + (final_coords[-2][0] - final_coords[-1][0]),
+            final_coords[-1][1] + (final_coords[-2][1] - final_coords[-1][1]),
+            final_coords[-1][2] + (final_coords[-2][2] - final_coords[-1][2])
+        ]
+        final_coords.append(end_coord)
 
         bpy.ops.object.mode_set(mode = 'EDIT')
         for j in range(len(curve_object.data.splines[0].points)):
@@ -904,7 +919,10 @@ class GraphBobject(Bobject):
     def add_to_blender(self, curve_colors = 'same', **kwargs):
         self.add_axes()
         if len(self.functions) > 0:
-            self.add_all_function_curves(curve_colors = curve_colors)
+            if self.overlay_functions == True:
+                self.add_all_function_curves(curve_colors = curve_colors)
+            else:
+                self.add_function_curve(index = 0)
         super().add_to_blender(**kwargs)
 
     def move_to(
