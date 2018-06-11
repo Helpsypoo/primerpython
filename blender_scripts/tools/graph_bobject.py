@@ -28,6 +28,7 @@ class GraphBobject(Bobject):
         tick_step = 'auto',
         arrows = True,
         centered = False,
+        high_res_curve_indices = [],
         **kwargs
     ):
         if 'name' not in kwargs:
@@ -65,6 +66,9 @@ class GraphBobject(Bobject):
 
         self.curve_highlight_points = []
         self.functions_curves = [] #Filled in self.add_function_curve()
+        #Discrete functions usually use few points, but if they are animated
+        #with highlight points, it's helpful to have more points.
+        self.high_res_curve_indices = high_res_curve_indices
 
         if 'scale' in kwargs:
             scale = kwargs['scale']
@@ -200,23 +204,6 @@ class GraphBobject(Bobject):
             while current_tick >= self.y_range[0]:
                 self.add_tick_y(current_tick)
                 current_tick -= y_tick_step
-
-    def add_new_function_and_curve(
-        self,
-        func,
-        curve_mat_modifier = None,
-        z_shift = 0,
-        color = 3
-    ):
-        self.functions.append(func)
-        self.functions_coords.append(self.func_to_coords(func_index = -1))
-        self.add_function_curve(
-            index = -1,
-            mat_modifier = curve_mat_modifier,
-            z_shift = z_shift,
-            color = color
-        )
-        self.functions_curves[-1].add_to_blender(appear_frame = 0)
 
     def add_tick_x(self, value):
         tick_scale = min(self.width, self.height) / 20
@@ -389,6 +376,23 @@ class GraphBobject(Bobject):
                 z_shift = z_shift[i]
             )
 
+    def add_new_function_and_curve(
+        self,
+        func,
+        curve_mat_modifier = None,
+        z_shift = 0,
+        color = 3
+    ):
+        self.functions.append(func)
+        self.functions_coords.append(self.func_to_coords(func_index = -1))
+        self.add_function_curve(
+            index = -1,
+            mat_modifier = curve_mat_modifier,
+            z_shift = z_shift,
+            color = color
+        )
+        self.functions_curves[-1].add_to_blender(appear_frame = 0)
+
     def animate_function_curve(self,
         start_frame = 0,
         end_frame = None,
@@ -460,9 +464,13 @@ class GraphBobject(Bobject):
             print("Graph bobject has no function defined, which might be cool, idk.")
             return
 
+        #-1 is sometimes passed here, which doesn't allow it to be recognized in
+        #self.high_res_curve_indices, so just wrap around to a positive version.
+        if func_index < 0:
+            func_index += len(self.functions)
         func = self.functions[func_index]
         coords = []
-        if isinstance(func, list):
+        if isinstance(func, list) and func_index not in self.high_res_curve_indices:
             #Discrete functions will be made from bezier curves
             #Assumes index can be treated as function input.
             condensed_func = []

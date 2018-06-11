@@ -1616,7 +1616,7 @@ class InTermsOfN(Scene):
                 color = COLORS_SCALED[3]
             )"""
 '''
-#'''
+'''
 class FirstRateCurve(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -1917,7 +1917,8 @@ class FirstRateCurve(Scene):
             location = (6.5, -2.5, 0),
             centered = True,
             arrows = True,
-            scale = 0.9
+            scale = 0.9,
+            high_res_curve_indices = [1]
         )
         graph2.add_to_blender(appear_frame = cues['ntgraph']['start'])
         graph2.animate_function_curve(
@@ -1984,7 +1985,11 @@ class FirstRateCurve(Scene):
         )
 
         func3 = sim.get_creature_count_by_t()
-        graph2.add_new_function_and_curve(func3)
+        graph2.add_new_function_and_curve(
+            func3,
+            curve_mat_modifier = 'fade',
+            z_shift = -0.05
+        )
 
         graph2.animate_function_curve(
             start_frame = cues['ntgraph']['start'] + 240,
@@ -2023,6 +2028,4 @@ class FirstRateCurve(Scene):
             uniform_along_x = True,
             skip = 2
         )
-
-
-#'''
+'''
