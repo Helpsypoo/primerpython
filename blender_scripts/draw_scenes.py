@@ -623,7 +623,7 @@ def graph_test():
             ['color', 'creature_color_1', 'death_modifier', 5, 0],
         ]
     )
-    num_sims = 100
+    num_sims = 5
     funcs = []
     for i in range(num_sims):
         pop.simulate()

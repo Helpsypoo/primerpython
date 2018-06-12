@@ -798,6 +798,7 @@ class GraphBobject(Bobject):
         frames_per_time_step = 1,
         full_coords = False
     ):
+
         #Handle defaults
         if point == None:
             raise Warning('Need point for multi_animate_point')
@@ -824,7 +825,8 @@ class GraphBobject(Bobject):
             #of x values or a list of full coords as a denser way of animating
             #several movements of non-curve-constrained points.
             if full_coords == True:
-                end_coord = x
+                end_coord = x #Instead of just an x value,
+                              #x could be a full spatial coord
             else:
                 end_coord = [x, 0, 0]
 

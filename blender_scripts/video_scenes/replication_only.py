@@ -2147,6 +2147,47 @@ class AddReplication(Scene):
             appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME,
             animate = False
         )
+        eq_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-7, 0, 0),
+                        'head': (-7.6, -1.8, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-4.22, 0, 0),
+                        'head': (-4.22, -1.8, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        eq_arrow.add_to_blender(
+            appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME
+        )
+        #eq_arrow.morph_figure(1, start_frame = cues['graph']['start'] + 900)
+        equilibrium = tex_bobject.TexBobject(
+            '\\substack{\\text{Equilibrium} \\\\ \\text{point}}',
+            '\\substack{\\text{"Stable"} \\\\ \\text{Equilibrium} \\\\ \\text{point}}',
+            location = (-6.8, 1.2, 0),
+            centered = True,
+            color = 'color2'
+        )
+        equilibrium.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
+
+        stable = tex_bobject.TexBobject(
+            '\\text{"Stable"}',
+            location = (-6.8, 2.5, 0),
+            centered = True,
+            scale = 0.67,
+            color = 'color2'
+        )
+        stable.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
+
 
         #Morph to example
         rhs.morph_figure(1, start_frame = cues['graph']['start'] + 60)
@@ -2154,17 +2195,23 @@ class AddReplication(Scene):
         #rhs.morph_figure(2, start_frame = cues['graph']['start'] + 120)
         #rhs.morph_figure(3, start_frame = cues['graph']['start'] + 180)
 
-        appear_coord = [5, 0, 0]
+        eq_arrow.morph_figure(1, start_frame = cues['graph']['start'] + 60)
+        equilibrium.move_to(
+            start_frame = cues['graph']['start'] + 60,
+            new_location = (-4.22, 1.2, 0)
+        )
+        stable.move_to(
+            start_frame = cues['graph']['start'] + 60,
+            new_location = (-4.22, 2.4, 0)
+        )
+
+        """appear_coord = [5, 0, 0]
         point = graph.add_point_at_coord(
             coord = appear_coord,
             appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME,
             axis_projections = True,
             track_curve = None
         )
-        """sbr = rhs.lookup_table[3][0]
-        sbr.color_shift(
-            start_frame = cues['graph']['start'] + 240
-        )"""
         graph.animate_point(
             end_coord = [5, 0.5, 0],
             start_frame = cues['graph']['start'] + 60,
@@ -2176,13 +2223,19 @@ class AddReplication(Scene):
             start_frame = cues['graph']['start'] + 120,
             end_frame = cues['graph']['start'] + 180,
             point = point
-        )
+        )"""
+
 
 
         #Transition to flat line
         rhs.morph_figure(2, start_frame = cues['graph']['start'] + 240)
         graph.morph_curve(2, start_frame = cues['graph']['start'] + 240)
-        graph.animate_point(
+        eq_arrow.disappear(disappear_frame = cues['graph']['start'] + 270)
+        equilibrium.disappear(disappear_frame = cues['graph']['start'] + 270)
+        stable.disappear(disappear_frame = cues['graph']['start'] + 270)
+
+
+        """graph.animate_point(
             end_coord = [10, 1, 0],
             start_frame = cues['graph']['start'] + 240,
             end_frame = cues['graph']['start'] + 270,
@@ -2190,64 +2243,7 @@ class AddReplication(Scene):
         )
         point.disappear(disappear_frame = 300)
         for proj in point.axis_projections:
-            proj.disappear(disappear_frame = 300)
-
-        """
-        eq_arrow = gesture.Gesture(
-            gesture_series = [
-                {
-                    'type': 'arrow',
-                    'points': {
-                        'tail': (-7, 0, 0),
-                        'head': (-7.4, -1.8, 0)
-                    }
-                },
-                {
-                    'type': 'arrow',
-                    'points': {
-                        'tail': (-7, -1.5, 0),
-                        'head': (-7.4, -3.3, 0)
-                    }
-                },
-                {
-                    'type': 'arrow',
-                    'points': {
-                        'tail': (-9.5, -1.1, 0),
-                        'head': (-9.9, -2.9, 0)
-                    }
-                }
-            ]
-        )
-        eq_arrow.add_to_blender(
-            appear_frame = cues['graph']['start'] + 420
-        )
-        #eq_arrow.morph_figure(1, start_frame = cues['graph']['start'] + 900)
-        equilibrium = tex_bobject.TexBobject(
-            '\\substack{\\text{Equilibrium} \\\\ \\text{point}}',
-            '\\substack{\\text{"Stable"} \\\\ \\text{Equilibrium} \\\\ \\text{point}}',
-            location = (-6.8, 1.2, 0),
-            centered = True
-        )
-        equilibrium.add_to_blender(appear_frame = cues['graph']['start'] + 480)
-
-        stable = tex_bobject.TexBobject(
-            '\\text{"Stable"}',
-            location = (-6.8, 2.5, 0),
-            centered = True,
-            scale = 0.67
-        )
-        stable.add_to_blender(appear_frame = cues['graph']['start'] + 840)
-
-        equilibrium.move_to(
-            start_frame = cues['graph']['start'] + 900,
-            new_location = (-6.8, -0.3, 0)
-        )
-        stable.move_to(
-            start_frame = cues['graph']['start'] + 900,
-            new_location = (-6.8, 1, 0)
-        )
-        """
-
+            proj.disappear(disappear_frame = 300)"""
 
         #Transition to N-t graph
 
@@ -2262,6 +2258,14 @@ class AddReplication(Scene):
             new_scale = 0.9,
             new_location = (-7.5, -2.5, 0)
         )
+        """equilibrium.move_to(
+            start_frame = cues['graph']['start'] + 360,
+            new_location = (-6.8, -0.3, 0)
+        )
+        stable.move_to(
+            start_frame = cues['graph']['start'] + 360,
+            new_location = (-6.8, 1, 0)
+        )"""
 
         def exp_func(x): return 5 + x
         graph2 = graph_bobject.GraphBobject(
@@ -2281,16 +2285,42 @@ class AddReplication(Scene):
             scale = 0.9
         )
         graph2.add_to_blender(appear_frame = cues['ntgraph']['start'])
-        graph2.animate_function_curve(
+
+        appear_coord = [0, 1, 0]
+        point = graph.add_point_at_coord(
+            coord = appear_coord,
+            appear_frame = cues['ntgraph']['start'] + 60,
+            axis_projections = True,
+            track_curve = None
+        )
+        x_of_t = [
+            [0, [0, 1, 0]],
+            [30, [11, 1, 0]],
+            [60, [0, 1, 0]],
+            [90, [11, 1, 0]],
+            [120, [0, 1, 0]],
+            [150, [11, 1, 0]],
+        ]
+        graph.multi_animate_point(
+            point = point,
+            x_of_t = x_of_t,
+            #frames_per_time_step = 30,
             start_frame = cues['ntgraph']['start'] + 60,
-            end_frame = cues['ntgraph']['start'] + 120,
+            full_coords = True
+        )
+        point.disappear(disappear_frame = cues['ntgraph']['start'] + 300)
+
+
+        graph2.animate_function_curve(
+            start_frame = cues['ntgraph']['start'] + 300,
+            end_frame = cues['ntgraph']['start'] + 360,
             #uniform_along_x = True,
             index = 0
         )
 
 
-        frames_per_time_step = 3
-        start_delay = 60
+        #frames_per_time_step = 3
+        #start_delay = 60
         sim_duration = 100
 
         initial_creature_count = 5
@@ -2318,7 +2348,7 @@ class AddReplication(Scene):
                 ['size', '1', 'mutation_chance', 0, 0],
                 ['color', 'creature_color_1', 'death_modifier', 150, 0],
                 ['color', 'creature_color_1', 'replication_modifier', 150, 0],
-            ]
+            ] #LIES
         )
         """sim.add_to_blender(appear_frame = cues['ntgraph']['start'] + 180)
         equation.move_to(
@@ -2334,15 +2364,6 @@ class AddReplication(Scene):
             start_frame = cues['ntgraph']['start'] + 180,
             new_scale = 0.6,
             new_location = (9, -2.5, 0)
-        )"""
-        """eq_arrow.morph_figure(2, start_frame = cues['ntgraph']['start'] + 180)
-        equilibrium.move_to(
-            start_frame = cues['ntgraph']['start'] + 180,
-            new_location = (-9.3, 0.1, 0)
-        )
-        stable.move_to(
-            start_frame = cues['ntgraph']['start'] + 180,
-            new_location = (-9.3, 1.4, 0)
         )"""
 
 
@@ -2369,7 +2390,7 @@ class AddReplication(Scene):
             point = point2
         )"""
         #Many sims
-        num_sims = 40
+        num_sims = 5
         for i in range(num_sims):
             sim.simulate()
             func = sim.get_creature_count_by_t()
@@ -2384,5 +2405,21 @@ class AddReplication(Scene):
             start_window = 0.5,
             uniform_along_x = True,
             skip = 1
+        )
+
+        spread = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'bracket',
+                    'points': {
+                        'annotation_point': (11.5, -1, 0),
+                        'left_point': (10.5, 2, 0),
+                        'right_point': (10.5, -4, 0)
+                    }
+                }
+            ]
+        )
+        spread.add_to_blender(
+            appear_frame = cues['ntgraph']['start'] + 960
         )
 #'''
