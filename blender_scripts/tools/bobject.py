@@ -29,7 +29,7 @@ class Bobject(object):
         #Would be cleaner elsewhere to override the setter to update
         #self.ref_obj.scale when self.scale is updated
         #(similarly for any attribute that's actually on the ref_obj)
-        self.appear_frame = self.get_from_kwargs('appear_frame', 0)
+        #self.appear_frame = self.get_from_kwargs('appear_frame', 0)
 
         ref_obj = bpy.data.objects.new(name = self.name, object_data = None)
         ref_obj.location = self.get_from_kwargs('location', (0, 0, 0) )
@@ -78,6 +78,8 @@ class Bobject(object):
         else:
             pass
             #print("Re-adding " + self.name)
+
+        self.appear_frame = appear_frame
 
 
         main_obj.hide = True

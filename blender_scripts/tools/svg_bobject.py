@@ -948,7 +948,11 @@ def reindex_to_top_point(spline):
         points[i].handle_left = left_handles[i]
         points[i].handle_right = right_handles[i]
 
-def add_points_to_curve_splines(curve, total_points = CONTROL_POINTS_PER_SPLINE):
+def add_points_to_curve_splines(
+    curve,
+    total_points = CONTROL_POINTS_PER_SPLINE,
+    closed_loop = True
+):
     #if len(curve.data.splines[0].bezier_points) < total_points:
     was_hidden = False
     if curve.hide:
@@ -965,12 +969,24 @@ def add_points_to_curve_splines(curve, total_points = CONTROL_POINTS_PER_SPLINE)
             start_index = 0
             end_index = 1
             for j in range(len(points)):
-                k = (j + 1) % len(points)
-                sep = points[k].co - points[j].co
-                if sep.length > longest:
+                if closed_loop == True:
+                    k = (j + 1) % len(points)
+                    sep = points[k].co - points[j].co
+                    length = sep.length
+                else:
+                    if j == len(points) - 1:
+                        k = j
+                    else:
+                        k = j + 1
+                    length = points[k].co[0] - points[j].co[0]
+                    #This is a hacky way of making it work for graph curves
+                    #bpy making it as uniform as possible along x.
+                    #Doesn't make sense in general.
+
+                if length > longest:
                     start_index = j
                     end_index = k
-                    longest = sep.length
+                    longest = length
 
             #subdivide longest segments
             points[start_index].select_control_point = True

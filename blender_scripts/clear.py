@@ -2,6 +2,7 @@ import bpy
 import collections
 
 def clear_blender():
+    print('Clearing Blender data')
     for bpy_data_iter in (
                 bpy.data.objects,
                 bpy.data.meshes,
@@ -12,7 +13,7 @@ def clear_blender():
                 bpy.data.particles,
                 bpy.data.worlds
                 ):
-        
+
         for id_data in bpy_data_iter:
             bpy_data_iter.remove(id_data)
 

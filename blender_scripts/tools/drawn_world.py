@@ -61,7 +61,8 @@ class DrawnWorld(TwoDWorld, Bobject):
                 duration = sim_duration,
                 overlap_okay = overlap_okay,
                 initial_creatures = initial_creatures,
-                gene_updates = gene_updates
+                gene_updates = gene_updates,
+                frames_per_time_step = frames_per_time_step
             )
             self.__dict__ = world.__dict__
             if save == True:
@@ -71,18 +72,19 @@ class DrawnWorld(TwoDWorld, Bobject):
         Bobject.__init__(self,
             location = location,
             scale = scale,
-            appear_frame = appear_frame
+            #appear_frame = appear_frame
         )
 
         self.sim_duration = sim_duration # - start_delay
-        self.frames_per_time_step = frames_per_time_step
+
+        self.frames_per_time_step = 1
         print('There are ' + str(self.frames_per_time_step) +' frames per time step')
-        self.sim_duration_in_frames = self.sim_duration * self.frames_per_time_step
+        #self.sim_duration_in_frames = self.sim_duration * self.frames_per_time_step
 
         #Could make radius more than 1D, but for now, just uses the
         #x component of scale
         #self.world_radius = self.scale[0] * self.radius #attribute of TwoDWorld
-        self.start_frame = self.appear_frame + start_delay
+        self.start_delay = start_delay
         #self.disappear_frame = self.start_frame + self.sim_duration
         self.pauses = pauses
 
@@ -105,13 +107,6 @@ class DrawnWorld(TwoDWorld, Bobject):
         print("Loaded the world")
 
     def add_to_blender(self, **kwargs):
-        super().add_to_blender(**kwargs)
-        self.align_info()
-        self.morph_counters()
-        self.add_creatures_to_blender()
-        self.set_world_keyframes()
-
-    def add_creatures_to_blender(self):
         #Create floor
         plane = import_object(
             'xyplane', 'primitives',
@@ -122,18 +117,29 @@ class DrawnWorld(TwoDWorld, Bobject):
         #print(plane.ref_obj.scale)
         apply_material(plane.ref_obj.children[0], 'color2')
         self.add_subbobject(plane)
+        
+        super().add_to_blender(**kwargs)
+        self.appear_frame = kwargs['appear_frame']
+        self.start_frame = self.appear_frame + self.start_delay
+        self.align_info()
+        self.morph_counters()
+        self.add_creatures_to_blender()
+        self.set_world_keyframes()
+
+    def add_creatures_to_blender(self):
+
         #plane.ref_obj.parent = self.ref_obj
         #print(plane.ref_obj.scale)
         #plane.superbobject = self
         #self.subbobjects.append(plane)
-        plane.add_to_blender(appear_frame = self.appear_frame)
+        #plane.add_to_blender(appear_frame = self.appear_frame)
 
         print("Adding " + str(len(self.creatures)) + " creatures to Blender")
         #creature_cache = []
         for cre in self.creatures:
             cre.reused = False
             cre_needs_bobject = True
-            #Assumes creatures are in order of birthday by assuming
+            #Assumes creatures are in order of birthframe by assuming
             #other_cre.bobject and other_cre.reused exist.
             for other_cre in self.creatures:
                 #2 * MATURATION_TIME because that's the minimum length of time
@@ -143,18 +149,18 @@ class DrawnWorld(TwoDWorld, Bobject):
                 #more unique creatures will be made than absolutely necessary,
                 #but it still puts a manageable cap on longer sims, so ¯\_(ツ)_/¯.
                 if other_cre != cre and \
-                other_cre.deathday + \
-                3 * MATURATION_TIME < cre.birthday and \
+                other_cre.deathframe + \
+                3 * MATURATION_TIME < cre.birthframe and \
                 other_cre.alleles == cre.alleles and \
                 other_cre.reused == False:
                     cre.bobject = other_cre.bobject
                     delay = 0
                     for pause in self.pauses:
-                        if cre.birthday > pause[0]:
+                        if cre.birthframe > pause[0]:
                             delay += pause[1]
                     cre.bobject.add_to_blender(
                         appear_frame = self.start_frame + \
-                            (cre.birthday + delay) * self.frames_per_time_step,
+                            (cre.birthframe + delay) * self.frames_per_time_step,
                         is_creature = True
                     )
                     other_cre.reused = True
@@ -185,10 +191,10 @@ class DrawnWorld(TwoDWorld, Bobject):
 
         delay = 0
         for pause in self.pauses:
-            if cre.birthday > pause[0]:
+            if cre.birthframe > pause[0]:
                 delay += pause[1]
         bobj.add_to_blender(
-            appear_frame = self.start_frame + (cre.birthday + delay) * \
+            appear_frame = self.start_frame + (cre.birthframe + delay) * \
                                                     self.frames_per_time_step,
             is_creature = True
         )
@@ -206,7 +212,8 @@ class DrawnWorld(TwoDWorld, Bobject):
 
         apply_material(obj.children[0], col, recursive = recursive, type_req = type_req)
 
-        obj.parent = self.ref_obj
+        #obj.parent = self.ref_obj
+        self.add_subbobject(cre.bobject)
         #obj.matrix_parent_inverse = obj.parent.matrix_world.inverted()
         print("Added " + str(cre.name))
 
@@ -221,23 +228,23 @@ class DrawnWorld(TwoDWorld, Bobject):
 
             delay = 0
             for pause in self.pauses:
-                if cre.deathday > pause[0]:
+                if cre.deathframe > pause[0]:
                     delay += pause[1]
 
             #If creature dies right away, animate as if it lasted long enough to
             #finish appearing before dying. 2 * maturation time because creatures
-            #start appearing on their birthday and finish disappearing on their
-            #deathday.
-            effective_deathday = cre.deathday
+            #start appearing on their birthframe and finish disappearing on their
+            #deathframe.
+            effective_deathframe = cre.deathframe
             #MATURATION_TIME is defined in frames, but we want it in sim time
             #steps
-            mat_time_in_sim_time = MATURATION_TIME / self.frames_per_time_step
-            if effective_deathday - cre.birthday < 2 * mat_time_in_sim_time:
-                effective_deathday = cre.birthday + 2 * mat_time_in_sim_time
-            disappear_time = effective_deathday + mat_time_in_sim_time + delay
+            #mat_time_in_sim_time = MATURATION_TIME / self.frames_per_time_step
+            if effective_deathframe - cre.birthframe < 2 * MATURATION_TIME:
+                effective_deathframe = cre.birthframe + 2 * MATURATION_TIME
+            disappear_time = effective_deathframe + MATURATION_TIME + delay
             #Ensure creature disappears in place.
             try:
-                obj.location = cre.locations[cre.deathday]
+                obj.location = cre.locations[cre.deathframe]
             except:
                 obj.location = cre.locations[-1]
             obj.keyframe_insert(
@@ -247,15 +254,15 @@ class DrawnWorld(TwoDWorld, Bobject):
             )
 
             #Make creatures disappear if they died before the sim ended.
-            #(All creatures are given a numerical deathday even if they last
+            #(All creatures are given a numerical deathframe even if they last
             #the whole time)
-            if cre.deathday < self.sim_duration:
+            if cre.deathframe < self.animated_duration:
                 bobj.disappear(
                     disappear_frame = self.start_frame + disappear_time * self.frames_per_time_step,
                     is_creature = True
                 )
 
-            for t in range(self.sim_duration + 1):
+            for t in range(self.animated_duration + 1):
                 if cre.locations and cre.locations[t] != None:
                     obj.location = cre.locations[t]
 
@@ -311,7 +318,7 @@ class DrawnWorld(TwoDWorld, Bobject):
         expression_times = [0]
         #Make list of expressions for each time the count changes
         count = -math.inf
-        for t in range(self.sim_duration):
+        for t in range(self.animated_duration):
             if count_by_time[t] != count:
                 count = count_by_time[t]
                 expressions.append(str(count))
@@ -392,7 +399,7 @@ class DrawnWorld(TwoDWorld, Bobject):
                     if morph_duration > 6: #6 is an arbitrary max duration
                         morph_duration = 6
                 except: #should only run for the last expression
-                    morph_duration = self.sim_duration - frames[i]
+                    morph_duration = self.animated_duration - frames[i]
                     if morph_duration > 6: #6 is an arbitrary max duration
                         morph_duration = 6
 

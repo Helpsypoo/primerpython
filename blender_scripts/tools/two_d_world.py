@@ -26,13 +26,20 @@ on in a 2D world.
 '''
 
 class TwoDWorld(Population):
-    #TODO Add kwargs handling so things like radius and duration can be changed
+    #TODO Add kwargs handling so things like radius and animated_duration can be changed
     #on instantiation
     #This really just extends the population class by adding spatial data
-    def __init__ (self, overlap_okay = True, **kwargs):
+    def __init__ (
+        self,
+        overlap_okay = True,
+        frames_per_time_step = 1,
+        **kwargs
+    ):
         super().__init__(**kwargs)
         self.radius = WORLD_RADIUS #Could make this a kwarg
         self.overlap_okay = overlap_okay
+        self.frames_per_time_step = frames_per_time_step
+        self.animated_duration = self.duration * self.frames_per_time_step
         self.simulate()
         self.populate_spacetime()
         print('Spacetime populated')
@@ -58,21 +65,23 @@ class TwoDWorld(Population):
     def populate_spacetime(self):
         creatures = self.creatures
         for creature in creatures:
-            creature.locations = [None] * (self.duration + 1) #duration+1 states
-            creature.velocities = [None] * (self.duration + 1)
-        for t in range(self.duration + 1): #duration steps, duration+1 states
+            creature.birthframe = creature.birthday * self.frames_per_time_step
+            creature.deathframe = creature.deathday * self.frames_per_time_step
+            creature.locations = [None] * (self.animated_duration + 1) #duration+1 states
+            creature.velocities = [None] * (self.animated_duration + 1)
+        for t in range(self.animated_duration + 1): #duration steps, duration+1 states
             for creature in creatures:
-                if t < creature.birthday:
+                if t < creature.birthframe:
                     pass
-                elif t == creature.birthday:
+                elif t == creature.birthframe:
                     creature.velocities[t] = [
                         uniform(-0.05, 0.05),
                         uniform(-0.05, 0.05),
                         0
                     ]
                     self.place_new_creature(creature, t)
-                elif t <= creature.deathday:
-                    #After birthday but before/on deathday
+                elif t <= creature.deathframe:
+                    #After birthframe but before/on deathframe
 
                     #update position
                     a = creature.locations[t-1]
@@ -82,10 +91,10 @@ class TwoDWorld(Population):
                     except:
                         print()
                         print(creature.name, "time = " + str(t))
-                        print("B-day: " + str(creature.birthday))
+                        print("B-frame: " + str(creature.birthframe))
                         print(creature.locations[t-1])
                         print(creature.velocities[t-1])
-                        print(creature.parent, creature.parent.deathday, creature.parent.locations[creature.birthday])
+                        print(creature.parent, creature.parent.deathframe, creature.parent.locations[creature.birthframe])
                         print(creature.locations)
                         print('location', a, type(a))
                         print('velocity', b, type(b))
@@ -114,7 +123,7 @@ class TwoDWorld(Population):
 
                     self.apply_friction(creature, t)
                 else:
-                    #On or after deathday, do nothing. Ya dead!
+                    #On or after deathframe, do nothing. Ya dead!
                     pass
 
 
@@ -167,22 +176,22 @@ class TwoDWorld(Population):
                                 for a in range(t, self.duration):
                                     creature.locations[a] = None
                                     creature.velocities[a] = None
-                                creature.deathday = t
+                                creature.deathframe = t
 
                                 self.revoke_existence(creature)
                                 '''
                                 alive = [x for x in creatures if \
-                                            x. birthday < t and x.deathday > t]
+                                            x. birthframe <= t and x.deathframe > t]
                                 print("There are %s living creatures at time = %s" \
                                         % (len(alive), t))
                                 print("Too crowded, had to allow overlap")
 
                                 self.place_new_creature(creature, t, overlap_okay = True)
 
-                                '''creature.deathday = t
+                                '''creature.deathframe = t
 
                                 alive = [x for x in creatures if \
-                                            x. birthday < t and x.deathday > t]
+                                            x. birthday < t and x.deathframe > t]
                                 print("There are %s living creatures at time = %s" \
                                         % (len(alive), t))
 
@@ -259,16 +268,16 @@ class TwoDWorld(Population):
     def spin_creatures(self):
         creatures = self.creatures
         for creature in creatures:
-            creature.rotation = [None] * self.duration
-            creature.rotation_vel = [None] * self.duration
-            for t in range(self.duration):
-                if t < creature.birthday:
+            creature.rotation = [None] * (self.animated_duration + 1)
+            creature.rotation_vel = [None] * (self.animated_duration + 1)
+            for t in range(self.animated_duration):
+                if t < creature.birthframe:
                     pass
-                elif t == creature.birthday:
+                elif t == creature.birthframe:
                     creature.rotation[t] = uniform(-60, 60)
                     creature.rotation_vel[t] = uniform(-0.1, 0.1)
 
-                elif t < creature.deathday:
+                elif t < creature.deathframe:
                     #update position
                     creature.rotation[t] = creature.rotation[t-1] + creature.rotation_vel[t-1]
                     creature.rotation_vel[t] = creature.rotation_vel[t-1] + uniform(-0.005, 0.005)
@@ -276,12 +285,12 @@ class TwoDWorld(Population):
     def blob_stuff(self):
         creatures = self.creatures
         for creature in creatures:
-            creature.head_angle = [None] * (self.duration + 1)
-            creature.head_angle_vel = [None] * (self.duration + 1)
-            for t in range(self.duration):
-                if t < creature.birthday:
+            creature.head_angle = [None] * (self.animated_duration + 1)
+            creature.head_angle_vel = [None] * (self.animated_duration + 1)
+            for t in range(self.animated_duration):
+                if t < creature.birthframe:
                     pass
-                elif t == creature.birthday:
+                elif t == creature.birthframe:
                     creature.head_angle[t] = [
                         1,
                         uniform(-0.005, 0.005),
@@ -296,8 +305,8 @@ class TwoDWorld(Population):
                     ]
                     #places new creature if there's room, otherwise kills it :(
                     #self.place_new_creature(creature, t)
-                elif t < creature.deathday:
-                    #After birthday but before deathday
+                elif t < creature.deathframe:
+                    #After birthframe but before deathframe
 
                     #update position
                     a = creature.head_angle[t-1]

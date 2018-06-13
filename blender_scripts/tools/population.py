@@ -101,7 +101,7 @@ class Population(object):
 
     def simulate(self):
         self.creatures = [] #clear creatures each time so one population
-                            #objects can be used to generate multiple sets of
+                            #object can be used to generate multiple sets of
                             #sim data
         print('Simulating ' + self.name)
         num = 1
@@ -240,13 +240,11 @@ class Population(object):
     def death(self, t):
         alive = [cre for cre in self.creatures if \
                     cre.deathday == None and cre.birthday <= t]
-                    #birthday requirement is unnecessary for now, since death
-                    #death() is called before birth functions, so no creature
-                    #could have a birthday greater than t. But makes this more
-                    #resilient.
 
         pop_size = self.count_creatures_at_t(t)
         #Simple function that ramps death chance up around the population cap
+        #Default cap is 3000, so it mostly functions to stop crashes/freezes
+        #when I put in the wrong parameters.
         crowding_death_mod = 1 + (pop_size / self.pop_cap) ** 10
 
         for creature in alive:

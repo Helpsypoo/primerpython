@@ -10,6 +10,8 @@ from bobject import *
 
 import tex_bobject
 imp.reload(tex_bobject)
+import svg_bobject
+imp.reload(svg_bobject)
 
 class GraphBobject(Bobject):
     """docstring for GraphBobject."""
@@ -261,9 +263,7 @@ class GraphBobject(Bobject):
         mat_modifier = None,
         z_shift = 0
     ):
-
         coords = self.functions_coords[index]
-
 
         data = bpy.data.curves.new(name = 'function_curve_data', type = 'CURVE')
         data.dimensions = '2D'
@@ -333,6 +333,7 @@ class GraphBobject(Bobject):
                 points[i].co = (x, y, z, 1)
 
         cur = bpy.data.objects.new(name = 'function_curve', object_data = data)
+
         if mat_modifier == None:
             mat_string = 'color' + str(color)
         elif mat_modifier == 'fade':
@@ -355,6 +356,17 @@ class GraphBobject(Bobject):
         if index < 0: index += len(self.functions_curves) #In case index == -1
         if len(self.functions_curves) != index + 1:
             raise Warning('Function count and index are out of sync.')
+
+        if index in self.high_res_curve_indices and \
+                                    len(cur.data.splines[0].bezier_points) > 1:
+            print("Adding points to graphed curve")
+            bpy.context.scene.objects.link(cur)
+            svg_bobject.add_points_to_curve_splines(
+                cur,
+                total_points = 200,
+                closed_loop = False
+            )
+            bpy.context.scene.objects.unlink(cur)
 
     def add_all_function_curves(self, curve_colors = 'same'):
         if curve_colors == 'same':
@@ -471,7 +483,7 @@ class GraphBobject(Bobject):
             func_index += len(self.functions)
         func = self.functions[func_index]
         coords = []
-        if isinstance(func, list) and func_index not in self.high_res_curve_indices:
+        if isinstance(func, list):
             #Discrete functions will be made from bezier curves
             #Assumes index can be treated as function input.
             condensed_func = []
@@ -611,13 +623,17 @@ class GraphBobject(Bobject):
         )
         if end_coord == None:
             end_coord = point.coord
+        if end_coord[0] > self.x_range[1]:
+            pass
+            #raise Warning("Moving point outside graph bounds." + \
+            #"Feel free to comment out this warning if you did it on purpose.")
         if end_frame == None:
             end_frame = start_frame + OBJECT_APPEARANCE_TIME
             #raise Warning('Need end frame to animate a point in the graph. ' + \
             #              'You are a terrible person.')
 
         #This condition is a bit goofy but it allows points that normally track
-        #the curve to deviate from the curve if desited, using this method's
+        #the curve to deviate from the curve if desired, using this method's
         #track_curve parameter to confirm that a curve should be tracked.
         #(Defaults to True.)
         if point.track_curve == None or track_curve == False:
