@@ -6,7 +6,7 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'medium'
+RENDER_QUALITY = 'final'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
@@ -133,7 +133,7 @@ INITIAL_CREATURES = 10
 DEFAULT_POP_CAP = 3000
 
 '''
-Motion constants
+Sim motion constants
 '''
 CREATURE_BUBBLE_WIDTH = 0.3
 BOUNCE_DAMP_FACTOR = 0.8
@@ -164,6 +164,8 @@ TEX_LOCAL_SCALE_UP = 260 #Value that makes line height about 1 Blender Unit
 '''
 Animation constants
 '''
+FRAME_RATE = 60
+
 MATURATION_TIME = 5 #time for a new creature to grow to full scale.
 OBJECT_APPEARANCE_TIME = 30
 PARTICLE_APPEARANCE_TIME = 1
@@ -172,7 +174,9 @@ MORPH_PARTICLE_SIZE = 0.03
 FLOOR_APPEARANCE_TIME = OBJECT_APPEARANCE_TIME #time for floor to appear in a new world
 TEXT_APPEARANCE_TIME = OBJECT_APPEARANCE_TIME
 DEFAULT_SCENE_DURATION = 150
-DEFAULT_SCENE_BUFFER = 30 #frames
+DEFAULT_SCENE_BUFFER = 0 #This was used when multiple scenes were in blender at
+                         #once, which was basically never, and will never be.
+                         #Could just delete.
 
 '''
 Graph constants
@@ -183,9 +187,9 @@ ARROW_SCALE = [0.3, 0.3, 0.4]
 GRAPH_PADDING = 1
 CURVE_WIDTH = 0.04
 if RENDER_QUALITY == 'high':
-    PLOTTED_POINT_DENSITY = 80
+    PLOTTED_POINT_DENSITY = 100
 else:
-    PLOTTED_POINT_DENSITY = 8
+    PLOTTED_POINT_DENSITY = 20
 CURVE_Z_OFFSET = 0.01
 AUTO_TICK_SPACING_TARGET = 2 #Blender units
 HIGHLIGHT_POINT_UPDATE_TIME = OBJECT_APPEARANCE_TIME

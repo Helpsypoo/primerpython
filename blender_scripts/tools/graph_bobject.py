@@ -30,11 +30,14 @@ class GraphBobject(Bobject):
         tick_step = 'auto',
         arrows = True,
         centered = False,
-        high_res_curve_indices = [],
+        high_res_curve_indices = [0], #by default, make the first curve high res
         **kwargs
     ):
         if 'name' not in kwargs:
             kwargs['name'] = 'graph'
+        #Discrete functions usually use few points, but if they are animated
+        #with highlight points, it's helpful to have more points.
+        self.high_res_curve_indices = high_res_curve_indices
         super().__init__(**kwargs)
         if isinstance(x_range, int) or isinstance(x_range, float):
             x_range = [0, x_range]
@@ -69,9 +72,7 @@ class GraphBobject(Bobject):
         self.curve_highlight_points = []
         self.functions_curves = [] #Filled in self.add_function_curve()
         self.overlay_functions = overlay_functions
-        #Discrete functions usually use few points, but if they are animated
-        #with highlight points, it's helpful to have more points.
-        self.high_res_curve_indices = high_res_curve_indices
+
 
         if 'scale' in kwargs:
             scale = kwargs['scale']
@@ -357,17 +358,6 @@ class GraphBobject(Bobject):
         if len(self.functions_curves) != index + 1:
             raise Warning('Function count and index are out of sync.')
 
-        if index in self.high_res_curve_indices and \
-                                    len(cur.data.splines[0].bezier_points) > 1:
-            print("Adding points to graphed curve")
-            bpy.context.scene.objects.link(cur)
-            svg_bobject.add_points_to_curve_splines(
-                cur,
-                total_points = 200,
-                closed_loop = False
-            )
-            bpy.context.scene.objects.unlink(cur)
-
     def add_all_function_curves(self, curve_colors = 'same'):
         if curve_colors == 'same':
             colors = [3] * len(self.functions)
@@ -406,12 +396,26 @@ class GraphBobject(Bobject):
         )
         self.functions_curves[-1].add_to_blender(appear_frame = 0)
 
-    def animate_function_curve(self,
-        start_frame = 0,
+    def animate_function_curve(
+        self,
+        start_time = None,
+        end_time = None,
+        start_frame = None,
         end_frame = None,
         uniform_along_x = False,
         index = 0
     ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+        if end_time != None:
+            if end_frame != None:
+                raise Warning("You defined both end frame and end time. " +\
+                              "Just do one, ya dick.")
+            end_frame = int(end_time * FRAME_RATE)
+
         if end_frame == None:
             raise Warning('Need end frame to animate function curve, ya dick.')
 
@@ -423,19 +427,30 @@ class GraphBobject(Bobject):
         data.bevel_factor_end = 1
         data.keyframe_insert(data_path = 'bevel_factor_end', frame = end_frame)
 
-        if uniform_along_x == False:
-            pass
-        else:
+        if uniform_along_x == True:
             make_animations_linear(data)
 
     def animate_all_function_curves(
         self,
-        start_frame = 0,
+        start_time = None,
+        end_time = None,
+        start_frame = None,
         end_frame = None,
         uniform_along_x = False,
         start_window = 0,
         skip = 0
     ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+        if end_time != None:
+            if end_frame != None:
+                raise Warning("You defined both end frame and end time. " +\
+                              "Just do one, ya dick.")
+            end_frame = int(end_time * FRAME_RATE)
+
         num_curves = len(self.functions) - skip
         start_interval = (end_frame - start_frame) * start_window / num_curves
 
@@ -483,7 +498,7 @@ class GraphBobject(Bobject):
             func_index += len(self.functions)
         func = self.functions[func_index]
         coords = []
-        if isinstance(func, list):
+        if isinstance(func, list) and func_index not in self.high_res_curve_indices:
             #Discrete functions will be made from bezier curves
             #Assumes index can be treated as function input.
             condensed_func = []
@@ -548,11 +563,20 @@ class GraphBobject(Bobject):
         return coords
 
     def add_point_at_coord(self,
-        appear_frame = 0,
+        appear_time = None,
+        appear_frame = None,
         coord = [0, 0, 0],
         track_curve = None,
         axis_projections = False
     ):
+        if appear_time != None:
+            if appear_frame != None:
+                raise Warning("You defined both appear frame and appear time. " +\
+                              "Just do one, ya dick.")
+            appear_frame = appear_time * FRAME_RATE
+        elif appear_frame == None:
+            appear_frame = 0
+
         draw_space_coord = [
             coord[0] * self.domain_scale_factor,
             coord[1] * self.range_scale_factor,
@@ -610,12 +634,25 @@ class GraphBobject(Bobject):
     def animate_point(
         self,
         end_coord = None,
-        start_frame = 0,
+        start_time = None,
+        end_time = None,
+        start_frame = None,
         end_frame = None,
         point = None,
         in_place = False,
         track_curve = True
     ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+        if end_time != None:
+            if end_frame != None:
+                raise Warning("You defined both end frame and end time. " +\
+                              "Just do one, ya dick.")
+            end_frame = int(end_time * FRAME_RATE)
+
         if point == None:
             point = self.add_point_at_coord(
             appear_frame = start_frame - OBJECT_APPEARANCE_TIME,
@@ -809,11 +846,17 @@ class GraphBobject(Bobject):
     def multi_animate_point(
         self,
         point = None,
-        start_frame = 0,
+        start_time = None,
+        start_frame = None,
         x_of_t = None,
         frames_per_time_step = 1,
         full_coords = False
     ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
 
         #Handle defaults
         if point == None:

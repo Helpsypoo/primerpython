@@ -32,7 +32,7 @@ class IntroImage(Scene):
     def __init__(self):
 
         self.subscenes = collections.OrderedDict([
-            ('logo', {'duration': 240})
+            ('logo', {'duration': 2})
         ])
         super().__init__()
 
@@ -53,18 +53,18 @@ class IntroImage(Scene):
         apply_material(stroke.ref_obj.children[0], 'color3')
         logo.morph_chains[0][0].ref_obj.location[2] = -1
         logo.add_to_blender(
-            appear_frame = cues['logo']['start'],
+            appear_time = cues['logo']['start'],
             #subbobject_timing = [90, 30, 40, 50, 60, 70, 80],
             subbobject_timing = [42, 30, 33, 36, 39, 42, 45],
             animate = True
         )
-        logo.disappear(disappear_frame = scene_end)
+        logo.disappear(disappear_time = scene_end)
 '''
 '''
 class TheGoal(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('sim', {'duration': 240})
+            ('sim', {'duration': 33})
         ])
         super().__init__()
 
@@ -102,13 +102,13 @@ class TheGoal(Scene):
             initial_creatures.append(new_creature)
         sim = drawn_world.DrawnWorld(
             name = 'blob1_sim',
-            location = [6, 0, 0],
-            scale = 0.8,
-            appear_frame = cues['sim']['start'],
+            location = [6.5, 0, 0],
+            scale = 0.6,
+            #appear_frame = cues['sim']['start'],
             start_delay = 30,
             #save = True,
             #load = 'wte_eq_replication',
-            duration = scene_end - cues['sim']['start'],
+            sim_duration_seconds = cues['sim']['duration'],
             initial_creatures = initial_creatures,
             gene_updates = [
                 ['color', 'creature_color_1', 'birth_modifier', 30, 0],
@@ -117,39 +117,40 @@ class TheGoal(Scene):
                 ['color', 'creature_color_1', 'mutation_chance', 0, 0],
                 ['shape', 'shape1', 'mutation_chance', 0, 0],
                 ['size', '1', 'mutation_chance', 0, 0],
-                ['color', 'creature_color_1', 'death_modifier', 16, 0],
-                ['color', 'creature_color_1', 'replication_modifier', 10, 0],
+                ['color', 'creature_color_1', 'death_modifier', 6, 0],
+                ['color', 'creature_color_1', 'replication_modifier', 4, 0],
             ],
             #counter_alignment = 'top_left',
             #creature_model = ['stanford_bunny', 'creatures']
         )
 
-        equation.add_to_blender(appear_frame = cues['sim']['start'])
+        equation.add_to_blender(appear_time = cues['sim']['start'] + 2)
         #rhs.morph_figure(1, start_frame = 60)
 
 
         sim.add_to_blender(
-            appear_frame = cues['sim']['start'],
+            appear_time = cues['sim']['start'] + 2,
             animate = True
         )
 
         B = rhs.lookup_table[0][0]
         B.pulse(
-            frame = 60,
-            duration = 2 * OBJECT_APPEARANCE_TIME
+            time = cues['sim']['start'] + 11,
+            duration = 5 * FRAME_RATE,
         )
         B.color_shift(
-            start_frame = 60,
-            duration = 2 * OBJECT_APPEARANCE_TIME,
+            start_time = cues['sim']['start'] + 11,
+            duration = 5 * FRAME_RATE,
             color = COLORS_SCALED[3]
         )
 
         spontaneous = tex_bobject.TexBobject(
             '\\substack{\\text{Spontaneous} \\\\ \\text{birth chance}}',
             location = (-5.5, 5.5, 0),
-            centered = True
+            centered = True,
+            color = 'color2'
         )
-        spontaneous.add_to_blender(appear_frame = 60)
+        spontaneous.add_to_blender(appear_time = cues['sim']['start'] + 11)
 
         spont_arrow = gesture.Gesture(
             gesture_series = [
@@ -168,37 +169,39 @@ class TheGoal(Scene):
                         'head': (-5.5, 2.25, 0)
                     }
                 }
-            ]
+            ],
+            color = 'color2'
         )
-        spont_arrow.add_to_blender(appear_frame = 60)
-        spont_arrow.subbobjects[0].color_shift(
-            start_frame = 60,
+        spont_arrow.add_to_blender(appear_time = cues['sim']['start'] + 11)
+        """spont_arrow.subbobjects[0].color_shift(
+            start_time = cues['sim']['start'] + 10,
             duration = 2 * OBJECT_APPEARANCE_TIME,
             color = COLORS_SCALED[3]
         )
         for bobj in spontaneous.subbobjects:
             bobj.color_shift(
-                start_frame = 60,
+                start_time = cues['sim']['start'] + 10,
                 duration = 2 * OBJECT_APPEARANCE_TIME,
                 color = COLORS_SCALED[3]
-            )
+            )"""
 
         R = rhs.lookup_table[0][4]
         R.pulse(
-            frame = 120,
-            duration = 2 * OBJECT_APPEARANCE_TIME
+            time = cues['sim']['start'] + 17,
+            duration = 4 * FRAME_RATE
         )
         R.color_shift(
-            start_frame = 120,
-            duration = 2 * OBJECT_APPEARANCE_TIME,
+            start_time = cues['sim']['start'] + 17,
+            duration = 4 * FRAME_RATE,
             color = COLORS_SCALED[3]
         )
         replication = tex_bobject.TexBobject(
             '\\substack{\\text{Replication} \\\\ \\text{chance}}',
             location = (-5, -5.5, 0),
-            centered = True
+            centered = True,
+            color = 'color2'
         )
-        replication.add_to_blender(appear_frame = 120)
+        replication.add_to_blender(appear_time = cues['sim']['start'] + 17,)
 
         rep_arrow = gesture.Gesture(
             gesture_series = [
@@ -217,32 +220,38 @@ class TheGoal(Scene):
                         'head': (-4.2, -2.25, 0)
                     }
                 }
-            ]
+            ],
+            color = 'color2'
         )
-        rep_arrow.add_to_blender(appear_frame = 120)
-        rep_arrow.subbobjects[0].color_shift(
+        rep_arrow.add_to_blender(appear_time = cues['sim']['start'] + 17)
+        """rep_arrow.subbobjects[0].color_shift(
             start_frame = 120,
-            duration = 2 * OBJECT_APPEARANCE_TIME,
+            duration = 4 * FRAME_RATE,
             color = COLORS_SCALED[3]
         )
         for bobj in replication.subbobjects:
             bobj.color_shift(
-                start_frame = 120,
-                duration = 2 * OBJECT_APPEARANCE_TIME,
+                start_time = cues['sim']['start'] + 17,
+                duration = 4 * FRAME_RATE,
                 color = COLORS_SCALED[3]
-            )
+            )"""
 
-        rhs.morph_figure(1, start_frame = 210)
+        rhs.morph_figure(1, start_time = cues['sim']['start'] + 27)
         cross1 = rhs.lookup_table[1][1]
         apply_material(cross1.ref_obj.children[0], 'color6')
         cross2 = rhs.lookup_table[1][0]
         apply_material(cross2.ref_obj.children[0], 'color6')
+
+        remaining = [equation, sim, spont_arrow, spontaneous, replication, rep_arrow]
+        for thing in remaining:
+            thing.disappear(disappear_time = scene_end)
 '''
 '''
 class ThereWillBeGraphs(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('sim', {'duration': 720})
+            ('delay', {'duration': 0.5}),
+            ('sim', {'duration': 8}),
         ])
         super().__init__()
 
@@ -251,7 +260,7 @@ class ThereWillBeGraphs(Scene):
         cues = self.subscenes
         scene_end = self.duration
 
-        start_delay = 30
+        start_delay = 0.5
         sim_duration = 60
         #frames_per_time_step = 5
         #sim_duration_frames = sim_duration * frames_per_time_step
@@ -265,9 +274,9 @@ class ThereWillBeGraphs(Scene):
             name = 'blob1_sim',
             location = [-7.5, 0, 0],
             scale = 0.6,
-            appear_frame = cues['sim']['start'],
+            #appear_frame = cues['sim']['start'],
             start_delay = start_delay,
-            frames_per_time_step = 10,
+            frames_per_time_step = 7,
             #save = True,
             #load = 'wte_eq_replication',
             sim_duration = sim_duration,
@@ -283,7 +292,7 @@ class ThereWillBeGraphs(Scene):
                 #['color', 'creature_color_1', 'replication_modifier', 10, 0],
             ]
         )
-        sim.add_to_blender(appear_frame = 0)
+        sim.add_to_blender(appear_time = cues['sim']['start'])
 
         func = sim.get_creature_count_by_t()
         graph = graph_bobject.GraphBobject(
@@ -301,26 +310,25 @@ class ThereWillBeGraphs(Scene):
             centered = True,
             arrows = True
         )
-        graph.add_to_blender(appear_frame = 0)
+        graph.add_to_blender(appear_time = cues['sim']['start'])
         graph.animate_function_curve(
-            start_frame = start_delay,
-            end_frame = start_delay + sim.sim_duration_in_frames,
+            start_time = cues['sim']['start'] + start_delay,
+            end_time = cues['sim']['start'] + start_delay + 7,
             uniform_along_x = True
         )
         appear_coord = [0, func[0], 0]
         point = graph.add_point_at_coord(
             coord = appear_coord,
-            appear_frame = 0,
+            appear_time = cues['sim']['start'],
             axis_projections = True,
-            track_curve = True
+            track_curve = 0
         )
         graph.animate_point(
             end_coord = [sim_duration, 0, 0],
-            start_frame = start_delay,
-            end_frame = start_delay + sim.sim_duration_in_frames,
+            start_time = cues['sim']['start'] + start_delay,
+            end_time = cues['sim']['start'] + start_delay + 7,
             point = point
         )
-
         #Rate-number graph
         def func2(x): return 1 - x / 10
         graph2 = graph_bobject.GraphBobject(
@@ -338,24 +346,26 @@ class ThereWillBeGraphs(Scene):
             centered = True,
             arrows = True
         )
-        graph2.add_to_blender()
+        graph2.add_to_blender(appear_time = cues['sim']['start'])
         appear_coord = [func[0], func2(func[0]), 0]
         point2 = graph2.add_point_at_coord(
             coord = appear_coord,
-            appear_frame = start_delay,
+            appear_time = cues['sim']['start'],
             axis_projections = True,
-            track_curve = True
+            track_curve = 0
         )
-        #This needs to change to account for the new frames_per_time_step
-        #parameter. This function assumes it's always 1, but it's not.
         graph2.multi_animate_point(
-            start_frame = start_delay,
+            start_time = cues['sim']['start'] + start_delay,
             point = point2,
             x_of_t = func, #Not func2. This uses the sim data to inform movements
             frames_per_time_step = sim.frames_per_time_step
         )
+
+        #remaining = [equation, sim, spont_arrow, spontaneous, replication, rep_arrow]
+        #for thing in remaining:
+        #    thing.disappear(disappear_time = scene_end)
 '''
-'''
+#'''
 class ChickenEgg(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -417,7 +427,7 @@ class ChickenEgg(Scene):
             scale = 3
         )
         wha.add_to_blender(appear_frame = 180)
-'''
+#'''
 '''
 class FirstKindOfGraph(Scene):
     def __init__(self):
@@ -485,7 +495,7 @@ class FirstKindOfGraph(Scene):
         graph.add_to_blender(appear_frame = 0)
         graph.animate_function_curve(
             start_frame = start_delay,
-            end_frame = start_delay + sim.sim_duration_in_frames,
+            end_frame = start_delay + sim.animated_duration,
             uniform_along_x = True
         )
         appear_coord = [0, func[0], 0]
@@ -493,12 +503,12 @@ class FirstKindOfGraph(Scene):
             coord = appear_coord,
             appear_frame = 0,
             axis_projections = True,
-            track_curve = True
+            track_curve = 0
         )
         graph.animate_point(
             end_coord = [sim_duration, 0, 0],
             start_frame = start_delay,
-            end_frame = start_delay + sim.sim_duration_in_frames,
+            end_frame = start_delay + sim.animated_duration,
             point = point
         )
 
@@ -569,7 +579,7 @@ class FirstKindOfGraph(Scene):
         graph2.add_to_blender(appear_frame = cues['two_sims']['start'])
         graph2.animate_function_curve(
             start_frame = cues['two_sims']['start'] + start_delay,
-            end_frame = cues['two_sims']['start'] + start_delay + sim2.sim_duration_in_frames,
+            end_frame = cues['two_sims']['start'] + start_delay + sim2.animated_duration,
             uniform_along_x = True
         )
         appear_coord = [0, func2[0], 0]
@@ -577,12 +587,12 @@ class FirstKindOfGraph(Scene):
             coord = appear_coord,
             appear_frame = 0,
             axis_projections = True,
-            track_curve = True
+            track_curve = 0
         )
         graph2.animate_point(
             end_coord = [sim_duration, 0, 0],
             start_frame = cues['two_sims']['start'] + start_delay,
-            end_frame = cues['two_sims']['start'] + start_delay + sim2.sim_duration_in_frames,
+            end_frame = cues['two_sims']['start'] + start_delay + sim2.animated_duration,
             point = point
         )
 
@@ -640,7 +650,7 @@ class FirstKindOfGraph(Scene):
         graph3.add_to_blender(appear_frame = cues['three_sims']['start'])
         graph3.animate_function_curve(
             start_frame = cues['three_sims']['start'] + start_delay,
-            end_frame = cues['three_sims']['start'] + start_delay + sim3.sim_duration_in_frames,
+            end_frame = cues['three_sims']['start'] + start_delay + sim3.animated_duration,
             uniform_along_x = True
         )
         appear_coord = [0, func3[0], 0]
@@ -648,12 +658,12 @@ class FirstKindOfGraph(Scene):
             coord = appear_coord,
             appear_frame = 0,
             axis_projections = True,
-            track_curve = True
+            track_curve = 0
         )
         graph3.animate_point(
             end_coord = [sim_duration, 0, 0],
             start_frame = cues['three_sims']['start'] + start_delay,
-            end_frame = cues['three_sims']['start'] + start_delay + sim3.sim_duration_in_frames,
+            end_frame = cues['three_sims']['start'] + start_delay + sim3.animated_duration,
             point = point
         )
 '''
@@ -815,7 +825,7 @@ class FunctionTime(Scene):
             coord = appear_coord,
             appear_frame = 540,
             axis_projections = True,
-            track_curve = True
+            track_curve = 0
         )
         graph.animate_point(
             end_coord = [10, 0, 0],
@@ -945,13 +955,15 @@ class EquationToFunction(Scene):
             "\\Delta",
             centered = True
         )
-        equals2.superbobject = equation
-        slhs.superbobject = equation
-        equals2.ref_obj.parent = equation.ref_obj
-        slhs.ref_obj.parent = equation.ref_obj
+        #equals2.superbobject = equation
+        #slhs.superbobject = equation
+        #equals2.ref_obj.parent = equation.ref_obj
+        #slhs.ref_obj.parent = equation.ref_obj
+        equation.add_tex_bobject(equals2, 0)
+        equation.add_tex_bobject(slhs, 0)
         equals2.add_to_blender(appear_frame = cues['equation']['start'] + 60)
         slhs.add_to_blender(appear_frame = cues['equation']['start'] + 60)
-        equation.subbobjects = [slhs, equals2, lhs, equals, rhs]
+        #equation.subbobjects = [slhs, equals2, lhs, equals, rhs]
         equation.arrange_tex_bobjects(
             start_frame = cues['equation']['start'] + 60,
             end_frame = cues['equation']['start'] + 60 + DEFAULT_MORPH_TIME
@@ -1838,7 +1850,7 @@ class FirstRateCurve(Scene):
             start_frame = cues['graph']['start'] + 600,
             end_frame = cues['graph']['start'] + 630,
             point = point,
-            track_curve = True
+            track_curve = 0
         )
         #Above equilibrium
         graph.animate_point(
@@ -1860,7 +1872,7 @@ class FirstRateCurve(Scene):
             start_frame = cues['graph']['start'] + 780,
             end_frame = cues['graph']['start'] + 810,
             point = point,
-            track_curve = True
+            track_curve = 0
         )
 
         stable = tex_bobject.TexBobject(
@@ -2012,7 +2024,7 @@ class FirstRateCurve(Scene):
         )
 
         #Many sims
-        num_sims = 20
+        num_sims = 50
         for i in range(num_sims):
             sim.simulate()
             func = sim.get_creature_count_by_t()
@@ -2674,7 +2686,7 @@ class Exponential(Scene):
             appear_frame = cues['ntgraph']['start'] + 960
         )
 '''
-#'''
+'''
 class Extinction(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -3109,4 +3121,4 @@ class Extinction(Scene):
         spread.add_to_blender(
             appear_frame = cues['ntgraph']['start'] + 1360
         )
-#'''
+'''

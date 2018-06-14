@@ -118,10 +118,21 @@ class TexBobject(SVGBobject):
     def morph_figure(
         self,
         final_index,
-        start_frame = 0,
+        start_time = None,
+        start_frame = None,
         duration = DEFAULT_MORPH_TIME
     ):
-        super().morph_figure(final_index, start_frame = start_frame, duration = duration)
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+
+        super().morph_figure(
+            final_index,
+            start_frame = start_frame,
+            duration = duration
+        )
 
         self.active_expression_path = self.paths[final_index]
 

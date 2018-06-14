@@ -66,12 +66,23 @@ class Bobject(object):
         bobj.superbobject = self
 
     def add_to_blender(self,
-        appear_frame = 0,
+        appear_frame = None,
+        appear_time = None,
         animate = True,
         subbobject_timing = 'start',
         transition_time = OBJECT_APPEARANCE_TIME,
         is_creature = False
     ):
+        if appear_time != None:
+            if appear_frame != None:
+                raise Warning("You defined both appear frame and appear time. " +\
+                              "Just do one, ya dick.")
+            appear_frame = appear_time * FRAME_RATE
+        elif appear_frame == None:
+            appear_frame = 0
+
+
+
         main_obj = self.ref_obj
         if main_obj.name not in bpy.context.scene.objects:
             bpy.context.scene.objects.link(main_obj)
@@ -157,16 +168,21 @@ class Bobject(object):
             raise Warning("So many types are accepted for subbobject_timing, "
                           "but you still managed to give an invalid value.")
 
-
     #Keyframe additions
     def disappear(self,
         disappear_frame = None,
+        disappear_time = None,
         animate = True,
         no_shrink = False,
         is_creature = False
     ):
+        if disappear_time != None:
+            if disappear_frame != None:
+                raise Warning("You defined both disappear frame and disappear time. " +\
+                              "Just do one, ya dick.")
+            disappear_frame = disappear_time * FRAME_RATE
         if disappear_frame == None:
-            raise Warning('Must specify frame for bobject disappearance')
+            raise Warning('Must specify frame or time for bobject disappearance')
 
         main_obj = self.ref_obj
 
@@ -210,6 +226,8 @@ class Bobject(object):
 
     def move_to(
         self,
+        start_time = None,
+        end_time = None,
         start_frame = None,
         end_frame = None,
         displacement = None,
@@ -217,6 +235,19 @@ class Bobject(object):
         new_scale = None,
         new_angle = None
     ):
+        #Convert time args to frames
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+        if end_time != None:
+            if end_frame != None:
+                raise Warning("You defined both end frame and end time. " +\
+                              "Just do one, ya dick.")
+            end_frame = int(end_time * FRAME_RATE)
+
+        #Ensure start and end frame defined.
         if start_frame == None:
             if end_frame == None:
                 raise Warning('Need start frame and/or end frame for move_to')
@@ -257,9 +288,22 @@ class Bobject(object):
     def spiny(
         self,
         spin_rate = 1, #Revolutions per second
+        start_time = None,
+        end_time = None,
         start_frame = None,
         end_frame = None
     ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+        if end_time != None:
+            if end_frame != None:
+                raise Warning("You defined both end frame and end time. " +\
+                              "Just do one, ya dick.")
+            end_frame = int(end_time * FRAME_RATE)
+
         if start_frame == None:
             raise Warning('Need start frame for spin function')
         if end_frame == None:
@@ -268,7 +312,7 @@ class Bobject(object):
         obj = self.ref_obj
         obj.keyframe_insert(data_path="rotation_euler", frame = start_frame)
 
-        new_y = spin_rate * (start_frame - end_frame) / 60 #60 fps
+        new_y = spin_rate * (start_frame - end_frame) / FRAME_RATE
 
         obj.rotation_euler[1] = new_y
         obj.keyframe_insert(
@@ -278,12 +322,25 @@ class Bobject(object):
 
     def pulse(
         self,
-        frame = 0,
+        time = None,
+        frame = None,
         factor = 1.2,
-        attack = OBJECT_APPEARANCE_TIME / 2,
-        decay = OBJECT_APPEARANCE_TIME / 2,
-        duration = OBJECT_APPEARANCE_TIME,
+        attack = OBJECT_APPEARANCE_TIME,
+        decay = OBJECT_APPEARANCE_TIME,
+        duration_time = None,
+        duration = OBJECT_APPEARANCE_TIME * 2,
     ):
+        if time != None:
+            if frame != None:
+                raise Warning("You defined both frame and time. " +\
+                              "Just do one, ya dick.")
+            frame = time * FRAME_RATE
+        if duration_time != None:
+            if duration != None:
+                raise Warning("You defined duration by both frames and time. " +\
+                              "Just do one, ya dick.")
+            duration = duration_time * FRAME_RATE
+
         obj = self.ref_obj
         obj.keyframe_insert(data_path="scale", frame = frame)
         obj.scale *= factor
@@ -295,10 +352,17 @@ class Bobject(object):
     def color_shift(
         self,
         color = COLORS_SCALED[3],
-        start_frame = 0,
+        start_time = None,
+        start_frame = None,
         duration = OBJECT_APPEARANCE_TIME * 2,
         shift_time = OBJECT_APPEARANCE_TIME
     ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both frame and time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+
         if duration < shift_time * 2:
             shift_time = duration / 2
             print('Adjusted shift time')
@@ -340,6 +404,8 @@ class MeshMorphBobject(Bobject):
 
     def add_to_blender(self, **kwargs):
         super().add_to_blender(**kwargs)
+        if 'appear_time' in kwargs:
+            kwargs['appear_frame'] = kwargs['appear_time'] * FRAME_RATE
         self.series[0].add_to_blender(
             animate = False,
             appear_frame = kwargs['appear_frame']
@@ -360,7 +426,30 @@ class MeshMorphBobject(Bobject):
         subbobject.ref_obj.parent = self.ref_obj
         subbobject.superbobject = self
 
-    def morph_bobject(self, initial_index, final_index, start_frame, end_frame, dissolve_time = 0):
+    def morph_bobject(
+        self,
+        initial_index,
+        final_index,
+        start_time = None,
+        end_time = None,
+        start_frame = None,
+        end_frame = None,
+        dissolve_time = 0
+    ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+        if end_time != None:
+            if end_frame != None:
+                raise Warning("You defined both end frame and end time. " +\
+                              "Just do one, ya dick.")
+            end_frame = int(end_time * FRAME_RATE)
+
+        if start_frame == None or end_frame == None:
+            raise Warning("Need to define start/end frame/time to morph bobject")
+
         self.series[initial_index].disappear(
             disappear_frame = start_frame + 1,
             animate = False
@@ -465,7 +554,6 @@ class MeshMorphBobject(Bobject):
         turb = bpy.context.object
         turb.parent = self.particle_controller.parent
         turb.field.strength = 1'''
-
 
     def key_particles(self, start, end, start_frame, end_frame, backward = False, dissolve_time = 0):
         #Once to shoot particles out of the original object

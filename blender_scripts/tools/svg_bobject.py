@@ -95,6 +95,15 @@ class SVGBobject(Bobject):
         else:
         #This part is a bit fragile because it assumes appear_frame is in kwargs
             if appear_mode == 'per_curve':
+                #Convert time args to frames. Need to do this before passing to
+                #super so timing can be manipulated.
+                if 'appear_time' in kwargs:
+                    if 'appear_frame' in kwargs:
+                        raise Warning("You defined both start frame and start time." +\
+                                      "Just do one, ya dick.")
+                    kwargs['appear_frame'] = kwargs['appear_time'] * FRAME_RATE
+                    kwargs['appear_time'] = None #Avoid passing non-None appear
+                                                  #time to super
                 #Bobject appears early but with each curve at size zero, then
                 #the curves morph to non-zero size, making it look like the
                 #curves appear independently.
@@ -114,7 +123,7 @@ class SVGBobject(Bobject):
             super().add_to_blender(**kwargs)
             self.morph_figure(
                 0,
-                start_frame = kwargs['appear_frame'] + DEFAULT_MORPH_TIME,
+                start_frame = self.appear_frame + DEFAULT_MORPH_TIME,
                 duration = transition_time
             )
 
@@ -131,6 +140,15 @@ class SVGBobject(Bobject):
 
         if disappear_mode == 'per_curve' and \
             self.transition_type == 'morph' and animate == True:
+
+            if 'disappear_time' in kwargs:
+                if 'disappear_frame' in kwargs:
+                    raise Warning("You defined both disappear frame and disappear time." +\
+                                  "Just do one, ya dick.")
+                kwargs['disappear_frame'] = kwargs['disappear_time'] * FRAME_RATE
+                kwargs['disappear_time'] = None #Avoid passing non-None appear
+                                              #time to super
+
             #Bobject appears early but with each curve at size zero, then
             #the curves morph to non-zero size, making it look like the
             #curves appear independently.
@@ -675,9 +693,16 @@ class SVGBobject(Bobject):
     def morph_figure(
         self,
         final_index,
-        start_frame = 0,
+        start_time = None,
+        start_frame = None,
         duration = DEFAULT_MORPH_TIME
     ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time." +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+
         print('Morphing ' + self.ref_obj.name + ' to shape ' + str(final_index + 1) + \
                 ' of ' + str(len(self.paths)))
         #duration = 60

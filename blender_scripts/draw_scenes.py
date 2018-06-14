@@ -141,7 +141,7 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION):
 
     #set up timeline
     bpy.data.scenes["Scene"].frame_start = 0
-    bpy.data.scenes["Scene"].frame_end = total_duration
+    bpy.data.scenes["Scene"].frame_end = total_duration * FRAME_RATE
     bpy.context.scene.frame_set(0)
 
     #create camera and light

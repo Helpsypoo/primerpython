@@ -40,15 +40,33 @@ class TexComplex(Bobject):
         self.centered = centered
         self.multiline = multiline
         self.line_height = line_height
-        self.tex_bobjects = subbobjects
+        self.tex_bobjects = list(subbobjects)
         self.annotations = []
 
     def add_to_blender(self, **kwargs):
         self.arrange_tex_bobjects()
-        self.arrange_annotations()
         super().add_to_blender(**kwargs)
 
-    def arrange_tex_bobjects(self, start_frame = None, end_frame = None, centered = None):
+    def arrange_tex_bobjects(
+        self,
+        start_time = None,
+        end_time = None,
+        start_frame = None,
+        end_frame = None,
+        centered = None
+    ):
+        #Convert time args to frames
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time." +\
+                              "Just do one, ya dick.")
+            start_frame = start_time * FRAME_RATE
+        if end_time != None:
+            if end_frame != None:
+                raise Warning("You defined both end frame and end time." +\
+                              "Just do one, ya dick.")
+            end_frame = end_time * FRAME_RATE
+
         t_bobjs = self.tex_bobjects
 
         #for t_bobj in t_bobjs:
@@ -100,8 +118,6 @@ class TexComplex(Bobject):
         if end_frame != None:
             for t_bobj in t_bobjs:
                 t_bobj.ref_obj.keyframe_insert(data_path = 'location', frame = end_frame)
-
-
 
     def add_annotation(
         self,
@@ -275,7 +291,9 @@ class TexComplex(Bobject):
         container.add_subbobject(label_text)
         self.add_subbobject(container)
 
-
-
-    def arrange_annotations(self):
-        pass
+    def add_tex_bobject(self, bobj, index = None):
+        super().add_subbobject(bobj)
+        if index == None:
+            self.tex_bobjects.append(bobj)
+        else:
+            self.tex_bobjects.insert(index, bobj)
