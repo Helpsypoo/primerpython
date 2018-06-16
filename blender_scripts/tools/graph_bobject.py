@@ -877,7 +877,8 @@ class GraphBobject(Bobject):
                 update_time = min(HIGHLIGHT_POINT_UPDATE_TIME,
                                   (x_of_t[i+1][0] - t) * frames_per_time_step)
             except: #Should only run for last element
-                update_time = HIGHLIGHT_POINT_UPDATE_TIME
+                #update_time = HIGHLIGHT_POINT_UPDATE_TIME
+                update_time = frames_per_time_step
 
             end_frame = start_frame + t * frames_per_time_step + update_time
             #Haven't tested this, but trying to making it so I can pass a list
@@ -996,7 +997,7 @@ class GraphBobject(Bobject):
 
             if 'new_scale' in kwargs:
                 scale = kwargs['new_scale']
-                if isinstance(scale, float):
+                if isinstance(scale, (float, int)):
                     scale = [scale] * 3
             else: scale = self.ref_obj.scale
 

@@ -149,17 +149,17 @@ class TexBobject(SVGBobject):
             )
         for i, annotation in enumerate(self.annotations):
             gesture = annotation[0].subbobjects[0]
-            label = annotation[0].subbobjects[1]
+            label = gesture.subbobjects[0].subbobjects[0]
             for j, target in enumerate(annotation[1]):
-                if target != None and target[0] == final_index and j > 0:
-                    old_loc = deepcopy(gesture.subbobjects[0].ref_obj.location)
+                if target[0] == final_index and j > 0:
+                    #old_loc = deepcopy(gesture.subbobjects[0].ref_obj.location)
                     gesture.morph_figure(
                         j,
                         start_frame = start_frame,
                         duration = duration
                     )
-                    new_loc = deepcopy(gesture.subbobjects[0].ref_obj.location)
-                    d_loc = new_loc - old_loc
+                    #new_loc = deepcopy(gesture.subbobjects[0].ref_obj.location)
+                    d_loc = [0, 0, 0]#new_loc - old_loc
 
                     for t_bobj in label.tex_bobjects:
                         t_bobj.morph_figure(
@@ -184,7 +184,8 @@ class TexBobject(SVGBobject):
 
                     label.move_to(
                         start_frame = start_frame,
-                        displacement = d_loc
+                        displacement = d_loc,
+                        new_angle = [0, 0, -label.ref_obj.parent.rotation_euler[2]]
                     )
                     break
 

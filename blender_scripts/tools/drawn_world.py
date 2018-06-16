@@ -94,6 +94,12 @@ class DrawnWorld(TwoDWorld, Bobject):
         #self.world_radius = self.scale[0] * self.radius #attribute of TwoDWorld
         self.start_delay = int(start_delay * FRAME_RATE)
         #self.disappear_frame = self.start_frame + self.sim_duration
+
+        #Pauses are given in sim time. Translate to frame time because that's
+        #how they're used. Should rethink what to define with which units.
+        for pause in pauses:
+            pause[0] *= frames_per_time_step
+            pause[1] *= frames_per_time_step
         self.pauses = pauses
 
         self.info = []
@@ -421,6 +427,20 @@ class DrawnWorld(TwoDWorld, Bobject):
 
     def move_to(self, new_counter_alignment = None, **kwargs):
         super().move_to(**kwargs)
+
+        #Convert start_time to start_frame (and/or end)
+        if 'start_time' in kwargs:
+            if 'start_frame' in kwargs:
+                raise Warning("You defined both start frame and start time." + \
+                              "Just do one, ya dick.")
+            kwargs['start_frame'] = kwargs['start_time'] * FRAME_RATE
+        if 'end_time' in kwargs:
+            if 'end_frame' in kwargs:
+                raise Warning("You defined both end frame and end time." + \
+                              "Just do one, ya dick.")
+            kwargs['end_frame'] = kwargs['end_time'] * FRAME_RATE
+
+        #Ensure start_frame and end_frame are set
         if 'start_frame' in kwargs:
             start_frame = kwargs['start_frame']
         else:

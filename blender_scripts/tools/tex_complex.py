@@ -109,7 +109,7 @@ class TexComplex(Bobject):
             for t_bobj in t_bobjs:
                 t_bobj.ref_obj.location[0] -= next_align / 2
 
-        for t_bobj in t_bobjs:
+        for i, t_bobj in enumerate(t_bobjs):
             #If any annotations are targeting the current t_bobj, move them too
             for annotation in self.annotations:
                 if annotation[1] == i:
@@ -130,11 +130,13 @@ class TexComplex(Bobject):
         #calc points from targets
         gesture_series = []
         tex_bobj = self.tex_bobjects[targets[0]]
-        label_anchor = None
-        for target in targets[1]:
+        #label_anchor = None
+        for j, target in enumerate(targets[1]):
             bobjs = []
             path = tex_bobj.paths[target[0]]
             for i in range(target[1], target[2] + 1):
+                #print(j)
+                #print(i)
                 bobjs.append(tex_bobj.imported_svg_data[path]['curves'][i])
 
             left_most = math.inf
@@ -175,8 +177,8 @@ class TexComplex(Bobject):
                             y - length,
                             0)
                     rot = (0, 0, math.pi)
-                if label_anchor == None:
-                    label_anchor = list(head)
+                    #if label_anchor == None:
+                    #    label_anchor = list(head)
                 gesture_series.append(
                     {
                         'type' : None,
@@ -198,8 +200,8 @@ class TexComplex(Bobject):
                     annotation_point = ((right_most + left_most) / 2, y - length, 0)
                     left_point = [right_most, y, 0]
                     right_point = [left_most, y, 0]
-                if label_anchor == None:
-                    label_anchor = list(annotation_point)
+                    #if label_anchor == None:
+                    #    label_anchor = list(annotation_point)
                 gesture_series.append(
                     {
                         'type' : 'bracket',
@@ -229,8 +231,8 @@ class TexComplex(Bobject):
                     tail = ((right_most + left_most) / 2 - math.tan(angle) * length,
                             y - length,
                             0)
-                if label_anchor == None:
-                    label_anchor = list(tail)
+                    #if label_anchor == None:
+                    #    label_anchor = list(tail)
                 gesture_series.append(
                     {
                         'type' : 'arrow',
@@ -246,9 +248,9 @@ class TexComplex(Bobject):
         container = bobject.Bobject(name = 'annotation')
 
         gest = gesture.Gesture(gesture_series = gesture_series, color = 'color2')
+        container.add_subbobject(gest)
         tex_bobj.annotations.append([container, targets[1], alignment])
         self.annotations.append([container, targets[0]])
-        container.add_subbobject(gest)
 
         #Make TexComplex for the annotation_text
         t_bobj_count = 0
@@ -268,8 +270,8 @@ class TexComplex(Bobject):
         scale = 0.67 #Smaller than text. Could do this in a more robust way
         line_height = 1.2 #Could make this a constant. It's already a default.
         dy = (1/2 + t_bobj_count) / 2 * line_height * scale
-        if alignment == 'bottom':
-            dy = -dy
+        #if alignment == 'bottom':
+        #    dy = -dy
 
         #Some t_bobjs may start with empty expressions. Initial position
         #shouldn't take empty lines into account, and position will be adjusted on morph
@@ -278,17 +280,19 @@ class TexComplex(Bobject):
                 if t_bobj.paths[0] == None:
                     dy -= line_height * scale
 
-        label_anchor[1] += dy
+        #label_anchor[1] += dy
 
         label_text = TexComplex(
             *t_bobjs,
             multiline = True,
             centered = True,
             scale = 0.67,
-            location = label_anchor
+            name = 'label',
+            location = (0, dy, 0),#label_anchor
+            rotation_euler = [0, 0, -gest.subbobjects[0].ref_obj.rotation_euler[2]]
         )
 
-        container.add_subbobject(label_text)
+        gest.subbobjects[0].add_subbobject(label_text)
         self.add_subbobject(container)
 
     def add_tex_bobject(self, bobj, index = None):

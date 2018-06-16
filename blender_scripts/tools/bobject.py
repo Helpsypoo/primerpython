@@ -328,7 +328,7 @@ class Bobject(object):
         attack = OBJECT_APPEARANCE_TIME,
         decay = OBJECT_APPEARANCE_TIME,
         duration_time = None,
-        duration = OBJECT_APPEARANCE_TIME * 2,
+        duration = OBJECT_APPEARANCE_TIME * 4,
     ):
         if time != None:
             if frame != None:
@@ -354,7 +354,7 @@ class Bobject(object):
         color = COLORS_SCALED[3],
         start_time = None,
         start_frame = None,
-        duration = OBJECT_APPEARANCE_TIME * 2,
+        duration = OBJECT_APPEARANCE_TIME * 4,
         shift_time = OBJECT_APPEARANCE_TIME
     ):
         if start_time != None:
@@ -363,9 +363,10 @@ class Bobject(object):
                               "Just do one, ya dick.")
             start_frame = int(start_time * FRAME_RATE)
 
-        if duration < shift_time * 2:
-            shift_time = duration / 2
-            print('Adjusted shift time')
+        if duration != None:
+            if duration < shift_time * 2:
+                shift_time = duration / 2
+                print('Adjusted shift time')
 
         #For now, only works for simple bobjects
         obj = self.ref_obj.children[0]

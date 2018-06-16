@@ -64,7 +64,7 @@ elif color_scheme == 2:
     #Coolors Exported Palette - coolors.co/191308-bbd8b3-f3b61f-48a0c9-72120d
     COLORS = [
         #[42, 46, 48, 1], #Three darker than first video
-        [47, 51, 54, 1], #Three darker than first video
+        [47, 51, 54, 1], #Two darker than first video
         #[211, 208, 203, 1],
         [243, 242, 240, 1],
         [62, 126, 160, 1],
@@ -135,7 +135,7 @@ DEFAULT_POP_CAP = 3000
 '''
 Sim motion constants
 '''
-CREATURE_BUBBLE_WIDTH = 0.3
+CREATURE_BUBBLE_WIDTH = 0.1
 BOUNCE_DAMP_FACTOR = 0.8
 FLOOR_PADDING = 1
 BLINK_CHANCE = 0.01

@@ -99,7 +99,7 @@ class SVGBobject(Bobject):
                 #super so timing can be manipulated.
                 if 'appear_time' in kwargs:
                     if 'appear_frame' in kwargs:
-                        raise Warning("You defined both start frame and start time." +\
+                        raise Warning("You defined both start frame and start time." + \
                                       "Just do one, ya dick.")
                     kwargs['appear_frame'] = kwargs['appear_time'] * FRAME_RATE
                     kwargs['appear_time'] = None #Avoid passing non-None appear
