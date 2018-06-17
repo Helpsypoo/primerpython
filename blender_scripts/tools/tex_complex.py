@@ -164,6 +164,11 @@ class TexComplex(Bobject):
                             if y > candidatey:
                                 y = candidatey
 
+            if isinstance(angle, (float, int)):
+                this_angle = angle
+            elif isinstance(angle, list):
+                this_angle = angle[j]
+
             if len(target) > 3 and target[3] == None: #No bobjs, empty gesture. HEH.
                 if alignment == 'top':
                     #y += 0 * self.scale[1] * tex_bobj.scale[1]
@@ -217,18 +222,18 @@ class TexComplex(Bobject):
                 (len(target) == 3 and len(bobjs) == 1): #Arrow
                 if alignment == 'top':
                     y += 0.4 * self.scale[1] * tex_bobj.scale[1]
-                    head = ((right_most + left_most) / 2 + math.tan(angle) * 0.4,
+                    head = ((right_most + left_most) / 2 + math.tan(this_angle) * 0.4,
                             y,
                             0)
-                    tail = ((right_most + left_most) / 2 + math.tan(angle) * length,
+                    tail = ((right_most + left_most) / 2 + math.tan(this_angle) * length,
                             y + length,
                             0)
                 elif alignment == 'bottom':
                     y -= 0.4 * self.scale[1] * tex_bobj.scale[1]
-                    head = ((right_most + left_most) / 2 - math.tan(angle) * 0.4,
+                    head = ((right_most + left_most) / 2 - math.tan(this_angle) * 0.4,
                             y,
                             0)
-                    tail = ((right_most + left_most) / 2 - math.tan(angle) * length,
+                    tail = ((right_most + left_most) / 2 - math.tan(this_angle) * length,
                             y - length,
                             0)
                     #if label_anchor == None:

@@ -1550,8 +1550,8 @@ class InTermsOfN(Scene):
         graph = graph_bobject.GraphBobject(
             #func,
             x_range = [0, 10],
-            y_range = [0, 10],
-            tick_step = [None, None],
+            y_range = [-1, 2],
+            tick_step = [5, 1],
             width = 10,
             height = 10,
             x_label = 'N',
@@ -1668,7 +1668,8 @@ class FirstRateCurve(Scene):
                 [],
                 ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
             ],
-            alignment = 'bottom'
+            alignment = 'bottom',
+            angle = math.pi / 4
         )
         equation.add_annotation(
             targets = [
@@ -2062,8 +2063,8 @@ class FirstRateCurve(Scene):
 class AddReplication(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('graph', {'duration': 1200}),
-            ('ntgraph', {'duration': 1000}),
+            ('graph', {'duration': 27}),
+            ('ntgraph', {'duration': 45}),
         ])
         super().__init__()
 
@@ -2083,7 +2084,7 @@ class AddReplication(Scene):
 
         graph = graph_bobject.GraphBobject(
             func, func2, func3,
-            x_range = [0, 11],
+            x_range = [0, 10],
             y_range = [-1, 2],
             tick_step = [5, 1],
             width = 10,
@@ -2096,11 +2097,12 @@ class AddReplication(Scene):
             centered = True,
             arrows = True,
         )
-        graph.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
+        graph.add_to_blender(appear_time = cues['graph']['start'] - 0.5)
 
         rhs = tex_bobject.TexBobject(
             "1 + (0-0.2) \\times N",
             "1 + (0.1-0.2) \\times N",
+            "1 + (0.2-0.2) \\times N",
             "1 + (0.2-0.2) \\times N",
             "1 + (0.2-0.2) \\times N",
             centered = True
@@ -2127,6 +2129,7 @@ class AddReplication(Scene):
                     [1, 0, 0],
                     [2, 0, 0],
                     [3, 0, 0, None],
+                    [4, 0, 0],
                 ],
             ],
             labels = [
@@ -2134,8 +2137,10 @@ class AddReplication(Scene):
                 ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
                 ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
                 [],
+                ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
             ],
-            alignment = 'bottom'
+            alignment = 'bottom',
+            angle = [math.pi / 4, 0, 0, 0, 0]
         )
         equation.add_annotation(
             targets = [
@@ -2145,6 +2150,7 @@ class AddReplication(Scene):
                     [1, 3, 5, 'arrow'],  #form, first char, last char
                     [2, 3, 5, 'arrow'],
                     [3, 3, 5, None],
+                    [4, 3, 5, 'arrow'],
                 ],
             ],
             labels = [
@@ -2152,6 +2158,7 @@ class AddReplication(Scene):
                 ['\\text{Replication chance}', '\\text{per creature}'],
                 ['\\text{Replication chance}', '\\text{per creature}'],
                 [],
+                ['\\text{Replication chance}', '\\text{per creature}'],
             ],
             alignment = 'top'
         )
@@ -2163,6 +2170,7 @@ class AddReplication(Scene):
                     [1, 7, 9, 'arrow'],
                     [2, 7, 9, 'arrow'],
                     [3, 7, 9, None],
+                    [4, 7, 9, 'arrow'],
                 ],
             ],
             labels = [
@@ -2170,11 +2178,12 @@ class AddReplication(Scene):
                 ['\\text{Death chance}', '\\text{per creature}'],
                 ['\\text{Death chance}', '\\text{per creature}'],
                 [],
+                ['\\text{Death chance}', '\\text{per creature}'],
             ],
             alignment = 'bottom'
         )
         equation.add_to_blender(
-            appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME,
+            appear_time = cues['graph']['start'] - 0.5,
             animate = False
         )
         eq_arrow = gesture.Gesture(
@@ -2197,9 +2206,9 @@ class AddReplication(Scene):
             color = 'color2'
         )
         eq_arrow.add_to_blender(
-            appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME
+            appear_time = cues['graph']['start'] - 0.5
         )
-        #eq_arrow.morph_figure(1, start_frame = cues['graph']['start'] + 900)
+        #eq_arrow.morph_figure(1, start_time = cues['graph']['start'] + 900)
         equilibrium = tex_bobject.TexBobject(
             '\\substack{\\text{Equilibrium} \\\\ \\text{point}}',
             '\\substack{\\text{"Stable"} \\\\ \\text{Equilibrium} \\\\ \\text{point}}',
@@ -2207,7 +2216,7 @@ class AddReplication(Scene):
             centered = True,
             color = 'color2'
         )
-        equilibrium.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
+        equilibrium.add_to_blender(appear_time = cues['graph']['start'] - 0.5)
 
         stable = tex_bobject.TexBobject(
             '\\text{"Stable"}',
@@ -2216,40 +2225,40 @@ class AddReplication(Scene):
             scale = 0.67,
             color = 'color2'
         )
-        stable.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
+        stable.add_to_blender(appear_time = cues['graph']['start'] - 0.5)
 
 
         #Morph to example
-        rhs.morph_figure(1, start_frame = cues['graph']['start'] + 60)
-        graph.morph_curve(1, start_frame = cues['graph']['start'] + 60)
+        rhs.morph_figure(1, start_time = cues['graph']['start'] + 3)
+        graph.morph_curve(1, start_time = cues['graph']['start'] + 3)
 
-        eq_arrow.morph_figure(1, start_frame = cues['graph']['start'] + 60)
+        eq_arrow.morph_figure(1, start_time = cues['graph']['start'] + 3)
         equilibrium.move_to(
-            start_frame = cues['graph']['start'] + 60,
+            start_time = cues['graph']['start'] + 3,
             new_location = (-4.22, 1.2, 0)
         )
         stable.move_to(
-            start_frame = cues['graph']['start'] + 60,
+            start_time = cues['graph']['start'] + 3,
             new_location = (-4.22, 2.4, 0)
         )
 
         #Transition to flat line
-        rhs.morph_figure(2, start_frame = cues['graph']['start'] + 240)
-        graph.morph_curve(2, start_frame = cues['graph']['start'] + 240)
-        eq_arrow.disappear(disappear_frame = cues['graph']['start'] + 270)
-        equilibrium.disappear(disappear_frame = cues['graph']['start'] + 270)
-        stable.disappear(disappear_frame = cues['graph']['start'] + 270)
+        rhs.morph_figure(2, start_time = cues['graph']['start'] + 14)
+        graph.morph_curve(2, start_time = cues['graph']['start'] + 14)
+        eq_arrow.disappear(disappear_time = cues['graph']['start'] + 14.5)
+        equilibrium.disappear(disappear_time = cues['graph']['start'] + 14.5)
+        stable.disappear(disappear_time = cues['graph']['start'] + 14.5)
 
 
         #Transition to N-t graph
-        rhs.morph_figure(3, start_frame = cues['graph']['start'] + 360)
+        rhs.morph_figure(3, start_time = cues['graph']['start'] + 27)
         equation.move_to(
-            start_frame = cues['graph']['start'] + 360,
+            start_time = cues['graph']['start'] + 27,
             new_scale = 1.5,
             new_location = (0, 6, 0)
         )
         graph.move_to(
-            start_frame = cues['graph']['start'] + 360,
+            start_time = cues['graph']['start'] + 27,
             new_scale = 0.9,
             new_location = (-7.5, -2.5, 0)
         )
@@ -2271,36 +2280,36 @@ class AddReplication(Scene):
             arrows = True,
             scale = 0.9
         )
-        graph2.add_to_blender(appear_frame = cues['ntgraph']['start'])
+        graph2.add_to_blender(appear_time = cues['ntgraph']['start'])
 
         appear_coord = [0, 1, 0]
         point = graph.add_point_at_coord(
             coord = appear_coord,
-            appear_frame = cues['ntgraph']['start'] + 60,
+            appear_time = cues['ntgraph']['start'] + 10,
             axis_projections = True,
             track_curve = None
         )
         x_of_t = [
             [0, [0, 1, 0]],
-            [30, [11, 1, 0]],
-            [60, [0, 1, 0]],
-            [90, [11, 1, 0]],
+            [60, [10, 1, 0]],
             [120, [0, 1, 0]],
-            [150, [11, 1, 0]],
+            [180, [10, 1, 0]],
+            [240, [0, 1, 0]],
+            [300, [10, 1, 0]],
         ]
         graph.multi_animate_point(
             point = point,
             x_of_t = x_of_t,
             #frames_per_time_step = 30,
-            start_frame = cues['ntgraph']['start'] + 60,
+            start_time = cues['ntgraph']['start'] + 11,
             full_coords = True
         )
-        point.disappear(disappear_frame = cues['ntgraph']['start'] + 300)
+        point.disappear(disappear_time = cues['ntgraph']['start'] + 5)
 
 
         graph2.animate_function_curve(
-            start_frame = cues['ntgraph']['start'] + 300,
-            end_frame = cues['ntgraph']['start'] + 360,
+            start_time = cues['ntgraph']['start'] + 26,
+            end_time = cues['ntgraph']['start'] + 27,
             #uniform_along_x = True,
             index = 0
         )
@@ -2319,9 +2328,9 @@ class AddReplication(Scene):
             #name = 'blob1_sim',
             #location = [0, -2.5, 0],
             #scale = 0.4,
-            #appear_frame = cues['ntgraph']['start'] + 180,
+            #appear_time = cues['ntgraph']['start'] + 180,
             #start_delay = start_delay,
-            #frames_per_time_step = frames_per_time_step,
+            #times_per_time_step = frames_per_time_step,
             #save = True,
             #load = 'wte_eq_replication',
             sim_duration = sim_duration,
@@ -2337,18 +2346,18 @@ class AddReplication(Scene):
                 ['color', 'creature_color_1', 'replication_modifier', 200, 0],
             ] #LIES
         )
-        """sim.add_to_blender(appear_frame = cues['ntgraph']['start'] + 180)
+        """sim.add_to_blender(appear_time = cues['ntgraph']['start'] + 180)
         equation.move_to(
-            start_frame = cues['ntgraph']['start'] + 180,
+            start_time = cues['ntgraph']['start'] + 180,
             new_location = (0, 5, 0)
         )
         graph.move_to(
-            start_frame = cues['ntgraph']['start'] + 180,
+            start_time = cues['ntgraph']['start'] + 180,
             new_scale = 0.6,
             new_location = (-10, -2.5, 0)
         )
         graph2.move_to(
-            start_frame = cues['ntgraph']['start'] + 180,
+            start_time = cues['ntgraph']['start'] + 180,
             new_scale = 0.6,
             new_location = (9, -2.5, 0)
         )"""
@@ -2358,26 +2367,26 @@ class AddReplication(Scene):
         #graph2.add_new_function_and_curve(data)
 
         """graph2.animate_function_curve(
-            start_frame = cues['ntgraph']['start'] + 240,
-            end_frame = cues['ntgraph']['start'] + 540,
+            start_time = cues['ntgraph']['start'] + 240,
+            end_time = cues['ntgraph']['start'] + 540,
             uniform_along_x = True,
             index = 1
         )
         appear_coord2 = [0, data[0], 0]
         point2 = graph2.add_point_at_coord(
             coord = appear_coord2,
-            appear_frame = cues['ntgraph']['start'] + 180,
+            appear_time = cues['ntgraph']['start'] + 180,
             axis_projections = True,
             track_curve = 1
         )
         graph2.animate_point(
             end_coord = [100, 0, 0],
-            start_frame = cues['ntgraph']['start'] + 240,
-            end_frame = cues['ntgraph']['start'] + 540,
+            start_time = cues['ntgraph']['start'] + 240,
+            end_time = cues['ntgraph']['start'] + 540,
             point = point2
         )"""
         #Many sims
-        num_sims = 5
+        num_sims = 40
         for i in range(num_sims):
             sim.simulate()
             func = sim.get_creature_count_by_t()
@@ -2387,8 +2396,8 @@ class AddReplication(Scene):
                 z_shift = -0.05
             )
         graph2.animate_all_function_curves(
-            start_frame = cues['ntgraph']['start'] + 600,
-            end_frame = cues['ntgraph']['start'] + 900,
+            start_time = cues['ntgraph']['start'] + 33,
+            end_time = cues['ntgraph']['start'] + 38,
             start_window = 0.5,
             uniform_along_x = True,
             skip = 1
@@ -2407,15 +2416,33 @@ class AddReplication(Scene):
             ]
         )
         spread.add_to_blender(
-            appear_frame = cues['ntgraph']['start'] + 960
+            appear_time = cues['ntgraph']['start'] + 43
         )
+
+
+        #Prep for next scene
+        equation.move_to(
+            start_time = cues['ntgraph']['end'] - 0.5,
+            new_location = [7.5, 0, 0],
+            new_scale = 1
+        )
+        rhs.morph_figure(4, start_time = cues['ntgraph']['end'] - 0.5)
+        graph.move_to(
+            start_time = cues['ntgraph']['end'] - 0.5,
+            new_location = [-7.5, -1, 0],
+            new_scale = 1
+        )
+
+        to_disappear = [graph2, spread]
+        for thing in to_disappear:
+            thing.disappear(disappear_time = cues['ntgraph']['end'])
 '''
 '''
 class Exponential(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('graph', {'duration': 1200}),
-            ('ntgraph', {'duration': 1000}),
+            ('graph', {'duration': 19}),
+            ('ntgraph', {'duration': 26}),
         ])
         super().__init__()
 
@@ -2432,7 +2459,7 @@ class Exponential(Scene):
 
         graph = graph_bobject.GraphBobject(
             func, func2,
-            x_range = [0, 11],
+            x_range = [0, 10],
             y_range = [-1, 2],
             tick_step = [5, 1],
             width = 10,
@@ -2445,10 +2472,11 @@ class Exponential(Scene):
             centered = True,
             arrows = True,
         )
-        graph.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
+        graph.add_to_blender(appear_time = cues['graph']['start'] - 0.5)
 
         rhs = tex_bobject.TexBobject(
             "1 + (0.2-0.2) \\times N",
+            "1 + (0.3-0.2) \\times N",
             "1 + (0.3-0.2) \\times N",
             "1 + (0.3-0.2) \\times N",
             centered = True
@@ -2474,12 +2502,14 @@ class Exponential(Scene):
                     [0, 0, 0],  #form, first char, last char
                     [1, 0, 0],
                     [2, 0, 0, None],
+                    [3, 0, 0],
                 ],
             ],
             labels = [
                 ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
                 ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
                 [],
+                ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
             ],
             alignment = 'bottom'
         )
@@ -2490,12 +2520,14 @@ class Exponential(Scene):
                     [0, 3, 5, 'arrow'],  #form, first char, last char
                     [1, 3, 5, 'arrow'],
                     [2, 3, 5, None],
+                    [3, 3, 5, 'arrow'],
                 ],
             ],
             labels = [
                 ['\\text{Replication chance}', '\\text{per creature}'],
                 ['\\text{Replication chance}', '\\text{per creature}'],
                 [],
+                ['\\text{Replication chance}', '\\text{per creature}'],
             ],
             alignment = 'top'
         )
@@ -2506,34 +2538,36 @@ class Exponential(Scene):
                     [0, 7, 9, 'arrow'],
                     [1, 7, 9, 'arrow'],
                     [2, 7, 9, None],
+                    [3, 7, 9, 'arrow'],
                 ],
             ],
             labels = [
                 ['\\text{Death chance}', '\\text{per creature}'],
                 ['\\text{Death chance}', '\\text{per creature}'],
                 [],
+                ['\\text{Death chance}', '\\text{per creature}'],
             ],
             alignment = 'bottom'
         )
         equation.add_to_blender(
-            appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME,
+            appear_time = cues['graph']['start'] - 0.5,
             animate = False
         )
 
         #Morph to example
-        rhs.morph_figure(1, start_frame = cues['graph']['start'] + 60)
-        graph.morph_curve(1, start_frame = cues['graph']['start'] + 60)
+        rhs.morph_figure(1, start_time = cues['graph']['start'] + 3.5)
+        graph.morph_curve(1, start_time = cues['graph']['start'] + 3.5)
 
         appear_coord = [0, 1, 0]
         point = graph.add_point_at_coord(
             coord = appear_coord,
-            appear_frame = cues['graph']['start'] + 60,
+            appear_time = cues['graph']['start'] + 9,
             axis_projections = True,
             track_curve = None
         )
 
-        num_shifts = 7
-        frames_per_shift = 60
+        num_shifts = 8
+        #frames_per_shift = 60
 
         coords = [[0, 1, 0]]
         for i in range(num_shifts):
@@ -2542,30 +2576,38 @@ class Exponential(Scene):
             coords.append([x, y, 0])
 
         x_of_t = []
-        for i, coord in enumerate(coords):
-            x_of_t.append([i * frames_per_shift, coord])
+        #for i, coord in enumerate(coords):
+        x_of_t.append([0, coords[0]])
+        x_of_t.append([180, coords[1]])
+        x_of_t.append([240, coords[2]])
+        x_of_t.append([300, coords[3]])
+        x_of_t.append([360, coords[4]])
+        x_of_t.append([420, coords[5]])
+        x_of_t.append([480, coords[6]])
+        x_of_t.append([540, coords[7]])
+
 
         graph.multi_animate_point(
             point = point,
             x_of_t = x_of_t,
             #frames_per_time_step = 30,
-            start_frame = cues['graph']['start'] + 90,
+            start_time = cues['graph']['start'] + 10,
             full_coords = True
         )
-        point.disappear(disappear_frame = cues['graph']['start'] + 660)
-        point.axis_projections[0].disappear(disappear_frame = cues['graph']['start'] + 660)
-        point.axis_projections[1].disappear(disappear_frame = cues['graph']['start'] + 660)
+        point.disappear(disappear_time = cues['graph']['start'] + 20)
+        point.axis_projections[0].disappear(disappear_time = cues['graph']['start'] + 20)
+        point.axis_projections[1].disappear(disappear_time = cues['graph']['start'] + 20)
 
 
         #Transition to N-t graph
-        rhs.morph_figure(2, start_frame = cues['graph']['start'] + 780)
+        rhs.morph_figure(2, start_time = cues['graph']['start'] + 19)
         equation.move_to(
-            start_frame = cues['graph']['start'] + 780,
+            start_time = cues['graph']['start'] + 19,
             new_scale = 1.5,
             new_location = (0, 6, 0)
         )
         graph.move_to(
-            start_frame = cues['graph']['start'] + 780,
+            start_time = cues['graph']['start'] + 19,
             new_scale = 0.9,
             new_location = (-7.5, -2.5, 0)
         )
@@ -2588,12 +2630,12 @@ class Exponential(Scene):
             arrows = True,
             scale = 0.9
         )
-        graph2.add_to_blender(appear_frame = cues['ntgraph']['start'])
+        graph2.add_to_blender(appear_time = cues['ntgraph']['start'])
 
 
         graph2.animate_function_curve(
-            start_frame = cues['ntgraph']['start'] + 300,
-            end_frame = cues['ntgraph']['start'] + 360,
+            start_time = cues['ntgraph']['start'] + 1,
+            end_time = cues['ntgraph']['start'] + 2,
             #uniform_along_x = True,
             index = 0
         )
@@ -2630,18 +2672,18 @@ class Exponential(Scene):
                 ['color', 'creature_color_1', 'replication_modifier', 300, 0],
             ] #LIES
         )
-        """sim.add_to_blender(appear_frame = cues['ntgraph']['start'] + 180)
+        """sim.add_to_blender(appear_time = cues['ntgraph']['start'] + 180)
         equation.move_to(
-            start_frame = cues['ntgraph']['start'] + 180,
+            start_time = cues['ntgraph']['start'] + 180,
             new_location = (0, 5, 0)
         )
         graph.move_to(
-            start_frame = cues['ntgraph']['start'] + 180,
+            start_time = cues['ntgraph']['start'] + 180,
             new_scale = 0.6,
             new_location = (-10, -2.5, 0)
         )
         graph2.move_to(
-            start_frame = cues['ntgraph']['start'] + 180,
+            start_time = cues['ntgraph']['start'] + 180,
             new_scale = 0.6,
             new_location = (9, -2.5, 0)
         )"""
@@ -2651,26 +2693,26 @@ class Exponential(Scene):
         #graph2.add_new_function_and_curve(data)
 
         """graph2.animate_function_curve(
-            start_frame = cues['ntgraph']['start'] + 240,
-            end_frame = cues['ntgraph']['start'] + 540,
+            start_time = cues['ntgraph']['start'] + 240,
+            end_time = cues['ntgraph']['start'] + 540,
             uniform_along_x = True,
             index = 1
         )
         appear_coord2 = [0, data[0], 0]
         point2 = graph2.add_point_at_coord(
             coord = appear_coord2,
-            appear_frame = cues['ntgraph']['start'] + 180,
+            appear_time = cues['ntgraph']['start'] + 180,
             axis_projections = True,
             track_curve = 1
         )
         graph2.animate_point(
             end_coord = [100, 0, 0],
-            start_frame = cues['ntgraph']['start'] + 240,
-            end_frame = cues['ntgraph']['start'] + 540,
+            start_time = cues['ntgraph']['start'] + 240,
+            end_time = cues['ntgraph']['start'] + 540,
             point = point2
         )"""
         #Many sims
-        num_sims = 4
+        num_sims = 40
         for i in range(num_sims):
             sim.simulate()
             func = sim.get_creature_count_by_t()
@@ -2680,12 +2722,22 @@ class Exponential(Scene):
                 z_shift = -0.05
             )
         graph2.animate_all_function_curves(
-            start_frame = cues['ntgraph']['start'] + 600,
-            end_frame = cues['ntgraph']['start'] + 900,
+            start_time = cues['ntgraph']['start'] + 8,
+            end_time = cues['ntgraph']['start'] + 13,
             start_window = 0.5,
             uniform_along_x = True,
             skip = 1
         )
+
+        top_y = graph2.tick_labels_y[-1]
+        top_y.pulse(
+            time = cues['ntgraph']['start'] + 13
+        )
+        y_nums = top_y.subbobjects
+        for num in y_nums:
+            num.color_shift(
+                start_time = cues['ntgraph']['start'] + 13
+            )
 
         spread = gesture.Gesture(
             gesture_series = [
@@ -2700,15 +2752,32 @@ class Exponential(Scene):
             ]
         )
         spread.add_to_blender(
-            appear_frame = cues['ntgraph']['start'] + 960
+            appear_time = cues['ntgraph']['start'] + 22
         )
+
+        #Prep for next scene
+        equation.move_to(
+            start_time = cues['ntgraph']['end'] - 0.5,
+            new_location = [7.5, 0, 0],
+            new_scale = 1
+        )
+        rhs.morph_figure(3, start_time = cues['ntgraph']['end'] - 0.5)
+        graph.move_to(
+            start_time = cues['ntgraph']['end'] - 0.5,
+            new_location = [-7.5, -1, 0],
+            new_scale = 1
+        )
+
+        to_disappear = [graph2, spread]
+        for thing in to_disappear:
+            thing.disappear(disappear_time = cues['ntgraph']['end'])
 '''
 '''
 class Extinction(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('graph', {'duration': 1200}),
-            ('ntgraph', {'duration': 1000}),
+            ('graph', {'duration': 23}),
+            ('ntgraph', {'duration': 25}),
         ])
         super().__init__()
 
@@ -2725,7 +2794,7 @@ class Extinction(Scene):
 
         graph = graph_bobject.GraphBobject(
             func, func2,
-            x_range = [0, 11],
+            x_range = [0, 10],
             y_range = [-1, 2],
             tick_step = [5, 1],
             width = 10,
@@ -2738,7 +2807,7 @@ class Extinction(Scene):
             centered = True,
             arrows = True,
         )
-        graph.add_to_blender(appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
+        graph.add_to_blender(appear_time = cues['graph']['start'] - OBJECT_APPEARANCE_TIME)
 
         rhs = tex_bobject.TexBobject(
             "1 + (0.3-0.2) \\times N",
@@ -2809,23 +2878,23 @@ class Extinction(Scene):
             alignment = 'bottom'
         )
         equation.add_to_blender(
-            appear_frame = cues['graph']['start'] - OBJECT_APPEARANCE_TIME,
+            appear_time = cues['graph']['start'] - OBJECT_APPEARANCE_TIME,
             animate = False
         )
 
         #Get rid of B
-        rhs.morph_figure(1, start_frame = cues['graph']['start'] + 60)
-        graph.morph_curve(1, start_frame = cues['graph']['start'] + 60)
+        rhs.morph_figure(1, start_time = cues['graph']['start'] + 5)
+        graph.morph_curve(1, start_time = cues['graph']['start'] + 5)
 
         appear_coord = [5, 0.5, 0]
         point = graph.add_point_at_coord(
             coord = appear_coord,
-            appear_frame = cues['graph']['start'] + 60,
+            appear_time = cues['graph']['start'] + 7,
             axis_projections = True,
             track_curve = None
         )
 
-        num_shifts = 4
+        num_shifts = 3
         frames_per_shift = 60
 
         coords = [[5, 0.5, 0]]
@@ -2841,10 +2910,11 @@ class Extinction(Scene):
             time = i * frames_per_shift
             x_of_t.append([time, coord])
 
+        #Wiggle
         time = time + 60
 
         num_wiggles = 2
-        time_per_wiggle = 30
+        time_per_wiggle = 20
         for i in range(num_wiggles):
             x_of_t.append([time + time_per_wiggle * i, [0.1, 0, 0]])
             x_of_t.append([time + time_per_wiggle * i + time_per_wiggle / 2, [-0.1, 0, 0]])
@@ -2859,14 +2929,38 @@ class Extinction(Scene):
             point = point,
             x_of_t = x_of_t,
             #frames_per_time_step = 30,
-            start_frame = cues['graph']['start'] + 90,
+            start_time = cues['graph']['start'] + 7,
             full_coords = True
         )
-        point.disappear(disappear_frame = cues['graph']['start'] + 90 + len(x_of_t) * frames_per_shift)
-        point.axis_projections[0].disappear(disappear_frame = cues['graph']['start'] + 90 + len(x_of_t) * frames_per_shift)
-        point.axis_projections[1].disappear(disappear_frame = cues['graph']['start'] + 90 + len(x_of_t) * frames_per_shift)
 
-        #Wiggle
+
+        extinction = tex_bobject.TexBobject(
+            '\\text{Extinction}',
+            location = [-7, -5, 0],
+            centered = True,
+            color = 'color2'
+        )
+        ex_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type' : 'arrow',
+                    'points' : {
+                        'head' : [-10.5, -3, 0],
+                        'tail' : [-8, -4.3, 0],
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        extinction.add_to_blender(appear_time = cues['graph']['start'] + 19.5)
+        ex_arrow.add_to_blender(appear_time = cues['graph']['start'] + 19.5)
+
+        point.disappear(disappear_time = cues['graph']['start'] + 22)
+        point.axis_projections[0].disappear(disappear_time = cues['graph']['start'] + 22)
+        point.axis_projections[1].disappear(disappear_time = cues['graph']['start'] + 22)
+
+        extinction.disappear(disappear_time = cues['graph']['start'] + 23.5)
+        ex_arrow.disappear(disappear_time = cues['graph']['start'] + 23.5)
 
         #Transition to N-t graph
         def exp_func(x): return 2 * math.exp(0.1 * x)
@@ -2886,11 +2980,11 @@ class Extinction(Scene):
             centered = True,
             arrows = True,
             scale = 0.6,
-            high_res_curve_indices = [1, 2]
+            high_res_curve_indices = [0, 1, 2]
         )
 
         frames_per_time_step = 15
-        start_delay = 180
+        start_delay = 2
         sim_duration = 20
 
         initial_creature_count = 2
@@ -2906,7 +3000,7 @@ class Extinction(Scene):
             start_delay = start_delay,
             frames_per_time_step = frames_per_time_step,
             #save = True,
-            #load = 'wte_eq_replication',
+            load = 'ro_not_extinction',
             sim_duration = sim_duration,
             initial_creatures = initial_creatures,
             gene_updates = [
@@ -2918,22 +3012,25 @@ class Extinction(Scene):
                 ['size', '1', 'mutation_chance', 0, 0],
                 ['color', 'creature_color_1', 'death_modifier', 200, 0],
                 ['color', 'creature_color_1', 'replication_modifier', 300, 0],
-            ] #LIES
+            ],
+            pauses = [
+                [0, 3]
+            ]
         )
-        rhs.morph_figure(2, start_frame = cues['ntgraph']['start'])
+        rhs.morph_figure(2, start_time = cues['ntgraph']['start'])
         equation.move_to(
-            start_frame = cues['ntgraph']['start'],
+            start_time = cues['ntgraph']['start'],
             new_location = (0, 5, 0),
             new_scale = 1.5,
         )
         graph.move_to(
-            start_frame = cues['ntgraph']['start'],
+            start_time = cues['ntgraph']['start'],
             new_scale = 0.6,
             new_location = (-10, -2.5, 0)
         )
-        graph2.add_to_blender(appear_frame = cues['ntgraph']['start'])
+        graph2.add_to_blender(appear_time = cues['ntgraph']['start'])
 
-        sim.add_to_blender(appear_frame = cues['ntgraph']['start'])
+        sim.add_to_blender(appear_time = cues['ntgraph']['start'])
         """graph2.move_to(
             start_frame = cues['ntgraph']['start'] + 180,
             new_scale = 0.6,
@@ -2949,8 +3046,8 @@ class Extinction(Scene):
 
         #Predicted curve
         graph2.animate_function_curve(
-            start_frame = cues['ntgraph']['start'] + 60,
-            end_frame = cues['ntgraph']['start'] + 120,
+            start_time = cues['ntgraph']['start'] + 1,
+            end_time = cues['ntgraph']['start'] + 2,
             #uniform_along_x = True,
             index = 0
         )
@@ -2963,11 +3060,10 @@ class Extinction(Scene):
             data,
             curve_mat_modifier = 'fade',
             z_shift = -0.05,
-
         )
         graph2.animate_function_curve(
-            start_frame = cues['ntgraph']['start'] + 180,
-            end_frame = cues['ntgraph']['start'] + 480,
+            start_time = cues['ntgraph']['start'] + 3,
+            end_time = cues['ntgraph']['start'] + 8,
             uniform_along_x = True,
             index = 1
         )
@@ -2975,38 +3071,55 @@ class Extinction(Scene):
         appear_coord2 = [0, data[0], 0]
         point2 = graph2.add_point_at_coord(
             coord = appear_coord2,
-            appear_frame = cues['ntgraph']['start'] + 150,
+            appear_time = cues['ntgraph']['start'] + 2,
             axis_projections = True,
             track_curve = 1
         )
         graph2.animate_point(
             end_coord = [20, 0, 0],
-            start_frame = cues['ntgraph']['start'] + 180,
-            end_frame = cues['ntgraph']['start'] + 480,
+            start_time = cues['ntgraph']['start'] + 3,
+            end_time = cues['ntgraph']['start'] + 8,
             point = point2
         )
         #delta graph highlight point
         appear_coord21 = [data[0], func2(data[0]), 0]
         point21 = graph.add_point_at_coord(
-            coord = appear_coord2,
-            appear_frame = cues['ntgraph']['start'] + 150,
+            coord = appear_coord21,
+            appear_time = cues['ntgraph']['start'] + 2,
             axis_projections = True,
             track_curve = 1
         )
         graph.multi_animate_point(
-            start_frame = cues['ntgraph']['start'] + 180,
-            #end_frame = cues['ntgraph']['start'] + 480,
+            start_time = cues['ntgraph']['start'] + 3,
+            #end_time = cues['ntgraph']['start'] + 480,
             point = point21,
             frames_per_time_step = frames_per_time_step,
             x_of_t = data, #Not func2. This uses the sim data to inform movements
         )
 
         sim.disappear(
-            disappear_frame = cues['ntgraph']['start'] + 540,
+            disappear_time = cues['ntgraph']['start'] + 9.5,
             #animate = False
         )
-        point2.disappear(disappear_frame = cues['ntgraph']['start'] + 540)
-        point21.disappear(disappear_frame = cues['ntgraph']['start'] + 540)
+        #point 21 shoots off and an arrow appears
+        point21.disappear(disappear_time = cues['ntgraph']['start'] + 6)
+        zoom_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type' : 'arrow',
+                    'points' : {
+                        'head' : [-6, -5/6, 0],
+                        'tail' : [-8, -1.5, 0],
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        zoom_arrow.add_to_blender(appear_time = cues['ntgraph']['start'] + 5.5)
+
+        #point 2 disappears after
+        point2.disappear(disappear_time = cues['ntgraph']['start'] + 9.5)
+        zoom_arrow.disappear(disappear_time = cues['ntgraph']['start'] + 9.5)
 
         #Second sim
         sim2 = drawn_world.DrawnWorld(
@@ -3014,10 +3127,10 @@ class Extinction(Scene):
             location = [0, -2.5, 0],
             scale = 0.4,
             #appear_frame = cues['ntgraph']['start'] + 180,
-            start_delay = 60,
+            start_delay = 0.5,
             frames_per_time_step = frames_per_time_step,
             #save = True,
-            #load = 'wte_eq_replication',
+            load = 'ro_extinction',
             sim_duration = sim_duration,
             initial_creatures = initial_creatures,
             gene_updates = [
@@ -3032,7 +3145,7 @@ class Extinction(Scene):
             ] #LIES
         )
         sim2.add_to_blender(
-            appear_frame = cues['ntgraph']['start'] + 540,
+            appear_time = cues['ntgraph']['start'] + 9.5,
             #animate = False
         )
 
@@ -3044,8 +3157,8 @@ class Extinction(Scene):
             z_shift = -0.05,
         )
         graph2.animate_function_curve(
-            start_frame = cues['ntgraph']['start'] + 600,
-            end_frame = cues['ntgraph']['start'] + 900,
+            start_time = cues['ntgraph']['start'] + 10,
+            end_time = cues['ntgraph']['start'] + 15,
             uniform_along_x = True,
             index = 2
         )
@@ -3053,55 +3166,55 @@ class Extinction(Scene):
         appear_coord3 = [0, data2[0], 0]
         point3 = graph2.add_point_at_coord(
             coord = appear_coord3,
-            appear_frame = cues['ntgraph']['start'] + 570,
+            appear_time = cues['ntgraph']['start'] + 9.5,
             axis_projections = True,
             track_curve = 2
         )
         graph2.animate_point(
             end_coord = [20, 0, 0],
-            start_frame = cues['ntgraph']['start'] + 600,
-            end_frame = cues['ntgraph']['start'] + 900,
+            start_time = cues['ntgraph']['start'] + 10,
+            end_time = cues['ntgraph']['start'] + 15,
             point = point3
         )
         #delta graph highlight point
         appear_coord31 = [data2[0], func2(data2[0]), 0]
         point31 = graph.add_point_at_coord(
             coord = appear_coord31,
-            appear_frame = cues['ntgraph']['start'] + 570,
+            appear_time = cues['ntgraph']['start'] + 9.5,
             axis_projections = True,
             track_curve = 1
         )
         graph.multi_animate_point(
-            start_frame = cues['ntgraph']['start'] + 600,
-            #end_frame = cues['ntgraph']['start'] + 480,
+            start_time = cues['ntgraph']['start'] + 10,
+            #end_time = cues['ntgraph']['start'] + 480,
             point = point31,
             frames_per_time_step = frames_per_time_step,
             x_of_t = data2, #Not func2. This uses the sim data to inform movements
         )
 
-        point3.disappear(disappear_frame = cues['ntgraph']['start'] + 960)
-        point31.disappear(disappear_frame = cues['ntgraph']['start'] + 960)
+        point3.disappear(disappear_time = cues['ntgraph']['start'] + 17)
+        point31.disappear(disappear_time = cues['ntgraph']['start'] + 17)
 
         #data = sim.get_creature_count_by_t()
         #graph2.add_new_function_and_curve(data)
 
         """graph2.animate_function_curve(
-            start_frame = cues['ntgraph']['start'] + 240,
-            end_frame = cues['ntgraph']['start'] + 540,
+            start_time = cues['ntgraph']['start'] + 240,
+            end_time = cues['ntgraph']['start'] + 540,
             uniform_along_x = True,
             index = 1
         )
         appear_coord2 = [0, data[0], 0]
         point2 = graph2.add_point_at_coord(
             coord = appear_coord2,
-            appear_frame = cues['ntgraph']['start'] + 180,
+            appear_time = cues['ntgraph']['start'] + 180,
             axis_projections = True,
             track_curve = 1
         )
         graph2.animate_point(
             end_coord = [100, 0, 0],
-            start_frame = cues['ntgraph']['start'] + 240,
-            end_frame = cues['ntgraph']['start'] + 540,
+            start_time = cues['ntgraph']['start'] + 240,
+            end_time = cues['ntgraph']['start'] + 540,
             point = point2
         )"""
         #Many sims
@@ -3116,14 +3229,14 @@ class Extinction(Scene):
                 z_shift = -0.05
             )
         graph2.animate_all_function_curves(
-            start_frame = cues['ntgraph']['start'] + 1000,
-            end_frame = cues['ntgraph']['start'] + 1300,
+            start_time = cues['ntgraph']['start'] + 18,
+            end_time = cues['ntgraph']['start'] + 23,
             start_window = 0.5,
             uniform_along_x = True,
             skip = 3
         )
 
-        spread = gesture.Gesture(
+        """spread = gesture.Gesture(
             gesture_series = [
                 {
                     'type': 'bracket',
@@ -3136,6 +3249,11 @@ class Extinction(Scene):
             ]
         )
         spread.add_to_blender(
-            appear_frame = cues['ntgraph']['start'] + 1360
-        )
+            appear_time = cues['ntgraph']['start'] + 23
+        )"""
+
+        #Prep for next scene
+        to_disappear = [equation, graph, sim2, graph2]
+        for thing in to_disappear:
+            thing.disappear(disappear_time = cues['ntgraph']['end'])
 '''

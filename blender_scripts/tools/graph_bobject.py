@@ -55,6 +55,8 @@ class GraphBobject(Bobject):
         self.width = width - 2 * GRAPH_PADDING
         self.height = height - 2 * GRAPH_PADDING
         self.tick_step = tick_step #Either 'auto' or a list
+        self.tick_labels_x = []
+        self.tick_labels_y = []
 
         #Calculate factor for converting from function space to draw space
         self.domain_scale_factor = self.width / (self.x_range[1] - self.x_range[0])
@@ -233,6 +235,7 @@ class GraphBobject(Bobject):
             scale = label_scale
         )
         self.add_subbobject(label)
+        self.tick_labels_x.append(label)
 
     def add_tick_y(self, value):
         tick_scale = min(self.width, self.height) / 20
@@ -256,6 +259,7 @@ class GraphBobject(Bobject):
             scale = label_scale
         )
         self.add_subbobject(label)
+        self.tick_labels_y.append(label)
 
     def add_function_curve(
         self,
@@ -543,6 +547,10 @@ class GraphBobject(Bobject):
             while x <= self.x_range[1]:
                 x_vals.append(x)
                 x += x_step
+
+            #Ensure last val in range is included.
+            if x_vals[-1] < self.x_range[1]:
+                x_vals.append(self.x_range[1])
 
             for x in x_vals:
                 y = self.evaluate_function(input = x, index = func_index)
@@ -877,8 +885,10 @@ class GraphBobject(Bobject):
                 update_time = min(HIGHLIGHT_POINT_UPDATE_TIME,
                                   (x_of_t[i+1][0] - t) * frames_per_time_step)
             except: #Should only run for last element
-                #update_time = HIGHLIGHT_POINT_UPDATE_TIME
-                update_time = frames_per_time_step
+                #Just use the timing from the previous transition, to make it
+                #not look out of place.
+                update_time = min(HIGHLIGHT_POINT_UPDATE_TIME,
+                                  (t - x_of_t[i-1][0]) * frames_per_time_step)
 
             end_frame = start_frame + t * frames_per_time_step + update_time
             #Haven't tested this, but trying to making it so I can pass a list
@@ -897,7 +907,26 @@ class GraphBobject(Bobject):
                 end_coord = end_coord
             )
 
-    def morph_curve(self, to_curve_index, start_frame = None, end_frame = None):
+    def morph_curve(
+        self,
+        to_curve_index,
+        start_time = None,
+        end_time = None,
+        start_frame = None,
+        end_frame = None
+    ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+        if end_time != None:
+            if end_frame != None:
+                raise Warning("You defined both end frame and end time. " +\
+                              "Just do one, ya dick.")
+            end_frame = int(end_time * FRAME_RATE)
+
+
         if start_frame == None:
             if end_frame == None:
                 raise Warning('Need start frame and/or end frame for move_to')

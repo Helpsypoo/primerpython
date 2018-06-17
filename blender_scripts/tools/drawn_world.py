@@ -116,6 +116,7 @@ class DrawnWorld(TwoDWorld, Bobject):
             world_file
         ) + ".pkl"
         with open(result, 'rb') as input:
+            print(input)
             world = pickle.load(input)
         self.__dict__ = world.__dict__
         print("Loaded the world")
