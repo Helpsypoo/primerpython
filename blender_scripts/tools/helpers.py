@@ -287,32 +287,21 @@ def import_object(filename, *folders, **kwargs):
         name = new_obj.name
         kwargs['name'] = name
 
+    #If this is an svg from blend, make subbobjects out of children before
+    #making the final bobject.
+    '''if 'svg' in kwargs and kwargs['svg'] == True:
+        #print('bananananan')
+        subbobjs = []
+        for child in new_obj.children:
+            child_bobj = bobject.Bobject(objects = [child])
+            subbobjs.append(child_bobj)
+        new_bobject = bobject.Bobject(*subbobjs, **kwargs)
+    else:'''
     new_bobject = bobject.Bobject(objects = [new_obj], **kwargs)
 
-    '''
-    ####################
-    sim = bpy.context.object
-    for obj in sim.children:
-        if 'boerd_blob' in obj.name:
-            for obj2 in obj.children[0].children:
-                if '0000' in obj2.name:
-                    obj2.name = obj.name + 'META'
-
-    blob = bpy.context.object
-    for obj in sim.children:
-        if 'boerd_blob' in obj.name:
-            for obj2 in obj.children[0].children:
-                if '0000' in obj2.name:
-                    obj2.name = obj.name + 'META'
 
 
-    for obj in bpy.data.objects:
-        if 'boerd_blob' in obj.name and obj.type == 'EMPTY':
-            for child in obj.children[0].children:
-                if child.type == 'META':
-                    child.name = obj.name + 'mball'
-    #######################
-    '''
+    #Blinks
     ref_obj = new_bobject.ref_obj
     if filename == 'boerd_blob' or filename == 'boerd_blob_squat':
         leye = ref_obj.children[0].pose.bones[5]

@@ -898,6 +898,10 @@ class SVGFromBlend(SVGBobject):
                 #continue
             else:
                 name = str(path)
+                '''if isinstance(name, list):
+                    name = name[0]
+                name = str(name)
+                print(name)'''
             self.imported_svg_data[name] = {'curves' : []}
             new_curve_bobj = self.import_and_modify_curve(i, path)
             #self.modify_curves(new_curve_bobj.ref_obj.children[0].children[0])
@@ -907,8 +911,10 @@ class SVGFromBlend(SVGBobject):
             #These will all have container objects because they were likely
             #made as regular svgbobjects the first time, so just take the actual
             #curves.
+
             for obj in new_curve_bobj.ref_obj.children:
                 new_curves.append(obj.children[0])
+                #print(new_curves[-1].type)
 
             #self.imported_svg_data[name]['curves'] = new_curves
 
@@ -930,11 +936,21 @@ class SVGFromBlend(SVGBobject):
         #print(self.paths)
 
     def import_and_modify_curve(self, index, path):
-        #This just imports a curve and returns it
-        #Extemded by subclass
+
+        #This is unfinished. Something is wrong with the way it makes the
+        #rendered curve objects out of the imported ones.
+
+        #Extended by subclass
         #index is needed for subclass implementation to know which curve it's
         #modifying.
-        new_curve_bobj = import_object(*path)
+        imported = import_object(path, 'svgblend')
+
+        new_curve_bobj = bobject.Bobject(
+            objects = imported.ref_obj.children[0].children,
+            name = 'imported_svg_object'
+        )
+        #new_curve_bobj.add_to_blender(appear_frame = 0)
+
         return new_curve_bobj
 
 

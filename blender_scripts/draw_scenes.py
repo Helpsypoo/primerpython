@@ -401,88 +401,18 @@ def test_sim():
 def tex_test():
     initialize_blender(total_duration = 350)
 
-    rhs = tex_bobject.TexBobject(
-        "B + (R-D) \\times N",
-        "1 + (R-D) \\times N",
-        "1 + (R-0.1) \\times N",
-        "1 + (0-0.1) \\times N",
-        centered = True
+    reddit = import_object(
+        'reddit', 'svgblend',
+        scale = 4,
+        location = (-5, 0, 0)
     )
-    equals = tex_bobject.TexBobject(
-        "\!=",
-        centered = True
+    reddit.add_to_blender(appear_frame = 0)
+    patreon = import_object(
+        'patreon', 'svgblend',
+        scale = 4,
+        location = (5, 0, 0)
     )
-    lhs = tex_bobject.TexBobject(
-        "\\Delta",
-        centered = True
-    )
-    equation = tex_complex.TexComplex(
-        lhs, equals,
-        rhs,
-        location = (0, 0, 0),
-        scale = 1,
-        centered = True
-    )
-    equation.add_annotation(
-        targets = [
-            2, #tex_bobject
-            [
-                [0, 3, 3],  #form, first char, last char
-                [1, 2, 6],
-                [2, 2, 8],
-            ],
-        ],
-        labels = [
-            ['\\text{Reproduction}', '\\text{chance per}', '\\text{creature}'],
-            ['\\text{Net change}', '\\text{per creature}', 'banana'],
-            ['\\text{Net change}', '\\text{per creature}']
-        ],
-        alignment = 'top',
-        angle = math.pi / 6
-    )
-    equation.add_to_blender(
-        appear_frame = 0,
-        animate = False
-    )
-
-    rhs.morph_figure(1, start_frame = 60)
-    rhs.morph_figure(2, start_frame = 120)
-
-    equation.move_to(
-        new_location = (1, 1, 1),
-        start_frame = 180
-    )
-
-    '''rhs.imported_svg_data[rhs.paths[0]]['curves'][2].add_to_blender(
-        appear_frame = 0
-    )'''
-    #obj = rhs.imported_svg_data[rhs.paths[0]]['curves'][2].objects[0]
-    #bpy.context.scene.objects.link(obj)
-
-    '''net_bracket = gesture.Gesture(
-        gesture_series = [
-            {
-                'type': 'bracket',
-                'points': {
-                    'annotation_point': (8.5, 5/3, 0),
-                    'left_point': (6.8, 2/3, 0),
-                    'right_point': (10.4, 2/3, 0)
-                }
-            },
-            {
-                'type': 'bracket',
-                'points': {
-                    'annotation_point': (8.5, 5/3, 0),
-                    'left_point': (6.55, 2/3, 0),
-                    'right_point': (10.4, 2/3, 0)
-                }
-            },
-        ],
-        color = 'color2'
-    )
-    net_bracket.add_to_blender(appear_frame = 120)'''
-
-
+    patreon.add_to_blender(appear_frame = 0)
     print_time_report()
 
 def morph_test():

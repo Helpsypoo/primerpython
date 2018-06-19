@@ -348,7 +348,10 @@ class GraphBobject(Bobject):
         bpy.ops.curve.primitive_bezier_circle_add()
         cross_section = bpy.context.object
         cross_section.scale = [CURVE_WIDTH, CURVE_WIDTH, 0]
-        bpy.context.scene.objects.unlink(cross_section)
+        cross_section.parent = self.ref_obj
+        cross_section.hide = True
+        cross_section.hide_render = True
+        #bpy.context.scene.objects.unlink(cross_section)
 
         cur.data.bevel_object = cross_section
 
