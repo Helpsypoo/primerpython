@@ -399,9 +399,21 @@ def test_sim():
     print_time_report()
 
 def tex_test():
-    initialize_blender(total_duration = 350)
+    initialize_blender(total_duration = 3.5)
 
-    reddit = import_object(
+
+    ming = tex_bobject.TexBobject(
+        '\\text{Chauchage.}', '\\text{Ming.}',
+        centered = True,
+        scale = 4
+    )
+    ming.add_to_blender(appear_time = 0)
+
+    ming.morph_figure(1, start_time = 1.5)
+
+    ming.disappear(disappear_time = 3.5)
+
+    '''reddit = import_object(
         'reddit', 'svgblend',
         scale = 4,
         location = (-5, 0, 0)
@@ -412,7 +424,7 @@ def tex_test():
         scale = 4,
         location = (5, 0, 0)
     )
-    patreon.add_to_blender(appear_frame = 0)
+    patreon.add_to_blender(appear_frame = 0)'''
     print_time_report()
 
 def morph_test():
@@ -492,6 +504,7 @@ def draw_scenes_from_file(script_file):
     #more than one in blender at once, so this is obsolete and will
     #break if you try to process more than one scene at a time.
     scenes = get_scene_object_list(script_file)
+    print(scenes)
     duration = get_total_duration(scenes)
     initialize_blender(total_duration =  duration)
 
@@ -651,7 +664,7 @@ def bcard():
 def main():
     #test_object()
     #execute_and_time(test_sim())
-    #execute_and_time(tex_test())
+    execute_and_time(tex_test())
     #test_molecule()
     #morph_test()
     #graph_test()
@@ -659,7 +672,8 @@ def main():
     #bcard()
     #gesture_test()
 
-    draw_scenes_from_file(replication_only)
+    #draw_scenes_from_file(why_things_exist)
+    #draw_scenes_from_file(replication_only)
 
     #print_time_report()
     finish_noise()

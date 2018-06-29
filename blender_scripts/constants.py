@@ -26,7 +26,7 @@ if RENDER_QUALITY == 'high':
     LAMPS_TO_A_SIDE = 1
     LAMP_TYPE = 'SUN'
     ICO_SUBDIVISIONS = 6
-    CONTROL_POINTS_PER_SPLINE = 50 #TODO: figure out the threshold for noticing a difference
+    CONTROL_POINTS_PER_SPLINE = 60 #TODO: figure out the threshold for noticing a difference
     PARTICLES_PER_MESH = 100000 #Could be smaller if morphing smaller objects
     #Could even be a function of scale
     #Or number of other objects
@@ -187,7 +187,7 @@ ARROW_SCALE = [0.3, 0.3, 0.4]
 GRAPH_PADDING = 1
 CURVE_WIDTH = 0.04
 if RENDER_QUALITY == 'high':
-    PLOTTED_POINT_DENSITY = 100
+    PLOTTED_POINT_DENSITY = 30
 else:
     PLOTTED_POINT_DENSITY = 20
 CURVE_Z_OFFSET = 0.01

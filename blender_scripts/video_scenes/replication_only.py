@@ -28,6 +28,234 @@ imp.reload(helpers)
 from helpers import *
 
 '''
+class WTEThumbnail(Scene):
+    def __init__(self):
+
+        self.subscenes = collections.OrderedDict([
+            ('logo', {'duration': 1.25})
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        bobj = import_object(
+            'boerd_blob', 'creatures',
+            scale = 10,
+            location = [-5.5, -8.5, 0],
+            rotation_euler = [0, math.pi * 45 / 180, 0]
+        )
+        bobj.ref_obj.children[0].children[2].data.resolution = 0.1
+        bobj.add_to_blender(
+            appear_frame = 0,
+        )
+        apply_material(
+            bobj.ref_obj,
+            'creature_color3',
+            recursive = True,
+            type_req = 'META'
+        )
+        bone = bobj.ref_obj.children[0].pose.bones[3]
+        bone.rotation_quaternion = [1, 0, 0.1, 0.15]
+
+
+        earth = import_object(
+            'earth', 'planets',
+            location = (11, 0, 0),
+            scale = 10,
+            name = 'earth',
+            rotation_euler = [math.pi * 19 / 180, math.pi * -36 / 180, 0]
+        )
+        earth.add_to_blender(
+            appear_frame = 0,
+            animate = True
+        )
+
+        why = tex_bobject.TexBobject(
+            "\\text{Why?}",
+            location = [-6.5, 4, 0],
+            scale = 5,
+            centered = True
+        )
+        why.add_to_blender(appear_frame = 0)
+
+
+        world = bpy.context.scene.world
+        nodes = world.node_tree.nodes
+        nodes.new(type = 'ShaderNodeMixRGB')
+        nodes.new(type = 'ShaderNodeTexImage')
+        nodes.new(type = 'ShaderNodeTexCoord')
+
+        path_mix_input = nodes[2].inputs[2]
+
+        for l in world.node_tree.links:
+            if l.to_socket == path_mix_input:
+               world.node_tree.links.remove(l)
+
+        world.node_tree.links.new(nodes[5].outputs[0], nodes[2].inputs[2])
+        world.node_tree.links.new(nodes[4].outputs[0], nodes[5].inputs[1])
+        world.node_tree.links.new(nodes[6].outputs[0], nodes[5].inputs[2])
+        world.node_tree.links.new(nodes[7].outputs[5], nodes[6].inputs[0])
+
+        stars_path = os.path.join(IMG_DIR, 'milky-way-and-starry-night-sky.jpg')
+        try:
+            img = bpy.data.images.load(stars_path)
+        except:
+            raise NameError("Cannot load image %s" % path)
+        nodes[6].image = img
+
+        nodes[5].inputs[0].default_value = 0
+
+
+        #Keyframes for background transition
+        #nodes[4].outputs[0].keyframe_insert(data_path = 'default_value', frame = planets_start)
+        nodes[4].outputs[0].default_value = (0, 0, 0, 1)
+        #nodes[4].outputs[0].keyframe_insert(data_path = 'default_value', frame = planets_start + 60)
+
+        #nodes[5].inputs[0].keyframe_insert(data_path = 'default_value', frame = planets_start + 60)
+        nodes[5].inputs[0].default_value = 1
+        #nodes[5].inputs[0].keyframe_insert(data_path = 'default_value', frame = planets_start + 120)
+        #nodes[5].inputs[0].keyframe_insert(data_path = 'default_value', frame = planets_end - 90)
+        #nodes[5].inputs[0].default_value = 0
+        #nodes[5].inputs[0].keyframe_insert(data_path = 'default_value', frame = planets_end - 30)
+
+        #nodes[4].outputs[0].keyframe_insert(data_path = 'default_value', frame = planets_end - 30)
+        #nodes[4].outputs[0].default_value = COLORS_SCALED[0]
+        #nodes[4].outputs[0].keyframe_insert(data_path = 'default_value', frame = planets_end + 30)
+'''
+#'''
+class ROThumbnail(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('logo', {'duration': 1.25})
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        bobj = import_object(
+            'boerd_blob', 'creatures',
+            scale = 3,
+            location = [-6.7, 2.5, 0],
+            rotation_euler = [0, math.pi * 45 / 180, 0]
+        )
+        bobj.ref_obj.children[0].children[2].data.resolution = 0.1
+        bobj.add_to_blender(
+            appear_frame = 0,
+        )
+        apply_material(
+            bobj.ref_obj,
+            'creature_color3',
+            recursive = True,
+            type_req = 'META'
+        )
+        bone = bobj.ref_obj.children[0].pose.bones[3]
+        bone.rotation_quaternion = [1, 0.1, 0, -0.25]
+
+
+        why = tex_bobject.TexBobject(
+            "\\text{Replicators Only}",
+            location = [0, 5, 0],
+            scale = 3,
+            centered = True
+        )
+        #why.add_to_blender(appear_frame = 0)
+
+
+
+        #Way more than necessary here, but borrowing code from a more complex scene
+
+        #Transition to N-t graph
+        def exp_func(x): return 5 * math.exp(0.1 * x)
+        #def exp_func(x): return 15 * math.exp(0.1 * x) - 10
+        graph2 = graph_bobject.GraphBobject(
+            exp_func,
+            x_range = [0, 20],
+            y_range = [0, 75],
+            tick_step = [5, 25],
+            width = 22,
+            height = 11,
+            x_label = 't',
+            x_label_pos = 'end',
+            y_label = 'N',
+            y_label_pos = 'end',
+            location = [-0.7, -1, 0], #(6.5, -2.5, 0),
+            centered = True,
+            arrows = True,
+            scale = 1,
+            high_res_curve_indices = [0, 1, 2]
+        )
+
+        frames_per_time_step = 15
+        start_delay = 1.5
+        sim_duration = 20
+
+        initial_creature_count = 5
+        initial_creatures = []
+        for i in range(initial_creature_count):
+            new_creature = creature.Creature()
+            initial_creatures.append(new_creature)
+        sim = drawn_world.DrawnWorld(
+            name = 'blob1_sim',
+            location = [0, -2.5, 0],
+            scale = 0.4,
+            #appear_frame = cues['ntgraph']['start'] + 180,
+            start_delay = start_delay,
+            frames_per_time_step = frames_per_time_step,
+            #save = True,
+            #load = 'ro_not_extinction',
+            sim_duration = sim_duration,
+            initial_creatures = initial_creatures,
+            gene_updates = [
+                ['color', 'creature_color_1', 'birth_modifier', 0, 0],
+                ['shape', 'shape1', 'birth_modifier', 0, 0],
+                ['size', '1', 'birth_modifier', 0, 0],
+                ['color', 'creature_color_1', 'mutation_chance', 0, 0],
+                ['shape', 'shape1', 'mutation_chance', 0, 0],
+                ['size', '1', 'mutation_chance', 0, 0],
+                ['color', 'creature_color_1', 'death_modifier', 200, 0],
+                ['color', 'creature_color_1', 'replication_modifier', 300, 0],
+            ],
+            pauses = [
+                [0, 1]
+            ]
+        )
+        graph2.add_to_blender(appear_time = 0)
+
+        #Predicted curve
+        """graph2.animate_function_curve(
+            start_time = cues['ntgraph']['start'] + 0.5,
+            end_time = cues['ntgraph']['start'] + 1.5,
+            #uniform_along_x = True,
+            index = 0
+        )"""
+
+        #Many sims
+        num_sims = 40
+        for i in range(num_sims):
+            sim.simulate()
+            func = sim.get_creature_count_by_t()
+            #print(func)
+            graph2.add_new_function_and_curve(
+                func,
+                curve_mat_modifier = 'fade',
+                z_shift = -0.05
+            )
+        graph2.animate_all_function_curves(
+            start_time = 0,
+            end_time = 1,
+            start_window = 0.5,
+            uniform_along_x = True,
+            skip = 3
+        )
+
+#'''
+'''
 class IntroImage(Scene):
     def __init__(self):
 
@@ -369,7 +597,7 @@ class ThereWillBeGraphs(Scene):
 class ChickenEgg(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('scene', {'duration': 5})
+            ('scene', {'duration': 11.5})
         ])
         super().__init__()
 
@@ -381,16 +609,21 @@ class ChickenEgg(Scene):
         chicken = import_object(
             'chicken',
             scale = 4,
-            location = (-7, 0, 0)
+            location = (0, 0, 0)
         )
         chicken.add_to_blender(appear_time = cues['scene']['start'])
+
+        chicken.move_to(
+            new_location = [-7, 0, 0],
+            start_time = cues['scene']['start'] + 3
+        )
 
         egg = import_object(
             'egg',
             scale = 4,
             location = (7, 0, 0)
         )
-        egg.add_to_blender(appear_time = cues['scene']['start'])
+        egg.add_to_blender(appear_time = cues['scene']['start'] + 3)
 
         top_arrow = gesture.Gesture(
             gesture_series = [
@@ -404,7 +637,7 @@ class ChickenEgg(Scene):
             ],
             scale = 2
         )
-        top_arrow.add_to_blender(appear_time = cues['scene']['start'] + 1)
+        top_arrow.add_to_blender(appear_time = cues['scene']['start'] + 4)
 
         bottom_arrow = gesture.Gesture(
             gesture_series = [
@@ -418,7 +651,7 @@ class ChickenEgg(Scene):
             ],
             scale = 2
         )
-        bottom_arrow.add_to_blender(appear_time = cues['scene']['start'] + 1)
+        bottom_arrow.add_to_blender(appear_time = cues['scene']['start'] + 4)
 
         wha = tex_bobject.TexBobject(
             '\\text{?}',
@@ -426,7 +659,7 @@ class ChickenEgg(Scene):
             location = (0, 0, 0),
             scale = 3
         )
-        wha.add_to_blender(appear_time = cues['scene']['start'] + 2)
+        wha.add_to_blender(appear_time = cues['scene']['start'] + 6)
 
         remaining = [chicken, egg, top_arrow, bottom_arrow, wha]
         for thing in remaining:

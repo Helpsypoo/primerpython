@@ -47,7 +47,52 @@ After setting it up this way, I realized that very often, scenes take too much
 memory in blender for it to make sense to run more than one at a time. So I just
 comment out all but the one I'm working on or want to run.
 '''
+#'''
+class Thumbnail(Scene):
+    def __init__(self):
 
+        self.subscenes = collections.OrderedDict([
+            ('logo', {'duration': 1.25})
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        bobj = import_object(
+            'boerd_blob', 'creatures',
+            scale = 10,
+            location = [-8.2, -8.5, 0],
+            rotation_euler = [0, math.pi * 45 / 180, 0]
+        )
+        bobj.ref_obj.children[0].children[2].data.resolution = 0.1
+        bobj.add_to_blender(
+            appear_frame = 0,
+        )
+        apply_material(
+            bobj.ref_obj,
+            'creature_color3',
+            recursive = True,
+            type_req = 'META'
+        )
+        bone = bobj.ref_obj.children[0].pose.bones[3]
+        bone.rotation_quaternion = [1, 0, 0, 0.1]
+
+
+        earth = import_object(
+            'earth', 'planets',
+            location = (10, 4, 0),
+            scale = 10,
+            name = 'earth',
+            rotation_euler = [math.pi * 19 / 180, math.pi * -36 / 180, 0]
+        )
+        earth.add_to_blender(
+            appear_frame = 0,
+            animate = True
+        )
+#'''
 '''
 class IntroImage(Scene):
     def __init__(self):
