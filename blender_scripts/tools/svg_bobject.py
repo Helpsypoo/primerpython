@@ -703,7 +703,7 @@ class SVGBobject(Bobject):
                               "Just do one, ya dick.")
             start_frame = int(start_time * FRAME_RATE)
 
-        print('Morphing ' + self.ref_obj.name + ' to shape ' + str(final_index + 1) + \
+        print('Morphing ' + str(self.ref_obj.name) + ' to shape ' + str(final_index + 1) + \
                 ' of ' + str(len(self.paths)))
         #duration = 60
         end_frame = start_frame + duration

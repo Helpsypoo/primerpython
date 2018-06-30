@@ -436,7 +436,7 @@ def print_time_report():
     total = now - TIME_LIST[0]
     print(total.total_seconds(), "Total")
 
-def finish_noise():
+def finish_noise(error = False):
     '''tempo = 138 #beats per minute
     mspb = 60000 // tempo #milliseconds per beat
 
@@ -471,7 +471,14 @@ def finish_noise():
     duration = mspb #Quarter note
     freq = 523  # C
     winsound.Beep(freq, duration)'''
-    winsound.MessageBeep()
+    if error == True:
+        winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
+        winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
+        winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
+    else:
+        winsound.MessageBeep()
+        winsound.MessageBeep()
+        winsound.MessageBeep()
     #If you're using this and aren't using windows, here's a resource:
     #https://stackoverflow.com/questions/16573051/python-sound-alarm-when-code-finishes
     #print('\007')

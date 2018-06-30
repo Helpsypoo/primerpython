@@ -128,13 +128,15 @@ class TexBobject(SVGBobject):
                               "Just do one, ya dick.")
             start_frame = int(start_time * FRAME_RATE)
 
+        if final_index == 'next':
+            final_index = self.paths.index(self.active_expression_path) + 1
+        self.active_expression_path = self.paths[final_index]
+
         super().morph_figure(
             final_index,
             start_frame = start_frame,
             duration = duration
         )
-
-        self.active_expression_path = self.paths[final_index]
 
         #This code messes up the counters, making the numbers all wobbly.
         #I don't fully get why, but it has something to do with the fact that

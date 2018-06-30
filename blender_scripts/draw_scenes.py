@@ -397,19 +397,23 @@ def test_sim():
     print_time_report()
 
 def tex_test():
-    initialize_blender(total_duration = 3.5)
+    initialize_blender(total_duration = 5)
 
 
     ming = tex_bobject.TexBobject(
-        '\\text{Chauchage.}', '\\text{Ming.}',
+        '\\text{I}',
+        '\\text{said}',
+        '\\text{HANK}',
         centered = True,
-        scale = 4
+        scale = 8
     )
     ming.add_to_blender(appear_time = 0)
 
-    ming.morph_figure(1, start_time = 1.5)
+    ming.morph_figure('next', start_time = 1.5)
 
-    ming.disappear(disappear_time = 3.5)
+    ming.morph_figure('next', start_time = 3)
+
+    ming.disappear(disappear_time = 5)
 
     '''reddit = import_object(
         'reddit', 'svgblend',
@@ -662,7 +666,7 @@ def bcard():
 def main():
     #test_object()
     #execute_and_time(test_sim())
-    #execute_and_time(tex_test())
+    execute_and_time(tex_test())
     #test_molecule()
     #morph_test()
     #graph_test()
@@ -671,7 +675,7 @@ def main():
     #gesture_test()
 
     #draw_scenes_from_file(why_things_exist)
-    draw_scenes_from_file(replication_only)
+    #draw_scenes_from_file(replication_only)
 
     #print_time_report()
     finish_noise()
@@ -681,5 +685,5 @@ if __name__ == "__main__":
     try:
         main()
     except:
-        finish_noise()
+        finish_noise(error = True)
         raise()
