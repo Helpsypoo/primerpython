@@ -65,10 +65,8 @@ Workflow improvements
 - Automate rendering
 - Write function to run sims until it finds one with the right results
 - Make sims take more arguments (e.g., pop cap, closeness)
-- Preview of graphs and family trees (?)
 
 New functionality
-- Stop and alter play speed of sims
 - Family tree
 
 Open source
@@ -664,7 +662,7 @@ def bcard():
 def main():
     #test_object()
     #execute_and_time(test_sim())
-    execute_and_time(tex_test())
+    #execute_and_time(tex_test())
     #test_molecule()
     #morph_test()
     #graph_test()
@@ -673,11 +671,15 @@ def main():
     #gesture_test()
 
     #draw_scenes_from_file(why_things_exist)
-    #draw_scenes_from_file(replication_only)
+    draw_scenes_from_file(replication_only)
 
     #print_time_report()
     finish_noise()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except:
+        finish_noise()
+        raise()

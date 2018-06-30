@@ -27,7 +27,7 @@ import helpers
 imp.reload(helpers)
 from helpers import *
 
-'''
+#'''
 class WTEThumbnail(Scene):
     def __init__(self):
 
@@ -49,7 +49,7 @@ class WTEThumbnail(Scene):
         )
         bobj.ref_obj.children[0].children[2].data.resolution = 0.1
         bobj.add_to_blender(
-            appear_frame = 0,
+            appear_time = -1,
         )
         apply_material(
             bobj.ref_obj,
@@ -69,7 +69,7 @@ class WTEThumbnail(Scene):
             rotation_euler = [math.pi * 19 / 180, math.pi * -36 / 180, 0]
         )
         earth.add_to_blender(
-            appear_frame = 0,
+            appear_time = -1,
             animate = True
         )
 
@@ -79,7 +79,7 @@ class WTEThumbnail(Scene):
             scale = 5,
             centered = True
         )
-        why.add_to_blender(appear_frame = 0)
+        why.add_to_blender(appear_time = -1)
 
 
         world = bpy.context.scene.world
@@ -124,8 +124,8 @@ class WTEThumbnail(Scene):
         #nodes[4].outputs[0].keyframe_insert(data_path = 'default_value', frame = planets_end - 30)
         #nodes[4].outputs[0].default_value = COLORS_SCALED[0]
         #nodes[4].outputs[0].keyframe_insert(data_path = 'default_value', frame = planets_end + 30)
-'''
 #'''
+'''
 class ROThumbnail(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -253,8 +253,7 @@ class ROThumbnail(Scene):
             uniform_along_x = True,
             skip = 3
         )
-
-#'''
+'''
 '''
 class IntroImage(Scene):
     def __init__(self):
