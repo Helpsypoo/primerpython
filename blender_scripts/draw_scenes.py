@@ -46,6 +46,10 @@ import replication_only
 imp.reload(replication_only)
 from replication_only import *
 
+import mutations
+imp.reload(mutations)
+#from mutations import *
+
 import population
 imp.reload(population)
 from population import *
@@ -666,7 +670,7 @@ def bcard():
 def main():
     #test_object()
     #execute_and_time(test_sim())
-    execute_and_time(tex_test())
+    #execute_and_time(tex_test())
     #test_molecule()
     #morph_test()
     #graph_test()
@@ -676,6 +680,9 @@ def main():
 
     #draw_scenes_from_file(why_things_exist)
     #draw_scenes_from_file(replication_only)
+
+    initialize_blender()
+    mutations.play_scenes()
 
     #print_time_report()
     finish_noise()
