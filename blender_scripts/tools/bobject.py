@@ -462,12 +462,14 @@ class MeshMorphBobject(Bobject):
 
         initial_meshes = []
         for child in self.series[initial_index].ref_obj.children:
-            initial_meshes.append(child)
-            append_descendants(child, initial_meshes)
+            if child.type == 'MESH':
+                initial_meshes.append(child)
+            append_descendants(child, initial_meshes, type_req = 'MESH')
         final_meshes = []
         for child in self.series[final_index].ref_obj.children:
-            final_meshes.append(child)
-            append_descendants(child, final_meshes)
+            if child.type == 'MESH':
+                final_meshes.append(child)
+            append_descendants(child, final_meshes, type_req = 'MESH')
 
 
         if RENDER_QUALITY == 'medium' or RENDER_QUALITY == "high":

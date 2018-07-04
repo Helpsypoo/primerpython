@@ -48,7 +48,7 @@ from replication_only import *
 
 import mutations
 imp.reload(mutations)
-#from mutations import *
+from mutations import *
 
 import population
 imp.reload(population)
@@ -512,7 +512,7 @@ def draw_scenes_from_file(script_file):
     scenes = get_scene_object_list(script_file)
     print(scenes)
     duration = get_total_duration(scenes)
-    initialize_blender(total_duration =  duration)
+    initialize_blender(total_duration = duration)
 
     frame = 0
     for scene in scenes:
@@ -680,9 +680,10 @@ def main():
 
     #draw_scenes_from_file(why_things_exist)
     #draw_scenes_from_file(replication_only)
+    draw_scenes_from_file(mutations)
 
-    initialize_blender()
-    mutations.play_scenes()
+    #initialize_blender(total_duration = 15)
+    #mutations.play_scenes()
 
     #print_time_report()
     finish_noise()

@@ -3,7 +3,7 @@ import sys
 import imp
 import bpy
 import math
-from random import random
+from random import random, uniform
 from copy import deepcopy
 import time
 import datetime
@@ -48,6 +48,7 @@ def define_materials():
     make_basic_material(rgb = deepcopy(COLORS[3]), name = 'color4')
     make_basic_material(rgb = deepcopy(COLORS[4]), name = 'color5')
     make_basic_material(rgb = deepcopy(COLORS[5]), name = 'color6')
+    make_basic_material(rgb = deepcopy(COLORS[6]), name = 'color7')
 
     make_creature_material(rgb = deepcopy(COLORS[0]), name = 'creature_color1')
     make_creature_material(rgb = deepcopy(COLORS[1]), name = 'creature_color2')
@@ -55,6 +56,7 @@ def define_materials():
     make_creature_material(rgb = deepcopy(COLORS[3]), name = 'creature_color4')
     make_creature_material(rgb = deepcopy(COLORS[4]), name = 'creature_color5')
     make_creature_material(rgb = deepcopy(COLORS[5]), name = 'creature_color6')
+    make_creature_material(rgb = deepcopy(COLORS[6]), name = 'creature_color7')
 
     make_translucent_material(rgb = deepcopy(COLORS[0]), name = 'trans_color1')
     make_translucent_material(rgb = deepcopy(COLORS[1]), name = 'trans_color2')
@@ -62,6 +64,7 @@ def define_materials():
     make_translucent_material(rgb = deepcopy(COLORS[3]), name = 'trans_color4')
     make_translucent_material(rgb = deepcopy(COLORS[4]), name = 'trans_color5')
     make_translucent_material(rgb = deepcopy(COLORS[5]), name = 'trans_color6')
+    make_translucent_material(rgb = deepcopy(COLORS[6]), name = 'trans_color7')
 
 def make_basic_material(rgb = None, name = None):
     if rgb == None or name == None:
@@ -155,9 +158,13 @@ def link_descendants(obj):
             bpy.context.scene.objects.link(child)
         link_descendants(child)
 
-def append_descendants(obj, lst):
+def append_descendants(obj, lst, type_req = None):
     for child in obj.children:
-        lst.append(child)
+        if type_req == None:
+            lst.append(child)
+        else:
+            if child.type == type_req:
+                lst.append(child)
         append_descendants(child, lst)
 
 def hide_self_and_descendants(obj, hide = True, keyframes = False, frame = None):
@@ -354,6 +361,105 @@ def import_object(filename, *folders, **kwargs):
             #error. In the end, it's fine if the creature never blinks. It's rare.
             pass
 
+    #Wiggles
+    if 'wiggle' in kwargs:
+        wiggle = kwargs['wiggle']
+    else:
+        wiggle = False
+    if (filename == 'boerd_blob' or filename == 'boerd_blob_squat') \
+        and wiggle == True:
+        wiggle_cycle_length = BLINK_CYCLE_LENGTH
+        wiggle_slow_factor = 2
+
+        new_bobject.head_angle = [None] * wiggle_cycle_length
+        new_bobject.head_angle_vel = [None] * wiggle_cycle_length
+        for t in range(wiggle_cycle_length):
+            if t == 0:
+                new_bobject.head_angle[t] = [
+                    1,
+                    uniform(-0.005, 0.005),
+                    uniform(-0.005, 0.005),
+                    uniform(-0.005, 0)
+                ]
+                new_bobject.head_angle_vel[t] = [
+                    0,
+                    uniform(-0.005, 0.005),
+                    uniform(-0.005, 0.005),
+                    uniform(-0.005, 0.005)
+                ]
+                bone = ref_obj.children[0].pose.bones[3]
+                bone.rotation_quaternion = new_bobject.head_angle[t]
+                bone.keyframe_insert(
+                    data_path = "rotation_quaternion",
+                    frame = t * wiggle_slow_factor
+                )
+            else:
+                #update position
+                a = new_bobject.head_angle[t-1]
+                b = new_bobject.head_angle_vel[t-1]
+                new_bobject.head_angle[t] = list(map(sum, zip(a, b)))
+
+                #Hard max on head angles
+                extrema = [
+                    [1, 1],
+                    [-0.1, 0.1],
+                    [-0.1, 0.1],
+                    [-0.1, 0]
+                ]
+                a = new_bobject.head_angle[t]
+                for i in range(1, len(new_bobject.head_angle[t])):
+                    if a[i] < extrema[i][0]:
+                        a[i] = extrema[i][0]
+                    if a[i] > extrema[i][1]:
+                        a[i] = extrema[i][1]
+
+                #update velocity to be used when updating position
+                #in next frame
+                a = new_bobject.head_angle_vel[t-1]
+                b = [
+                    0,
+                    uniform(-0.002, 0.002),
+                    uniform(-0.002, 0.002),
+                    uniform(-0.002, 0.002)
+                ]
+                #Shift the acceleration distribution toward neutral
+                for i in range(1, len(b)):
+                    go_back = -new_bobject.head_angle[t][i] / 1000
+                    b[i] += go_back
+                new_bobject.head_angle_vel[t] = list(map(sum, zip(a, b)))
+
+                bone = ref_obj.children[0].pose.bones[3]
+                bone.rotation_quaternion = new_bobject.head_angle[t]
+                bone.keyframe_insert(
+                    data_path = "rotation_quaternion",
+                    frame = t * wiggle_slow_factor
+                )
+
+        #Make wiggle cyclical
+        bone_x_fcurve = ref_obj.children[0].animation_data.action.fcurves.find(
+            'pose.bones["brd_bone_neck"].rotation_quaternion',
+            index = 0
+        )
+        neck_x_cycle = bone_x_fcurve.modifiers.new(type = 'CYCLES')
+        neck_x_cycle.frame_start = 0
+        neck_x_cycle.frame_end = wiggle_cycle_length * wiggle_slow_factor
+
+        bone_y_fcurve = ref_obj.children[0].animation_data.action.fcurves.find(
+            'pose.bones["brd_bone_neck"].rotation_quaternion',
+            index = 1
+        )
+        neck_y_cycle = bone_y_fcurve.modifiers.new(type = 'CYCLES')
+        neck_y_cycle.frame_start = 0
+        neck_y_cycle.frame_end = wiggle_cycle_length * wiggle_slow_factor
+
+        bone_z_fcurve = ref_obj.children[0].animation_data.action.fcurves.find(
+            'pose.bones["brd_bone_neck"].rotation_quaternion',
+            index = 2
+        )
+        neck_z_cycle = bone_z_fcurve.modifiers.new(type = 'CYCLES')
+        neck_z_cycle.frame_start = 0
+        neck_z_cycle.frame_end = wiggle_cycle_length * wiggle_slow_factor
+
 
     if filename == 'stanford_bunny':
         eye = ref_obj.children[0].children[0]
@@ -473,11 +579,7 @@ def finish_noise(error = False):
     winsound.Beep(freq, duration)'''
     if error == True:
         winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
-        winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
-        winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
     else:
-        winsound.MessageBeep()
-        winsound.MessageBeep()
         winsound.MessageBeep()
     #If you're using this and aren't using windows, here's a resource:
     #https://stackoverflow.com/questions/16573051/python-sound-alarm-when-code-finishes
