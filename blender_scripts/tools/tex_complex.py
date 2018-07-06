@@ -113,7 +113,11 @@ class TexComplex(Bobject):
             #If any annotations are targeting the current t_bobj, move them too
             for annotation in self.annotations:
                 if annotation[1] == i:
+                    if start_frame != None:
+                        annotation[0].ref_obj.keyframe_insert(data_path = 'location', frame = start_frame)
                     annotation[0].ref_obj.location[0] = t_bobj.ref_obj.location[0]
+                    if end_frame != None:
+                        annotation[0].ref_obj.keyframe_insert(data_path = 'location', frame = end_frame)
 
         if end_frame != None:
             for t_bobj in t_bobjs:

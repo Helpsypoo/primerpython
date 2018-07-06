@@ -355,7 +355,8 @@ class Bobject(object):
         start_time = None,
         start_frame = None,
         duration = OBJECT_APPEARANCE_TIME * 4,
-        shift_time = OBJECT_APPEARANCE_TIME
+        shift_time = OBJECT_APPEARANCE_TIME,
+        obj = None
     ):
         if start_time != None:
             if start_frame != None:
@@ -368,8 +369,9 @@ class Bobject(object):
                 shift_time = duration / 2
                 print('Adjusted shift time')
 
-        #For now, only works for simple bobjects
-        obj = self.ref_obj.children[0]
+        #automatically finds object for simple bobjects
+        if obj == None:
+            obj = self.ref_obj.children[0]
         mat_copy = obj.material_slots[0].material.copy()
         obj.active_material = mat_copy
         color_field = mat_copy.node_tree.nodes[-1].inputs[0]

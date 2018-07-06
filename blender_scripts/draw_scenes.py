@@ -510,7 +510,7 @@ def draw_scenes_from_file(script_file):
     #more than one in blender at once, so this is obsolete and will
     #break if you try to process more than one scene at a time.
     scenes = get_scene_object_list(script_file)
-    print(scenes)
+    #print(scenes)
     duration = get_total_duration(scenes)
     initialize_blender(total_duration = duration)
 

@@ -314,7 +314,11 @@ def import_object(filename, *folders, **kwargs):
         leye = ref_obj.children[0].pose.bones[5]
         reye = ref_obj.children[0].pose.bones[6]
         t = 0
-        while t < BLINK_CYCLE_LENGTH:
+        if 'cycle_length' not in kwargs:
+            cycle_length = BLINK_CYCLE_LENGTH
+        else:
+            cycle_length = kwargs['cycle_length']
+        while t < cycle_length:
             blink_roll = random()
             if blink_roll < BLINK_CHANCE:
                 leye.keyframe_insert(data_path = 'scale', frame = t)
@@ -368,24 +372,29 @@ def import_object(filename, *folders, **kwargs):
         wiggle = False
     if (filename == 'boerd_blob' or filename == 'boerd_blob_squat') \
         and wiggle == True:
-        wiggle_cycle_length = BLINK_CYCLE_LENGTH
-        wiggle_slow_factor = 2
+        if 'cycle_length' not in kwargs:
+            wiggle_cycle_length = BLINK_CYCLE_LENGTH
+        else:
+            wiggle_cycle_length = kwargs['cycle_length']
+        wiggle_slow_factor = 1
+        wind_down_time = FRAME_RATE / wiggle_slow_factor
 
         new_bobject.head_angle = [None] * wiggle_cycle_length
         new_bobject.head_angle_vel = [None] * wiggle_cycle_length
         for t in range(wiggle_cycle_length):
             if t == 0:
+                #Start in neutral position
                 new_bobject.head_angle[t] = [
                     1,
-                    uniform(-0.005, 0.005),
-                    uniform(-0.005, 0.005),
-                    uniform(-0.005, 0)
+                    uniform(0, 0),
+                    uniform(0, 0),
+                    uniform(0, 0),
                 ]
                 new_bobject.head_angle_vel[t] = [
                     0,
-                    uniform(-0.005, 0.005),
-                    uniform(-0.005, 0.005),
-                    uniform(-0.005, 0.005)
+                    uniform(-0.0025, 0.0025),
+                    uniform(-0.0025, 0.0025),
+                    uniform(-0.0025, 0.0025)
                 ]
                 bone = ref_obj.children[0].pose.bones[3]
                 bone.rotation_quaternion = new_bobject.head_angle[t]
@@ -393,7 +402,51 @@ def import_object(filename, *folders, **kwargs):
                     data_path = "rotation_quaternion",
                     frame = t * wiggle_slow_factor
                 )
+            elif t < wiggle_cycle_length - wind_down_time:
+                #Random movement up to a half second before end of cycle.
+                #update position
+                a = new_bobject.head_angle[t-1]
+                b = new_bobject.head_angle_vel[t-1]
+                new_bobject.head_angle[t] = list(map(sum, zip(a, b)))
+
+                #Hard max on head angles
+                extrema = [
+                    [1, 1],
+                    [-0.05, 0.05],
+                    [-0.05, 0.05],
+                    [-0.05, 0]
+                ]
+                a = new_bobject.head_angle[t]
+                for i in range(1, len(new_bobject.head_angle[t])):
+                    if a[i] < extrema[i][0]:
+                        a[i] = extrema[i][0]
+                    if a[i] > extrema[i][1]:
+                        a[i] = extrema[i][1]
+
+                #update velocity to be used when updating position
+                #in next frame
+                a = new_bobject.head_angle_vel[t-1]
+                b = [
+                    0,
+                    uniform(-0.0005, 0.0005),
+                    uniform(-0.0005, 0.0005),
+                    uniform(-0.0005, 0.0005)
+                ]
+                #Shift the acceleration distribution toward neutral
+                for i in range(1, len(b)):
+                    go_back = -new_bobject.head_angle[t][i] / 5000
+                    b[i] += go_back
+                new_bobject.head_angle_vel[t] = list(map(sum, zip(a, b)))
+
+                bone = ref_obj.children[0].pose.bones[3]
+                bone.rotation_quaternion = new_bobject.head_angle[t]
+                bone.keyframe_insert(
+                    data_path = "rotation_quaternion",
+                    frame = t * wiggle_slow_factor
+                )
             else:
+                #Approach neutral toward end of cycle, for continuity across
+                #scenes
                 #update position
                 a = new_bobject.head_angle[t-1]
                 b = new_bobject.head_angle_vel[t-1]
@@ -410,22 +463,39 @@ def import_object(filename, *folders, **kwargs):
                 for i in range(1, len(new_bobject.head_angle[t])):
                     if a[i] < extrema[i][0]:
                         a[i] = extrema[i][0]
+                        if b[i] < 0: b[i] = 0
                     if a[i] > extrema[i][1]:
                         a[i] = extrema[i][1]
+                        if b[i] > 0: b[i] = 0
 
                 #update velocity to be used when updating position
                 #in next frame
+                #Calculate acceleration needed to get back to neutral
+
+
+                time_left = wiggle_cycle_length - t
+                timing_factor = (wind_down_time - time_left) * time_left \
+                                        / wind_down_time ** 2
+                target_v = [ #Approaches zero as distance goes to zero
+                    - a[1] * timing_factor,
+                    - a[2] * timing_factor,
+                    - a[3] * timing_factor,
+                ]
+                #print(target_v)
+
+                acc_x = (target_v[0] - b[1]) / 2
+                acc_y = (target_v[1] - b[2]) / 2
+                acc_z = (target_v[2] - b[3]) / 2
+
                 a = new_bobject.head_angle_vel[t-1]
                 b = [
                     0,
-                    uniform(-0.002, 0.002),
-                    uniform(-0.002, 0.002),
-                    uniform(-0.002, 0.002)
+                    acc_x,
+                    acc_y,
+                    acc_z,
                 ]
-                #Shift the acceleration distribution toward neutral
-                for i in range(1, len(b)):
-                    go_back = -new_bobject.head_angle[t][i] / 1000
-                    b[i] += go_back
+                #print(" " + str(b))
+
                 new_bobject.head_angle_vel[t] = list(map(sum, zip(a, b)))
 
                 bone = ref_obj.children[0].pose.bones[3]

@@ -38,7 +38,7 @@ class Gesture(SVGFromBlend):
         super().__init__(*paths, **kwargs)
 
         self.curve = self.ref_obj
-        print(self.ref_obj.name)
+        #print(self.ref_obj.name)
 
     def process_points(self, gesture):
         if gesture['type'] == 'bracket':
