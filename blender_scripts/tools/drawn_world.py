@@ -219,6 +219,10 @@ class DrawnWorld(TwoDWorld, Bobject):
             col = 'creature_color3'
         elif cre.alleles['color'] == 'creature_color_2':
             col = 'creature_color7'
+        elif cre.alleles['color'] == 'creature_color_3':
+            col = 'creature_color6'
+        elif cre.alleles['color'] == 'creature_color_4':
+            col = 'creature_color5'
 
         recursive = True
         if 'stanford_bunny' in self.creature_model:
@@ -233,7 +237,7 @@ class DrawnWorld(TwoDWorld, Bobject):
 
     def set_world_keyframes(self):
         for cre in self.creatures:
-            print("Setting keyframes for " + str(cre.name))
+            #print("Setting keyframes for " + str(cre.name))
             bobj = cre.bobject
             obj = bobj.ref_obj
 

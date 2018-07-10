@@ -156,6 +156,58 @@ class MutationScene(object):
             'R = 5\%',
         ]
 
+        #labeled args
+        b_birth_chance_args_lab = [
+            'B_1 = 100\%',
+        ]
+        b_death_chance_args_lab = [
+            'D_1 = 10\%',
+        ]
+        b_rep_chance_args_lab = [
+            'R_1 = 5\%',
+        ]
+        b_mut_chance_args_lab = [
+            'M_1 = 10\%',
+            'M_{12} = 10\%',
+        ]
+        b_mut_chance_args2_lab = [
+            'M_1 = 10\%',
+            'M_{13} = 10\%',
+        ]
+
+        g_birth_chance_args_lab = [
+            'B_2 = 0\%',
+        ]
+        g_death_chance_args_lab = [
+            'D_2 = 10\%',
+        ]
+        g_rep_chance_args_lab = [
+            'R_2 = 5\%',
+        ]
+
+        r_birth_chance_args_lab = [
+            'B_3 = 0\%',
+        ]
+        r_death_chance_args_lab = [
+            'D_3 = 5\%',
+        ]
+        r_rep_chance_args_lab = [
+            'R_3 = 5\%',
+        ]
+        r_mut_chance_args_lab = [
+            'M_{34} = 5\%',
+        ]
+
+        y_birth_chance_args_lab = [
+            'B_4 = 0\%',
+        ]
+        y_death_chance_args_lab = [
+            'D_4 = 5\%',
+        ]
+        y_rep_chance_args_lab = [
+            'R_4 = 10\%',
+        ]
+
         start_delay = 1
         frames_per_time_step = 10
         sim_duration = 60
@@ -179,6 +231,32 @@ class MutationScene(object):
                 ['color', 'creature_color_1', 'replication_modifier', 50, 0],
                 ['color', 'creature_color_2', 'death_modifier', 100, 0],
                 ['color', 'creature_color_2', 'replication_modifier', 50, 0],
+            ]
+        }
+        second_mutation_sim_kwargs = {
+            'name' : 'mutation_sim',
+            'location' : [-8, -2.5, 0],
+            'scale' : 0.5,
+            'start_delay' : start_delay,
+            'frames_per_time_step' : frames_per_time_step,
+            'sim_duration' : sim_duration,
+            'initial_creatures' : None,
+            'gene_updates' : [
+                ['color', 'creature_color_1', 'birth_modifier', 1000, 0],
+                ['shape', 'shape1', 'birth_modifier', 1, 0],
+                ['size', '1', 'birth_modifier', 1, 0],
+                #Color will have default mutation chance
+                ['color', 'creature_color_1', 'mutation_chance', [0, 0.1, 0.1, 0], 0],
+                ['shape', 'shape1', 'mutation_chance', 0, 0],
+                ['size', '1', 'mutation_chance', 0, 0],
+                ['color', 'creature_color_1', 'death_modifier', 100, 0],
+                ['color', 'creature_color_1', 'replication_modifier', 50, 0],
+                ['color', 'creature_color_2', 'death_modifier', 100, 0],
+                ['color', 'creature_color_2', 'replication_modifier', 50, 0],
+                ['color', 'creature_color_3', 'death_modifier', 100, 0],
+                ['color', 'creature_color_3', 'replication_modifier', 50, 0],
+                ['color', 'creature_color_4', 'death_modifier', 100, 0],
+                ['color', 'creature_color_4', 'replication_modifier', 50, 0],
             ]
         }
 
@@ -1041,7 +1119,7 @@ class BlueEquation(Scene):
         rhs.morph_figure(4, start_time = cues['blue']['start'] + 17)
         lhs.morph_figure(2, start_time = cues['blue']['start'] + 17)
 '''
-#'''
+'''
 class GreenEquation(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -1123,6 +1201,7 @@ class GreenEquation(Scene):
             "B + \\big(R-D\\big) \\times N",
             "B_2 + \\big(R_2-D_2\\big) \\times N_2",
             "B_2 + \\big(R_2-D_2\\big) \\times N_2 + \\substack{\\text{From} \\\\ \\text{Mutation}}",
+            "B_2 + \\big(R_2-D_2\\big) \\times N_2 - R_1M_1N_1",
             centered = True
         )
         gequals = tex_bobject.TexBobject(
@@ -1144,6 +1223,33 @@ class GreenEquation(Scene):
             animate = False
         )
 
+        #Make mutation terms white
+        for i in range(6, 12):
+            char = brhs.lookup_table[1][i]
+            if i == 6:
+                duration = 5.5 * FRAME_RATE
+            else:
+                duration = None
+            char.color_shift(
+                start_time = cues['green']['start'] - 1,
+                duration = duration,
+                color = COLORS_SCALED[1]
+            )
+        for i in range(12, 14):
+            char = brhs.lookup_table[2][i]
+            char.color_shift(
+                start_time = cues['green']['start'] + 4,
+                duration = None,
+                color = COLORS_SCALED[1]
+            )
+        for i in range(13, len(grhs.lookup_table[2])):
+            char = grhs.lookup_table[2][i]
+            char.color_shift(
+                start_time = cues['green']['start'] - 1,
+                duration = None,
+                color = COLORS_SCALED[1]
+            )
+
         brhs.morph_figure(1, start_time = cues['green']['start'] + 2)
         grhs.morph_figure(1, start_time = cues['green']['start'] + 2)
         grhs.morph_figure('next', start_time = cues['green']['start'] + 3)
@@ -1161,6 +1267,572 @@ class GreenEquation(Scene):
             scale = 2
         )
         bg_arrow.add_to_blender(appear_time = cues['green']['start'] + 5)
+        arrow_curve = bg_arrow.lookup_table[0][0]
+        arrow_curve.color_shift(
+            color_gradient = {
+                'color_1' : COLORS_SCALED[2],
+                'color_2' : COLORS_SCALED[6]
+            }
+        )
+
+        grhs.morph_figure('next', start_time = cues['green']['start'] + 6)
+
+        sg = import_object(
+            'sunglasses',
+            location = [1.17, -1.03 + 3, 0.44],
+            rotation_euler = [0, 68.4 * math.pi / 180, 0],
+            scale = 1,
+        )
+        sg.ref_obj.parent = g_blob.ref_obj.children[0]
+        sg.ref_obj.parent_bone = g_blob.ref_obj.children[0].pose.bones["brd_bone_neck"].name
+        sg.ref_obj.parent_type = 'BONE'
+        sg.add_to_blender(
+            appear_time = cues['green']['start'] + 7
+        )
+        sg.move_to(
+            start_time = cues['green']['start'] + 7,
+            displacement = [0, -3, 0]
+        )
+'''
+'''
+class RedYellow(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('rad', {'duration': 10}),
+            ('yallow', {'duration': 10}),
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+        print('Scene end is ' + str(scene_end))
+
+        #Blue blob and stats
+        b_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [-11, 0, 0],
+            scale = 2.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        b_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
+        b_blob.add_to_blender(appear_time = cues['rad']['start'])
+
+        #blue stats
+        b_birth_chance = tex_bobject.TexBobject(
+            *MutationScene.b_birth_chance_args_lab,
+            #**MutationScene.b_birth_chance_kwargs,
+        )
+        b_death_chance = tex_bobject.TexBobject(
+            *MutationScene.b_death_chance_args_lab,
+            scale = 1,
+        )
+        b_rep_chance = tex_bobject.TexBobject(
+            *MutationScene.b_rep_chance_args_lab,
+        )
+        b_mut_chance = tex_bobject.TexBobject(
+            *MutationScene.b_mut_chance_args_lab,
+        )
+        b_stats = tex_complex.TexComplex(
+            b_birth_chance, b_death_chance, b_rep_chance, b_mut_chance,
+            multiline = True,
+            line_height = 1.4,
+            location = [2 / b_blob.ref_obj.scale[0], 0, 0],
+            scale = 1 / b_blob.ref_obj.scale[0]
+        )
+        b_stats.ref_obj.parent = b_blob.ref_obj
+        b_stats.add_to_blender(
+            appear_time = cues['rad']['start'],
+            #subbobject_timing = [0, 60, 120, ],
+        )
+
+
+        g_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-1.5, 0, 0),
+                        'head': (1.5, 0, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-1.5, 0.5, 0),
+                        'head': (1.5, 1.5, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-3.5/1.6, 4/1.6, 0),
+                        'head': (2.5/1.6, 4/1.6, 0)
+                    }
+                }
+            ],
+            scale = 1.6,
+            color = 'color2'
+        )
+        g_arrow.add_to_blender(appear_time = cues['rad']['start'] + 1)
+
+        #Green blob and stats
+        g_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [5, 0, 0],
+            scale = 2.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        g_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(g_blob.ref_obj.children[0].children[0], 'creature_color7')
+        g_blob.add_to_blender(appear_time = cues['rad']['start'] + 2)
+
+        g_birth_chance = tex_bobject.TexBobject(
+            *MutationScene.g_birth_chance_args_lab,
+            #**MutationScene.b_birth_chance_kwargs,
+        )
+        g_death_chance = tex_bobject.TexBobject(
+            *MutationScene.g_death_chance_args_lab,
+            scale = 1,
+        )
+        g_rep_chance = tex_bobject.TexBobject(
+            *MutationScene.g_rep_chance_args_lab,
+        )
+        g_stats = tex_complex.TexComplex(
+            g_birth_chance, g_death_chance, g_rep_chance,
+            multiline = True,
+            line_height = 1.4,
+            location = [2 / g_blob.ref_obj.scale[0], 0, 0],
+            scale = 1 / g_blob.ref_obj.scale[0]
+        )
+        g_stats.ref_obj.parent = g_blob.ref_obj
+        g_stats.add_to_blender(
+            appear_time = cues['rad']['start'] + 2,
+        )
+
+        #Red
+        #Move the green blob
+        g_blob.move_to(
+            new_location = [5, 4, 0],
+            start_time = cues['rad']['start'] + 3
+        )
+
+        g_arrow.morph_figure(1, start_time = cues['rad']['start'] + 3)
+
+        r_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-1.5, -0.5, 0),
+                        'head': (1.5, -1.5, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-11/1.6, 1/1.6, 0),
+                        'head': (-11/1.6, -1/1.6, 0)
+                    }
+                },
+            ],
+            scale = 1.6,
+            color = 'color2'
+        )
+        r_arrow.add_to_blender(appear_time = cues['rad']['start'] + 3)
+
+        #Red blob and stats
+        r_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [5, -4, 0],
+            scale = 2.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        r_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(r_blob.ref_obj.children[0].children[0], 'creature_color6')
+        r_blob.add_to_blender(appear_time = cues['rad']['start'] + 3)
+
+        r_birth_chance = tex_bobject.TexBobject(
+            *MutationScene.r_birth_chance_args_lab,
+            #**MutationScene.b_birth_chance_kwargs,
+        )
+        r_death_chance = tex_bobject.TexBobject(
+            *MutationScene.r_death_chance_args_lab,
+            scale = 1,
+        )
+        r_rep_chance = tex_bobject.TexBobject(
+            *MutationScene.r_rep_chance_args_lab,
+        )
+        r_stats = tex_complex.TexComplex(
+            r_birth_chance, r_death_chance, r_rep_chance,
+            multiline = True,
+            line_height = 1.4,
+            location = [2 / r_blob.ref_obj.scale[0], 0, 0],
+            scale = 1 / r_blob.ref_obj.scale[0]
+        )
+        r_stats.ref_obj.parent = r_blob.ref_obj
+        r_stats.add_to_blender(
+            appear_time = cues['rad']['start'] + 3,
+        )
+
+
+        b_mut_chance2 = tex_bobject.TexBobject(
+            *MutationScene.b_mut_chance_args2_lab,
+        )
+        b_stats.add_tex_bobject(b_mut_chance2)
+        b_mut_chance2.add_to_blender(
+            appear_time = cues['rad']['start'] + 4
+        )
+        b_stats.arrange_tex_bobjects(
+            start_time = cues['rad']['start'] + 4
+        )
+        b_mut_chance.morph_figure(1, start_time = cues['rad']['start'] + 5)
+        b_mut_chance2.morph_figure(1, start_time = cues['rad']['start'] + 6)
+
+
+
+
+
+
+
+        """cam_bobj = bobject.Bobject(location = CAMERA_LOCATION)
+        cam_bobj.add_to_blender(appear_time = 0)
+        cam_obj = bpy.data.objects['Camera']
+        cam_obj.location = [0, 0, 0]
+        cam_obj.parent = cam_bobj.ref_obj
+
+        cam_bobj.move_to(
+            new_location = [5, 1.2, 3],
+            start_time = cues['rad']['start']
+        )
+        cam_bobj.move_to(
+            new_location = CAMERA_LOCATION,
+            start_time = cues['rad']['start']
+        )"""
+
+        b_blob.move_to(
+            displacement = [0, 4, 0],
+            start_time = cues['yallow']['start']
+        )
+        """b_stats.move_to(
+            new_scale = 0.3,
+            start_time = cues['yallow']['start']
+        )"""
+        """g_blob.move_to(
+            new_location = [-2.5, 4, 0],
+            start_time = cues['yallow']['start']
+        )"""
+        g_arrow.morph_figure(2, start_time = cues['yallow']['start'])
+        r_blob.move_to(
+            new_location = [-11, -4, 0],
+            start_time = cues['yallow']['start']
+        )
+        r_arrow.morph_figure(1, start_time = cues['yallow']['start'])
+
+
+        r_mut_chance = tex_bobject.TexBobject(
+            *MutationScene.r_mut_chance_args_lab,
+        )
+        r_stats.add_tex_bobject(r_mut_chance)
+        r_mut_chance.add_to_blender(
+            appear_time = cues['yallow']['start'] + 3
+        )
+        r_stats.arrange_tex_bobjects(
+            start_time = cues['yallow']['start'] + 3
+        )
+
+        #Red blob and stats
+        y_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [5, -4, 0],
+            scale = 2.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        y_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(y_blob.ref_obj.children[0].children[0], 'creature_color4')
+        y_blob.add_to_blender(appear_time = cues['yallow']['start'] + 3)
+
+        y_birth_chance = tex_bobject.TexBobject(
+            *MutationScene.y_birth_chance_args_lab,
+            #**MutationScene.b_birth_chance_kwargs,
+        )
+        y_death_chance = tex_bobject.TexBobject(
+            *MutationScene.y_death_chance_args_lab,
+            scale = 1,
+        )
+        y_rep_chance = tex_bobject.TexBobject(
+            *MutationScene.y_rep_chance_args_lab,
+        )
+        y_stats = tex_complex.TexComplex(
+            y_birth_chance, y_death_chance, y_rep_chance,
+            multiline = True,
+            line_height = 1.4,
+            location = [2 / y_blob.ref_obj.scale[0], 0, 0],
+            scale = 1 / y_blob.ref_obj.scale[0]
+        )
+        y_stats.ref_obj.parent = y_blob.ref_obj
+        y_stats.add_to_blender(
+            appear_time = cues['yallow']['start'] + 1,
+        )
+
+        y_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-3.5/1.6, -4/1.6, 0),
+                        'head': (2.5/1.6, -4/1.6, 0)
+                    }
+                }
+            ],
+            scale = 1.6,
+            color = 'color2'
+        )
+        y_arrow.add_to_blender(appear_time = cues['yallow']['start'] + 1)
+
+        #This somehow get set to zero messed up somewhere above.
+        y_blob.ref_obj.scale = [2.5, 2.5, 2.5]
+
+        b_blob.move_to(
+            new_location = [-12.1, 5.5, 0],
+            new_scale = 1.5,
+            start_time = scene_end - 0.5
+        )
+        """b_stats.move_to(
+            displacement = [
+                0,
+                -0.7 * 0.4,
+                0
+            ],
+            start_time = scene_end - 0.5
+        )"""
+        g_blob.move_to(
+            new_location = [-5.1, 5.5, 0],
+            new_scale = 1.5,
+            start_time = scene_end - 0.5
+        )
+        """g_stats.move_to(
+            displacement = [
+                0,
+                0.7 * 0.4,
+                0
+            ],
+            start_time = scene_end - 0.5
+        )"""
+        r_blob.move_to(
+            new_location = [1.9, 5.5, 0],
+            new_scale = 1.5,
+            start_time = scene_end - 0.5
+        )
+        y_blob.move_to(
+            new_location = [8.9, 5.5, 0],
+            new_scale = 1.5,
+            start_time = scene_end - 0.5
+        )
+        """y_stats.move_to(
+            displacement = [
+                0,
+                0.7 * 0.4,
+                0
+            ],
+            start_time = scene_end - 0.5
+        )"""
+
+        remaining = [
+            g_arrow, r_arrow, y_arrow
+        ]
+        for thing in remaining:
+            thing.disappear(disappear_time = scene_end)
+'''
+#'''
+class RedYellowSim(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('sim', {'duration': 10}),
+            ('banana', {'duration': 10}),
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        print('Scene end is ' + str(self.duration))
+
+        #self.set_up()
+        self.sim()
+
+    def set_up(self):
+        cues = self.subscenes
+        scene_end = self.duration
+
+        #Blue blob and stats
+        b_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [-12.1, 5.5, 0],
+            scale = 1.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        b_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
+        b_blob.add_to_blender(appear_time = cues['sim']['start'] - 0.5)
+
+        #blue stats
+        b_birth_chance = tex_bobject.TexBobject(
+            *MutationScene.b_birth_chance_args_lab,
+            #**MutationScene.b_birth_chance_kwargs,
+        )
+        b_death_chance = tex_bobject.TexBobject(
+            *MutationScene.b_death_chance_args_lab,
+            scale = 1,
+        )
+        b_rep_chance = tex_bobject.TexBobject(
+            *MutationScene.b_rep_chance_args_lab,
+        )
+        b_mut_chance = tex_bobject.TexBobject(
+            *MutationScene.b_mut_chance_args_lab,
+        )
+        b_mut_chance2 = tex_bobject.TexBobject(
+            *MutationScene.b_mut_chance_args2_lab,
+        )
+        b_stats = tex_complex.TexComplex(
+            b_birth_chance, b_death_chance, b_rep_chance,
+            b_mut_chance, b_mut_chance2,
+            multiline = True,
+            line_height = 1.4,
+            location = [0.8, 0, 0],
+            scale = 0.4
+        )
+        b_stats.ref_obj.parent = b_blob.ref_obj
+        b_stats.add_to_blender(
+            appear_time = cues['sim']['start'] - 0.5,
+        )
+        b_mut_chance.morph_figure(1, start_time = cues['sim']['start'] - 0.5)
+        b_mut_chance2.morph_figure(1, start_time = cues['sim']['start'] - 0.5)
+
+        #Green blob and stats
+        g_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [-5.1, 5.5, 0],
+            scale = 1.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        g_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(g_blob.ref_obj.children[0].children[0], 'creature_color7')
+        g_blob.add_to_blender(appear_time = cues['sim']['start'] - 0.5)
+
+        g_birth_chance = tex_bobject.TexBobject(
+            *MutationScene.g_birth_chance_args_lab,
+            #**MutationScene.b_birth_chance_kwargs,
+        )
+        g_death_chance = tex_bobject.TexBobject(
+            *MutationScene.g_death_chance_args_lab,
+            scale = 1,
+        )
+        g_rep_chance = tex_bobject.TexBobject(
+            *MutationScene.g_rep_chance_args_lab,
+        )
+        g_stats = tex_complex.TexComplex(
+            g_birth_chance, g_death_chance, g_rep_chance,
+            multiline = True,
+            line_height = 1.4,
+            location = [0.8, 0, 0],
+            scale = 0.4
+        )
+        g_stats.ref_obj.parent = g_blob.ref_obj
+        g_stats.add_to_blender(
+            appear_time = cues['sim']['start'] - 0.5,
+        )
+
+        #Red blob and stats
+        r_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [1.9, 5.5, 0],
+            scale = 1.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        r_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(r_blob.ref_obj.children[0].children[0], 'creature_color6')
+        r_blob.add_to_blender(appear_time = cues['sim']['start'] - 0.5)
+
+        r_birth_chance = tex_bobject.TexBobject(
+            *MutationScene.r_birth_chance_args_lab,
+            #**MutationScene.b_birth_chance_kwargs,
+        )
+        r_death_chance = tex_bobject.TexBobject(
+            *MutationScene.r_death_chance_args_lab,
+            scale = 1,
+        )
+        r_rep_chance = tex_bobject.TexBobject(
+            *MutationScene.r_rep_chance_args_lab,
+        )
+        r_mut_chance = tex_bobject.TexBobject(
+            *MutationScene.r_mut_chance_args_lab,
+        )
+        r_stats = tex_complex.TexComplex(
+            r_birth_chance, r_death_chance, r_rep_chance, r_mut_chance,
+            multiline = True,
+            line_height = 1.4,
+            location = [0.8, 0, 0],
+            scale = 0.4
+        )
+        r_stats.ref_obj.parent = r_blob.ref_obj
+        r_stats.add_to_blender(
+            appear_time = cues['sim']['start'] - 0.5,
+        )
+
+        #Red blob and stats
+        y_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [8.9, 5.5, 0],
+            scale = 1.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        y_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(y_blob.ref_obj.children[0].children[0], 'creature_color4')
+        y_blob.add_to_blender(appear_time = cues['sim']['start'] - 0.5)
+
+        y_birth_chance = tex_bobject.TexBobject(
+            *MutationScene.y_birth_chance_args_lab,
+            #**MutationScene.b_birth_chance_kwargs,
+        )
+        y_death_chance = tex_bobject.TexBobject(
+            *MutationScene.y_death_chance_args_lab,
+            scale = 1,
+        )
+        y_rep_chance = tex_bobject.TexBobject(
+            *MutationScene.y_rep_chance_args_lab,
+        )
+        y_stats = tex_complex.TexComplex(
+            y_birth_chance, y_death_chance, y_rep_chance,
+            multiline = True,
+            line_height = 1.4,
+            location = [0.8, 0, 0],
+            scale = 0.4
+        )
+        y_stats.ref_obj.parent = y_blob.ref_obj
+        y_stats.add_to_blender(
+            appear_time = cues['sim']['start'] - 0.5,
+        )
+
+    def sim(self):
+        cues = self.subscenes
+        scene_end = self.duration
+
+        sim = drawn_world.DrawnWorld(
+            **MutationScene.second_mutation_sim_kwargs
+        )
+        sim.add_to_blender(
+            appear_time = cues['sim']['start']
+        )
 #'''
 
 """def play_scenes():

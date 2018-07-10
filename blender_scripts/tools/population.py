@@ -4,6 +4,7 @@ import imp
 import creature
 import constants
 import math
+import collections
 #import alone doesn't check for changes in cached files
 imp.reload(creature)
 #from creature import Creature
@@ -16,48 +17,60 @@ A collection of creatures over time.
 
 class Population(object):
     genes = {
-        'color' : {
-            "creature_color_1" : {
+        'color' : collections.OrderedDict([
+            ("creature_color_1" , {
                     "birth_modifier" : 0,
                     "replication_modifier" : 1,
                     "mutation_chance" : DEFAULT_MUTATION_CHANCE,
                     "death_modifier" : 1
-            },
-            "creature_color_2" : {
+            }),
+            ("creature_color_2" , {
                     "birth_modifier" : 0,
                     "replication_modifier" : 1,
                     "mutation_chance" : DEFAULT_MUTATION_CHANCE,
                     "death_modifier" : 1
-            }
-        },
-        'shape' : {
-            "shape1" : {
+            }),
+            ("creature_color_3" , {
                     "birth_modifier" : 0,
                     "replication_modifier" : 1,
                     "mutation_chance" : DEFAULT_MUTATION_CHANCE,
                     "death_modifier" : 1
-            },
-            "shape2" : {
+            }),
+            ("creature_color_4" , {
                     "birth_modifier" : 0,
                     "replication_modifier" : 1,
                     "mutation_chance" : DEFAULT_MUTATION_CHANCE,
                     "death_modifier" : 1
-            }
-        },
-        'size' : {
-            "1" : {
+            })
+        ]),
+        'shape' : collections.OrderedDict([
+            ("shape1" , {
                     "birth_modifier" : 0,
                     "replication_modifier" : 1,
                     "mutation_chance" : DEFAULT_MUTATION_CHANCE,
                     "death_modifier" : 1
-            },
-            "0.5" : {
+            }),
+            ("shape2" , {
                     "birth_modifier" : 0,
                     "replication_modifier" : 1,
                     "mutation_chance" : DEFAULT_MUTATION_CHANCE,
                     "death_modifier" : 1
-            }
-        }
+            })
+        ]),
+        'size' : collections.OrderedDict([
+            ("1" , {
+                    "birth_modifier" : 0,
+                    "replication_modifier" : 1,
+                    "mutation_chance" : DEFAULT_MUTATION_CHANCE,
+                    "death_modifier" : 1
+            }),
+            ("0.5" , {
+                    "birth_modifier" : 0,
+                    "replication_modifier" : 1,
+                    "mutation_chance" : DEFAULT_MUTATION_CHANCE,
+                    "death_modifier" : 1
+            })
+        ])
     }
 
     def __init__(self, **kwargs):
@@ -208,18 +221,30 @@ class Population(object):
             if replicate_roll < replication_chance:
                 baby = creature.Creature()
                 self.creatures.append(baby)
-
                 #Assign genes, checking for mutations
                 for gene in self.genes:
                     mutation_roll = random()
-                    if mutation_roll < \
-                    self.genes[gene][cre.alleles[gene]]\
-                                                        ['mutation_chance']:
-                        other_options = deepcopy(self.genes[gene])
-                        other_options.pop(cre.alleles[gene])
-                        baby.alleles[gene] = choice(list(other_options.keys()))
+                    chances = self.genes[gene][cre.alleles[gene]]['mutation_chance']
+                    if isinstance(chances, (float, int)):
+                        if mutation_roll < chances:
+                            other_options = deepcopy(self.genes[gene])
+                            other_options.pop(cre.alleles[gene])
+                            baby.alleles[gene] = choice(list(other_options.keys()))
+                        else:
+                            baby.alleles[gene] = cre.alleles[gene]
+                    #Allow for different odds of mutating to different alleles
+                    elif isinstance(chances, list):
+                        cumulative_chance = 0
+                        for chance, allele in zip(chances, self.genes[gene]):
+                            cumulative_chance += chance
+                            if mutation_roll < cumulative_chance:
+                                baby.alleles[gene] = allele
+                                break
+                            baby.alleles[gene] = cre.alleles[gene]
+
                     else:
-                        baby.alleles[gene] = cre.alleles[gene]
+                        raise Warning('Mutation chance must be number or list')
+
 
                 baby.birthday = t + 1
                 baby.parent = cre

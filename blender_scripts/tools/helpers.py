@@ -83,6 +83,35 @@ def make_basic_material(rgb = None, name = None):
                   #which doesn't take alpha
     color.diffuse_color = rgb
 
+def add_color_gradient_to_mat(mat, color_gradient):
+    nodes = mat.node_tree.nodes
+    num = len(nodes)
+    color_node = nodes[-1]
+    color_field = color_node.inputs[0]
+
+
+
+
+    #color.node_tree.links.remove(nodes[0].inputs[0].links[0])
+
+    nodes.new(type = 'ShaderNodeMixRGB')
+    mat.node_tree.links.new(nodes[num].outputs[0], color_field)
+    nodes[-1].inputs[1].default_value = color_gradient['color_1']
+    nodes[-1].inputs[2].default_value = color_gradient['color_2']
+
+    nodes.new(type = 'ShaderNodeTexGradient')
+    mat.node_tree.links.new(nodes[-1].outputs[0], nodes[-2].inputs[0])
+
+    nodes.new(type = 'ShaderNodeMapping')
+    mat.node_tree.links.new(nodes[-1].outputs[0], nodes[-2].inputs[0])
+    nodes[-1].vector_type = 'TEXTURE'
+    nodes[-1].translation = color_gradient['translation']
+    nodes[-1].rotation = color_gradient['rotation']
+    nodes[-1].scale = color_gradient['scale']
+
+    nodes.new(type = 'ShaderNodeTexCoord')
+    mat.node_tree.links.new(nodes[-1].outputs[0], nodes[-2].inputs[0])
+
 def make_creature_material(rgb = None, name = None):
     if rgb == None or name == None:
         raise Warning('Need rgb and name to make creature material')

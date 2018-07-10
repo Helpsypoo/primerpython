@@ -356,7 +356,8 @@ class Bobject(object):
         start_frame = None,
         duration = OBJECT_APPEARANCE_TIME * 4,
         shift_time = OBJECT_APPEARANCE_TIME,
-        obj = None
+        obj = None,
+        color_gradient = None
     ):
         if start_time != None:
             if start_frame != None:
@@ -374,30 +375,51 @@ class Bobject(object):
             obj = self.ref_obj.children[0]
         mat_copy = obj.material_slots[0].material.copy()
         obj.active_material = mat_copy
-        color_field = mat_copy.node_tree.nodes[-1].inputs[0]
+        color_node = mat_copy.node_tree.nodes[-1]
+        color_field = color_node.inputs[0]
 
-        if duration != None:
-            #If duration is finite, store original color
-            original_color = list(color_field.default_value)
+        if color_gradient == None:
+            if duration != None:
+                #If duration is finite, store original color
+                original_color = list(color_field.default_value)
 
-        color_field.keyframe_insert(data_path = 'default_value', frame = start_frame)
-        color_field.default_value = color
-        color_field.keyframe_insert(data_path = 'default_value', frame = start_frame + shift_time)
 
-        #Viewport color
-        mat_copy.keyframe_insert(data_path = 'diffuse_color', frame = start_frame)
-        mat_copy.diffuse_color = color[:3]
-        mat_copy.keyframe_insert(data_path = 'diffuse_color', frame = start_frame + shift_time)
+            color_field.keyframe_insert(data_path = 'default_value', frame = start_frame)
+            color_field.default_value = color
+            color_field.keyframe_insert(data_path = 'default_value', frame = start_frame + shift_time)
 
-        if duration != None:
-            #If duration is finite, return to original color
-            color_field.keyframe_insert(data_path = 'default_value', frame = start_frame + duration - shift_time)
-            color_field.default_value = original_color
-            color_field.keyframe_insert(data_path = 'default_value', frame = start_frame + duration)
+            #Viewport color
+            mat_copy.keyframe_insert(data_path = 'diffuse_color', frame = start_frame)
+            mat_copy.diffuse_color = color[:3]
+            mat_copy.keyframe_insert(data_path = 'diffuse_color', frame = start_frame + shift_time)
 
-            mat_copy.keyframe_insert(data_path = 'diffuse_color', frame = start_frame + duration - shift_time)
-            mat_copy.diffuse_color = original_color[:3]
-            mat_copy.keyframe_insert(data_path = 'diffuse_color', frame = start_frame + duration)
+            if duration != None:
+                #If duration is finite, return to original color
+                color_field.keyframe_insert(data_path = 'default_value', frame = start_frame + duration - shift_time)
+                color_field.default_value = original_color
+                color_field.keyframe_insert(data_path = 'default_value', frame = start_frame + duration)
+
+                mat_copy.keyframe_insert(data_path = 'diffuse_color', frame = start_frame + duration - shift_time)
+                mat_copy.diffuse_color = original_color[:3]
+                mat_copy.keyframe_insert(data_path = 'diffuse_color', frame = start_frame + duration)
+
+        #No actual need for keyframes right now.
+        else: #Gradient
+            #These default value work for arrows
+            if 'color_1' not in color_gradient:
+                color_gradient['color_1'] = color_field.default_value
+            if 'color_2' not in color_gradient:
+                color_gradient['color_2'] = color
+            if 'rotation' not in color_gradient:
+                color_gradient['rotation'] = [0, 0, - math.pi / 2]
+            if 'translation' not in color_gradient:
+                color_gradient['translation'] = [0, 0.5, 0]
+            if 'scale' not in color_gradient:
+                color_gradient['scale'] = [0.2, 0.2, 0]
+
+            add_color_gradient_to_mat(mat_copy, color_gradient)
+
+
 
 class MeshMorphBobject(Bobject):
     def __init__(self, *subbobjects, **kwargs):
