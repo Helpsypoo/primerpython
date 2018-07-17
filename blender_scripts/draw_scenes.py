@@ -105,6 +105,8 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION):
     scn.render.use_compositing = False
     scn.render.use_sequencer = False
     scn.render.image_settings.file_format = 'PNG'
+    scn.render.tile_x = RENDER_TILE_SIZE
+    scn.render.tile_y = RENDER_TILE_SIZE
     #Apparentlly 16-bit color depth pngs don't convert well to mp4 in Blender.
     #It gets all dark. 8-bit it is.
     #scn.render.image_settings.color_depth = '16'
@@ -221,126 +223,31 @@ def get_scene_object_list(script_file):
     return objects
 
 def test_object():
+    scene_length = 4
 
-    blob2_intro_start = 0
-    blob2_intro_end = blob2_intro_start + 40
-
-    blob2_sim_start = blob2_intro_end
-    blob2_sim_end = blob2_sim_start
-
-    scene_end = blob2_sim_end
-
-    initialize_blender(total_duration = scene_end)
+    initialize_blender(total_duration = scene_length)
 
     blob2 = import_object(
-        'boerd_blob_squat',
+        'boerd_blob',
         'creatures',
-        location = (7, 2, 0),
-        scale = 4
+        location = (0, 0, 0),
+        scale = 5,
+        wiggle = True,
+        cycle_length = scene_length * FRAME_RATE
     )
     for child in blob2.ref_obj.children[0].children:
         if child.type == 'META':
             if len(child.material_slots) > 0:
                 child.data.resolution = 0.1
                 apply_material(child, 'creature_color4')
-
-    '''birth_chance_tex2 = tex_bobject.TexBobject('\\text{Birth chance each frame} = 10\\%')
-    birth_tex_container2 = tex_complex.TexComplex(
-        birth_chance_tex2,
-        centered= True,
-        location = (7, -4, 0),
-        scale = 0.67
-    )
-    birth_tex_container2.add_to_blender(
-        appear_frame = blob2_intro_start + 24,
-        animate = True
-    )
-    death_chance_tex2 = tex_bobject.TexBobject('\\text{Survival chance each frame} = 99\\%')
-    death_tex_container2 = tex_complex.TexComplex(
-        death_chance_tex2,
-        centered= True,
-        location = (7, -5, 0),
-        scale = 0.67
-    )
-    death_tex_container2.add_to_blender(
-        appear_frame = blob2_intro_start + 48,
-        animate = True
-    )
-    birth_tex_container2.disappear(disappear_frame = blob2_intro_end)
-    death_tex_container2.disappear(disappear_frame = blob2_intro_end)'''
-
-    '''initial_creature_count = 10
-    initial_creatures = []
-    for i in range(initial_creature_count):
-        new_creature = creature.Creature(color = 'creature_color_2', shape = 'shape2')
-        initial_creatures.append(new_creature)
-    blob2_sim = drawn_world.DrawnWorld(
-        name = 'blob2_sim',
-        location = [7.5, -2.5, 0],
-        scale = 0.6,
-        appear_frame = blob2_sim_start,
-        start_delay = 0,
-        duration = scene_end - blob2_sim_start,
-        initial_creatures = initial_creatures,
-        #save = True,
-        #load = 'prep_chars_test',
-        gene_updates = [
-            ['color', 'creature_color_2', 'birth_modifier', 100, 0],
-            ['shape', 'shape2', 'birth_modifier', 1, 0],
-            ['size', '1', 'birth_modifier', 1, 0],
-            ['color', 'creature_color_2', 'replication_modifier', 0, 0],
-            ['color', 'creature_color_2', 'death_modifier', 10, 0],
-        ],
-        counter_alignment = 'top_left'
-    )'''
-
     ##Create blender-side objects and manipulate
     blob2.add_to_blender(
-        appear_frame = blob2_intro_start,
-        animate = True
+        appear_time = 0
     )
-    '''blob2.move_to(
-        start_frame = blob2_intro_end - OBJECT_APPEARANCE_TIME,
-        end_frame = blob2_intro_end,
-        new_location = (11, 4.5, 0),
-        new_scale = [2] * 3,
-    )'''
-    '''blob2_sim.add_counter(
-        color = 'creature_color_2',
-        label = '\\text{Total: }'
+    blob2.blob_wave(
+        start_time = 1,
+        duration = 2
     )
-    blob2_sim.add_counter(
-        color = 'creature_color_2',
-        label = '\\text{Average: }',
-        average = True
-    )'''
-
-    '''birth_chance_info2 = tex_bobject.TexBobject('\\text{Birth chance: } 10\\%')
-    blob2_sim.add_info(birth_chance_info2)
-
-    death_chance_info2 = tex_bobject.TexBobject('\\text{Survival chance: } 99\\%')
-    blob2_sim.add_info(death_chance_info2)
-
-    blob2_sim.add_to_blender(
-        appear_frame = blob2_sim_start,
-        animate = True
-    )'''
-
-    '''bun = import_object('stanford_bunny', 'creatures', scale = 8)
-    torus = import_object('torus', 'primitives', scale = 60, location = (0, 0, 40))
-    form_bun = bobject.MeshMorphBobject(name = 'form_bun')
-    form_bun.add_subbobject_to_series(torus)
-    form_bun.add_subbobject_to_series(bun)
-
-    form_bun.add_to_blender(appear_frame = 0, animate = False)
-
-    form_bun.morph_bobject(0, 1, 20, 60, dissolve_time = 30)
-
-    #Spiiiiiiiin
-    form_bun.ref_obj.rotation_euler = (0, -math.pi / 2, 0)
-    form_bun.ref_obj.keyframe_insert(data_path="rotation_euler", frame = 0)
-    form_bun.ref_obj.rotation_euler = (0, math.pi / 2, 0)
-    form_bun.ref_obj.keyframe_insert(data_path="rotation_euler", frame = 100)'''
 
 def test_sim():
     total_duration = 200
@@ -532,14 +439,17 @@ def draw_scenes_from_file(script_file):
     print_time_report()
 
 def test_molecule():
-    initialize_blender()
+    #initialize_blender()
 
-    parent = bobject.Bobject()
-    parent.add_subbobject_to_series(import_object('H2O'))
-    parent.add_subbobject_to_series(import_object('sucrose'))
-    parent.add_to_blender()
+    make_parent_tree()
 
-    #parent.morph_bobject(1, 50, 70)
+    """rna = import_object(
+        'rna', 'biochem',
+    )
+    rna.add_to_blender(
+        appear_time = 0,
+        animate = False
+    )"""
 
 def graph_test():
     initialize_blender(total_duration = 1200)
@@ -668,15 +578,7 @@ def bcard():
     primer.add_to_blender(appear_frame = 0)
 
 def main():
-    #test_object()
-    #execute_and_time(test_sim())
-    #execute_and_time(tex_test())
     #test_molecule()
-    #morph_test()
-    #graph_test()
-    #color_test()
-    #bcard()
-    #gesture_test()
 
     #draw_scenes_from_file(why_things_exist)
     #draw_scenes_from_file(replication_only)

@@ -81,6 +81,7 @@ def run():
 
     json_mol = process(mol, args.hydrogens, args.generate_coords,
                        args.infer_bonds, args.convert_only)
+    #print(json_mol)
     if args.convert_only:
         print(json_mol)
         sys.exit()
@@ -105,9 +106,13 @@ def run():
         command.append('--no-join')
     if args.join == 'colors':
         command.append('--join-colors')
+    #print(command)
     with open(os.devnull, 'w') as null:
         subprocess.Popen(command, stdout=null, stderr=null)
 
 
 if __name__ == '__main__':
     run()
+
+
+#C1=CN(C(=O)N=C1N)C2C(C(C(O2)COP(=O)(O)O)OP(=O)(O)OCC3C(C(C(O3)N4C=NC5=C4N=C(NC5=O)N)O)OP(=O)(O)OCC6C(C(C(O6)N7C=NC8=C7N=C(NC8=O)N)O)OP(=O)(O)OCC9C(C(C(O9)N1C=CC(=NC1=O)N)O)OP(=O)(O)OCC1C(C(C(O1)N1C=CC(=O)NC1=O)O)OP(=O)(O)OCC1C(C(C(O1)N1C=CC(=NC1=O)N)O)OP(=O)(O)OCC1C(C(C(O1)N1C=NC2=C1N=CN=C2N)O)OP(=O)(O)OCC1C(C(C(O1)N1C=NC2=C1N=CN=C2N)O)O)O

@@ -14,6 +14,7 @@ if RENDER_QUALITY == 'final':
     LIGHT_SAMPLING_THRESHOLD = 0.0
     SAMPLE_COUNT = 64
     RENDER_QUALITY = 'high'
+    RENDER_TILE_SIZE = 512
     #The 'final' stuff is over, so just setting to 'high' for rest of code
 else:
     RESOLUTION_PERCENTAGE = 30
@@ -21,6 +22,7 @@ else:
                                    #ray bouncing that the cutoff test actually
                                    #takes longer than lsetting the light keep going
     SAMPLE_COUNT = 64
+    RENDER_TILE_SIZE = 256
 
 if RENDER_QUALITY == 'high':
     LAMPS_TO_A_SIDE = 1
@@ -61,7 +63,6 @@ if color_scheme == 1:
         #[255, 0, 0, 1]
     ]
 elif color_scheme == 2:
-    #Coolors Exported Palette - coolors.co/191308-bbd8b3-f3b61f-48a0c9-72120d
     COLORS = [
         #[42, 46, 48, 1], #Three darker than first video
         [47, 51, 54, 1], #Two darker than first video
@@ -72,7 +73,7 @@ elif color_scheme == 2:
         #[232, 225, 34, 1],
         [231, 226, 71, 1],
         #[106, 141, 115, 1]
-        [215, 38, 61, 1],
+        [214, 59, 80, 1],
         #[255, 0, 0, 1]
         [105, 143, 63, 1]
     ]

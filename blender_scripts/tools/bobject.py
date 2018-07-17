@@ -3,7 +3,7 @@ import mathutils
 
 import inspect
 import imp
-from random import random
+from random import random, uniform
 import math
 import time
 from copy import deepcopy
@@ -312,7 +312,7 @@ class Bobject(object):
         obj = self.ref_obj
         obj.keyframe_insert(data_path="rotation_euler", frame = start_frame)
 
-        new_y = spin_rate * (start_frame - end_frame) / FRAME_RATE
+        new_y = spin_rate * 2 * math.pi * (start_frame - end_frame) / FRAME_RATE
 
         obj.rotation_euler[1] = new_y
         obj.keyframe_insert(
@@ -328,7 +328,7 @@ class Bobject(object):
         attack = OBJECT_APPEARANCE_TIME,
         decay = OBJECT_APPEARANCE_TIME,
         duration_time = None,
-        duration = OBJECT_APPEARANCE_TIME * 4,
+        duration = None,
     ):
         if time != None:
             if frame != None:
@@ -340,6 +340,9 @@ class Bobject(object):
                 raise Warning("You defined duration by both frames and time. " +\
                               "Just do one, ya dick.")
             duration = duration_time * FRAME_RATE
+        else:
+            if duration == None:
+                duration = OBJECT_APPEARANCE_TIME * 4
 
         obj = self.ref_obj
         obj.keyframe_insert(data_path="scale", frame = frame)
@@ -419,7 +422,190 @@ class Bobject(object):
 
             add_color_gradient_to_mat(mat_copy, color_gradient)
 
+    def blob_wave(
+        self,
+        start_time,
+        duration
+    ):
+        #This function only works for blob creatures. Maybe they deserve their
+        #own subclass of bobject.
+        start_frame = start_time * FRAME_RATE
+        duration = duration * FRAME_RATE
 
+        wave_cycle_length = 8
+        cycle_error = 4
+        num_wave_cycles = math.floor(duration / wave_cycle_length)
+        duration = num_wave_cycles * wave_cycle_length
+
+        l_arm_up_z = 1
+        l_arm_down_z = -1
+        l_arm_out_y = 3
+        r_arm_up_z = -1
+        r_arm_down_z = 1
+        r_arm_out_y = -5
+
+        #These labels are from the point of view of the blob, which is opposite
+        #from how they're labeled in the template .blend file. Huzzah.
+        l_arm = self.ref_obj.children[0].pose.bones[1]
+        r_arm = self.ref_obj.children[0].pose.bones[2]
+
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        initial_angle = deepcopy(l_arm.rotation_quaternion)
+        l_arm.rotation_quaternion[2] = l_arm_out_y
+        l_arm.rotation_quaternion[3] = l_arm_down_z
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + wave_cycle_length + uniform(-cycle_error, cycle_error)
+        )
+
+        #waves
+        for i in range(1, num_wave_cycles - 1): #last one gets overridden
+            if i % 2 == 1:
+                l_arm.rotation_quaternion[3] = l_arm_up_z
+            if i % 2 == 0:
+                l_arm.rotation_quaternion[3] = l_arm_down_z
+            l_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + wave_cycle_length + uniform(-cycle_error, cycle_error) + i * wave_cycle_length
+            )
+
+        #And back
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + duration - wave_cycle_length  + uniform(-cycle_error, cycle_error)
+        )
+        l_arm.rotation_quaternion = initial_angle
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + duration
+        )
+
+
+
+
+        #Right arm
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        initial_angle = deepcopy(r_arm.rotation_quaternion)
+        r_arm.rotation_quaternion[2] = r_arm_out_y
+        r_arm.rotation_quaternion[3] = r_arm_down_z
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + wave_cycle_length + uniform(-cycle_error, cycle_error)
+        )
+
+        #waves
+        for i in range(1, num_wave_cycles - 1):
+            if i % 2 == 1:
+                r_arm.rotation_quaternion[3] = r_arm_up_z
+            if i % 2 == 0:
+                r_arm.rotation_quaternion[3] = r_arm_down_z
+            r_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + wave_cycle_length + uniform(-cycle_error, cycle_error) + i * wave_cycle_length
+            )
+
+        #And back
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + duration - wave_cycle_length + uniform(-cycle_error, cycle_error)
+        )
+        r_arm.rotation_quaternion = initial_angle
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + duration
+        )
+
+    def de_explode(
+        self,
+        start_time = 0,
+        duration = 1,
+        delay = 0,
+        delay_step = 2
+    ):
+        #Works on a group of objects with a series of parent-child relationships
+        #Spreads the objects out, then pulls them together based on family tree
+        #structure
+
+        start_frame = start_time * FRAME_RATE
+        duration_frames = duration * FRAME_RATE
+
+        seed = self.ref_obj       
+        de_explode_children(seed, start_frame, duration_frames, delay, delay_step)
+
+def de_explode_children(obj, start_frame, duration_frames, delay, delay_step):
+    for child in obj.children:
+        #location
+        final_loc = deepcopy(child.location)
+        #if delay == 0: #First parent
+        spread_factor = 10
+        child.location = [
+            spread_factor * uniform(-1, 1),
+            spread_factor * uniform(-1, 1),
+            spread_factor * uniform(-1, 1)
+        ]
+        child.keyframe_insert(
+            data_path = 'location',
+            frame = start_frame + delay
+        )
+        child.location = final_loc
+        child.keyframe_insert(
+            data_path = 'location',
+            frame = start_frame + duration_frames + delay
+        )
+
+        final_scale = deepcopy(child.scale)
+        child.scale = [0, 0, 0]
+        child.keyframe_insert(
+            data_path = 'scale',
+            frame = start_frame
+        )
+        if 'Cylinder' in child.name:
+            child.keyframe_insert(
+                data_path = 'scale',
+                #Start to appear once in place
+                frame = start_frame + duration_frames + delay            )
+            child.scale = final_scale
+            child.keyframe_insert(
+                data_path = 'scale',
+                frame = start_frame + duration_frames + delay + OBJECT_APPEARANCE_TIME
+            )
+
+        else:
+            child.keyframe_insert(
+                data_path = 'scale',
+                #2 sec before arriving, the atom begins to appear
+                frame = start_frame + duration_frames + delay - 120
+            )
+            child.scale = final_scale
+            child.keyframe_insert(
+                data_path = 'scale',
+                #1 sec before arriving, the atom is full size
+                frame = start_frame + duration_frames + delay - 60
+            )
+
+        #Extra delay on recursion at Phosphorus
+        if child.scale[0] > 0.03:
+            de_explode_children(
+                child,
+                start_frame,
+                duration_frames,
+                delay + delay_step * 20,
+                delay_step
+            )
+        else:
+            de_explode_children(
+                child,
+                start_frame,
+                duration_frames,
+                delay + delay_step,
+                delay_step
+            )
 
 class MeshMorphBobject(Bobject):
     def __init__(self, *subbobjects, **kwargs):

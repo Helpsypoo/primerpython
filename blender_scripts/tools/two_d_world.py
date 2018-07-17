@@ -168,7 +168,8 @@ class TwoDWorld(Population):
                             if repetitions > 10:
                                 '''
                                 #This code was in progress when I decided it's not
-                                #actually important to handle overpopulation well.
+                                #actually important to handle drawspace-based
+                                #overpopulation well.
                                 #If you want to handle it well, you'd need to
                                 #exterminate the dead creature's whole lineage.
                                 #Right now, the code just kills the creature itself.
@@ -181,8 +182,8 @@ class TwoDWorld(Population):
                                 self.revoke_existence(creature)
                                 '''
                                 alive = [x for x in creatures if \
-                                            x. birthframe <= t and x.deathframe > t]
-                                print("There are %s living creatures at time = %s" \
+                                            x.birthframe <= t and x.deathframe > t]
+                                print("There are %s living creatures at frame = %s" \
                                         % (len(alive), t))
                                 print("Too crowded, had to allow overlap")
 

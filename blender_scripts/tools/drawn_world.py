@@ -222,7 +222,7 @@ class DrawnWorld(TwoDWorld, Bobject):
         elif cre.alleles['color'] == 'creature_color_3':
             col = 'creature_color6'
         elif cre.alleles['color'] == 'creature_color_4':
-            col = 'creature_color5'
+            col = 'creature_color4'
 
         recursive = True
         if 'stanford_bunny' in self.creature_model:

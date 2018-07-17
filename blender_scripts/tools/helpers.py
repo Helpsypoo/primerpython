@@ -2,9 +2,10 @@ import os
 import sys
 import imp
 import bpy
+import bmesh
 import math
 from random import random, uniform
-from copy import deepcopy
+from copy import copy, deepcopy
 import time
 import datetime
 
@@ -268,6 +269,197 @@ def get_unit_vec(vec):
     for i in range(len(vec)):
         v.append(vec[i] / length)
     return v
+
+'''
+Mesh intersections
+'''
+def bmesh_copy_from_object(obj, transform=True, triangulate=True, apply_modifiers=False):
+    """
+    Returns a transformed, triangulated copy of the mesh
+    """
+
+    assert(obj.type == 'MESH')
+
+    if apply_modifiers and obj.modifiers:
+        me = obj.to_mesh(bpy.context.scene, True, 'PREVIEW', calc_tessface=False)
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        bpy.data.meshes.remove(me)
+    else:
+        me = obj.data
+        if obj.mode == 'EDIT':
+            bm_orig = bmesh.from_edit_mesh(me)
+            bm = bm_orig.copy()
+        else:
+            bm = bmesh.new()
+            bm.from_mesh(me)
+
+    # Remove custom data layers to save memory
+    for elem in (bm.faces, bm.edges, bm.verts, bm.loops):
+        for layers_name in dir(elem.layers):
+            if not layers_name.startswith("_"):
+                layers = getattr(elem.layers, layers_name)
+                for layer_name, layer in layers.items():
+                    layers.remove(layer)
+
+    if transform:
+        bm.transform(obj.matrix_world)
+
+    if triangulate:
+        bmesh.ops.triangulate(bm, faces=bm.faces)
+
+    return bm
+
+def bmesh_check_intersect_objects(obj, obj2, location_as_proxy = True):
+    """
+    Check if any faces intersect with the other object
+    returns a boolean
+    """
+
+    if location_as_proxy == True:
+        diff = obj2.location - obj.location
+        dist = diff.length
+        if dist > 0.1:
+            return False
+
+    assert(obj != obj2)
+
+    # Triangulate
+    bm = bmesh_copy_from_object(obj, transform=True, triangulate=True)
+    bm2 = bmesh_copy_from_object(obj2, transform=True, triangulate=True)
+
+    # If bm has more edges, use bm2 instead for looping over its edges
+    # (so we cast less rays from the simpler object to the more complex object)
+    if len(bm.edges) > len(bm2.edges):
+        bm2, bm = bm, bm2
+
+    # Create a real mesh (lame!)
+    scene = bpy.context.scene
+    me_tmp = bpy.data.meshes.new(name="~temp~")
+    bm2.to_mesh(me_tmp)
+    bm2.free()
+    obj_tmp = bpy.data.objects.new(name=me_tmp.name, object_data=me_tmp)
+    scene.objects.link(obj_tmp)
+    scene.update()
+    ray_cast = obj_tmp.ray_cast
+
+    intersect = False
+
+    EPS_NORMAL = 0.000001
+    EPS_CENTER = 0.01  # should always be bigger
+
+    #for ed in me_tmp.edges:
+    for ed in bm.edges:
+        v1, v2 = ed.verts
+
+        # setup the edge with an offset
+        co_1 = v1.co.copy()
+        co_2 = v2.co.copy()
+        co_mid = (co_1 + co_2) * 0.5
+        no_mid = (v1.normal + v2.normal).normalized() * EPS_NORMAL
+        co_1 = co_1.lerp(co_mid, EPS_CENTER) + no_mid
+        co_2 = co_2.lerp(co_mid, EPS_CENTER) + no_mid
+
+        res, co, no, index = ray_cast(co_1, co_2)
+        if index != -1:
+            intersect = True
+            break
+
+    scene.objects.unlink(obj_tmp)
+    bpy.data.objects.remove(obj_tmp)
+    bpy.data.meshes.remove(me_tmp)
+
+    scene.update()
+
+    return intersect
+
+def find_intersections(meshes):
+    intersections = []
+    for i in range(len(meshes)):
+        print('Checking for intersections with ' + meshes[i].name)
+        for j in range(i + 1, len(meshes)):
+            intersection = bmesh_check_intersect_objects(meshes[i], meshes[j])
+            #Sometimes cylinders and spheres touch even though they shouldn't
+            #be counted
+            same_type = False
+            if 'Sphere' in meshes[i].name and 'Sphere' in meshes[j].name:
+                same_type = True
+            if 'Cylinder' in meshes[i].name and 'Cylinder' in meshes[j].name:
+                same_type = True
+            if intersection == True and same_type == False:
+                intersections.append([meshes[i], meshes[j]])
+
+    return intersections
+
+def get_centrality(mesh, intersection_checklist, depth):
+    #Kind of a weird name for this function
+
+    score = 0
+    if 'Sphere' in mesh.name:
+        score = depth * depth
+    for line in intersection_checklist:
+        if mesh in line[0] and line[1] == False:
+            #print(' ' + mesh.name + ' ' + str(line[0]))
+            line[1] = True
+
+            for thing in line[0]:
+                if thing != mesh:
+                    next_mesh = thing
+
+            if 'Sphere' in next_mesh.name:
+                next_depth = depth + 1
+            else:
+                next_depth = depth
+
+            score += get_centrality(next_mesh, intersection_checklist, next_depth)
+
+    return score
+
+def establish_ancestors(mesh, intersections):
+    #Kind of a weird name for this function
+
+    for inter in intersections:
+        if mesh in inter:
+            for thing in inter:
+                if thing != mesh:
+                    next_mesh = thing
+
+            #Second requirement prevents error with root parent
+            if next_mesh.parent == None and len(next_mesh.children) == 0:
+                #Don't make cylinders parents, since they need different visual
+                #treatment
+                while "Cylinder" in mesh.name:
+                    mesh = mesh.parent
+                next_mesh.parent = mesh
+                next_mesh.matrix_parent_inverse = mesh.matrix_world.inverted()
+                establish_ancestors(next_mesh, intersections)
+
+def make_parent_tree():
+    #Only works when all meshes are part of one intersecting whole.
+
+    meshes = []
+    for obj in bpy.data.objects:
+        if obj.type == 'MESH':
+            meshes.append(obj)
+
+    intersections = find_intersections(meshes)
+
+    min_score = math.inf
+    central_mesh = None
+    for mesh in meshes:
+        intersection_checklist = []
+        for inter in intersections:
+            intersection_checklist.append([inter, False])
+        score = get_centrality(mesh, intersection_checklist, 0)
+        print(mesh.name, score)
+        if score < min_score:
+            min_score = score
+            central_mesh = mesh
+
+    print()
+    print(central_mesh.name, min_score)
+
+    establish_ancestors(central_mesh, intersections)
 
 '''
 Blender object imports

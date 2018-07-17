@@ -82,8 +82,8 @@ class MutationScene(object):
             'high_res_curve_indices' : [0, 1, 2]
         }
 
-        frames_per_time_step = 15
-        start_delay = 1.5
+        frames_per_time_step = 21
+        start_delay = 1
         sim_duration = 20
 
         initial_creature_count = 2
@@ -95,24 +95,24 @@ class MutationScene(object):
             'name' : 'blob1_sim',
             'location' : [0, -3, 0],
             'scale' : 0.4,
-            'start_delay' : start_delay,
+            'start_delay' : start_delay - 0.2, #To compensate for cute add timing
             'frames_per_time_step' : frames_per_time_step,
             'load' : 'ro_not_extinction',
             'sim_duration' : sim_duration,
             'initial_creatures' : initial_creatures,
-            'gene_updates' : [
-                ['color', 'creature_color_1', 'birth_modifier', 0, 0],
-                ['shape', 'shape1', 'birth_modifier', 0, 0],
-                ['size', '1', 'birth_modifier', 0, 0],
-                ['color', 'creature_color_1', 'mutation_chance', 0, 0],
-                ['shape', 'shape1', 'mutation_chance', 0, 0],
-                ['size', '1', 'mutation_chance', 0, 0],
-                ['color', 'creature_color_1', 'death_modifier', 200, 0],
-                ['color', 'creature_color_1', 'replication_modifier', 300, 0],
-            ],
-            'pauses' : [
-                [0, 1]
-            ]
+            #'gene_updates' : [
+            #    ['color', 'creature_color_1', 'birth_modifier', 0, 0],
+            #    ['shape', 'shape1', 'birth_modifier', 0, 0],
+            #    ['size', '1', 'birth_modifier', 0, 0],
+            #    ['color', 'creature_color_1', 'mutation_chance', 0, 0],
+            #    ['shape', 'shape1', 'mutation_chance', 0, 0],
+            #    ['size', '1', 'mutation_chance', 0, 0],
+            #    ['color', 'creature_color_1', 'death_modifier', 200, 0],
+            #    ['color', 'creature_color_1', 'replication_modifier', 300, 0],
+            #],
+            #'pauses' : [
+            #    [0, 1]
+            #]
         }
         sim2_kwargs = {
             'name' : 'blob1_sim',
@@ -208,9 +208,9 @@ class MutationScene(object):
             'R_4 = 10\%',
         ]
 
-        start_delay = 1
-        frames_per_time_step = 10
-        sim_duration = 60
+        start_delay = 0.5
+        frames_per_time_step = 15
+        sim_duration = 120
         first_mutation_sim_kwargs = {
             'name' : 'mutation_sim',
             'location' : [6, 0, 0],
@@ -219,18 +219,22 @@ class MutationScene(object):
             'frames_per_time_step' : frames_per_time_step,
             'sim_duration' : sim_duration,
             'initial_creatures' : None,
+            'save' : True,
             'gene_updates' : [
-                ['color', 'creature_color_1', 'birth_modifier', 1000, 0],
+                #Other alleles
                 ['shape', 'shape1', 'birth_modifier', 1, 0],
                 ['size', '1', 'birth_modifier', 1, 0],
-                #Color will have default mutation chance
-                #['color', 'creature_color_1', 'mutation_chance', 0, 0],
                 ['shape', 'shape1', 'mutation_chance', 0, 0],
                 ['size', '1', 'mutation_chance', 0, 0],
+                #Color 1
+                ['color', 'creature_color_1', 'birth_modifier', 1000, 0],
                 ['color', 'creature_color_1', 'death_modifier', 100, 0],
                 ['color', 'creature_color_1', 'replication_modifier', 50, 0],
+                ['color', 'creature_color_1', 'mutation_chance', [0, 0.1, 0, 0], 0],
+                #Color 2
                 ['color', 'creature_color_2', 'death_modifier', 100, 0],
                 ['color', 'creature_color_2', 'replication_modifier', 50, 0],
+                ['color', 'creature_color_2', 'mutation_chance', 0, 0],
             ]
         }
         second_mutation_sim_kwargs = {
@@ -241,30 +245,69 @@ class MutationScene(object):
             'frames_per_time_step' : frames_per_time_step,
             'sim_duration' : sim_duration,
             'initial_creatures' : None,
+            #'save' : True,
+            'load' : 'mut_reasonable_yellow',
             'gene_updates' : [
-                ['color', 'creature_color_1', 'birth_modifier', 1000, 0],
+                #Other alleles
                 ['shape', 'shape1', 'birth_modifier', 1, 0],
                 ['size', '1', 'birth_modifier', 1, 0],
-                #Color will have default mutation chance
-                ['color', 'creature_color_1', 'mutation_chance', [0, 0.1, 0.1, 0], 0],
                 ['shape', 'shape1', 'mutation_chance', 0, 0],
                 ['size', '1', 'mutation_chance', 0, 0],
+                #Color 1
+                ['color', 'creature_color_1', 'birth_modifier', 1000, 0],
                 ['color', 'creature_color_1', 'death_modifier', 100, 0],
                 ['color', 'creature_color_1', 'replication_modifier', 50, 0],
+                ['color', 'creature_color_1', 'mutation_chance', [0, 0.1, 0.1, 0], 0],
+                #Color 2
                 ['color', 'creature_color_2', 'death_modifier', 100, 0],
                 ['color', 'creature_color_2', 'replication_modifier', 50, 0],
-                ['color', 'creature_color_3', 'death_modifier', 100, 0],
+                ['color', 'creature_color_2', 'mutation_chance', 0, 0],
+                #Color 3
+                ['color', 'creature_color_3', 'death_modifier', 50, 0],
                 ['color', 'creature_color_3', 'replication_modifier', 50, 0],
-                ['color', 'creature_color_4', 'death_modifier', 100, 0],
-                ['color', 'creature_color_4', 'replication_modifier', 50, 0],
+                ['color', 'creature_color_3', 'mutation_chance', [0, 0, 0, 0.1], 0],
+                #Color 4
+                ['color', 'creature_color_4', 'death_modifier', 50, 0],
+                ['color', 'creature_color_4', 'replication_modifier', 100, 0],
+                ['color', 'creature_color_4', 'mutation_chance', 0, 0],
             ]
+        }
+        second_mutation_sim_graph_kwargs = {
+            'x_range' : [0, sim_duration],
+            'y_range' : [0, 50],
+            'tick_step' : [50, 10],
+            'width' : 12,
+            'height' : 9,
+            'x_label' : 't',
+            'x_label_pos' : 'end',
+            'y_label' : 'N',
+            'y_label_pos' : 'along',
+            'location' : (6, -2.5, 0),
+            'centered' : True,
+            'arrows' : 'positive',
+            'high_res_curve_indices' : [0, 1, 2, 3]
+        }
+        second_mutation_sim_graph_end_kwargs = {
+            'x_range' : [0, sim_duration],
+            'y_range' : [0, 50],
+            'tick_step' : [50, 10],
+            'width' : 15,
+            'height' : 10,
+            'x_label' : 't',
+            'x_label_pos' : 'end',
+            'y_label' : 'N',
+            'y_label_pos' : 'end',
+            'location' : (-4, -1, 0),
+            'centered' : True,
+            'arrows' : 'positive',
+            'high_res_curve_indices' : [0, 1, 2, 3]
         }
 
 '''
 class LastVideoExp(Scene, MutationScene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('sim', {'duration': 8}),
+            ('sim', {'duration': 9}),
         ])
         super().__init__()
 
@@ -281,22 +324,42 @@ class LastVideoExp(Scene, MutationScene):
 
         blob = import_object(
             'boerd_blob', 'creatures',
-            location = [0, 4.5, 0],
-            scale = 2.7
+            location = [-7.5, 5, 0],
+            scale = 2.7,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
         )
         apply_material(blob.ref_obj.children[0].children[0], 'creature_color3')
-        blob.add_to_blender(appear_time = 0)
+        blob.add_to_blender(appear_time = cues['sim']['start'] + 1)
+
+        rhs = tex_bobject.TexBobject(
+            "B + \\big(R-D\\big) \\times N",
+            centered = True
+        )
+        equals = tex_bobject.TexBobject(
+            "\!=",
+            centered = True
+        )
+        lhs = tex_bobject.TexBobject(
+            "\\Delta",
+            centered = True
+        )
+        equation = tex_complex.TexComplex(
+            lhs, equals, rhs,
+            location = (2.5, 5, 0),
+            scale = 1.2,
+            centered = True
+        )
+        equation.add_to_blender(appear_time = cues['sim']['start'] + 1)
 
         graph = graph_bobject.GraphBobject(
             func2,
             **MutationScene.graph_kwargs
         )
-        graph.add_to_blender(appear_time = cues['sim']['start'])
+        graph.add_to_blender(appear_time = cues['sim']['start'] + 1.1)
 
         appear_coord = [5, 0.5, 0]
 
-
-        #Transition to N-t graph
         def exp_func(x): return 2 * math.exp(0.1 * x)
         #def exp_func(x): return 15 * math.exp(0.1 * x) - 10
         graph2 = graph_bobject.GraphBobject(
@@ -305,7 +368,7 @@ class LastVideoExp(Scene, MutationScene):
         )
 
         frames_per_time_step = 15
-        start_delay = 1.5
+        start_delay = 1
         sim_duration = 20
 
         initial_creature_count = 2
@@ -317,9 +380,9 @@ class LastVideoExp(Scene, MutationScene):
             **MutationScene.sim_kwargs
         )
 
-        graph2.add_to_blender(appear_time = cues['sim']['start'])
+        graph2.add_to_blender(appear_time = cues['sim']['start'] + 1.3)
 
-        sim.add_to_blender(appear_time = cues['sim']['start'])
+        sim.add_to_blender(appear_time = cues['sim']['start'] + 1.2)
 
 
 
@@ -328,7 +391,7 @@ class LastVideoExp(Scene, MutationScene):
         print(data)
         graph2.add_new_function_and_curve(
             data,
-            curve_mat_modifier = 'fade',
+            #curve_mat_modifier = 'fade',
             z_shift = -0.05,
         )
         graph2.animate_function_curve(
@@ -341,7 +404,7 @@ class LastVideoExp(Scene, MutationScene):
         appear_coord2 = [0, data[0], 0]
         point2 = graph2.add_point_at_coord(
             coord = appear_coord2,
-            appear_time = cues['sim']['start'] + 1.5,
+            appear_time = cues['sim']['start'] + 2,
             axis_projections = True,
             track_curve = 1
         )
@@ -355,7 +418,7 @@ class LastVideoExp(Scene, MutationScene):
         appear_coord21 = [data[0], func2(data[0]), 0]
         point21 = graph.add_point_at_coord(
             coord = appear_coord21,
-            appear_time = cues['sim']['start'] + 1.5,
+            appear_time = cues['sim']['start'] + 2,
             axis_projections = True,
             track_curve = 0
         )
@@ -386,22 +449,21 @@ class LastVideoExp(Scene, MutationScene):
         zoom_arrow.add_to_blender(appear_time = cues['sim']['start'] + 4.5)
 
         #point 2 disappears after
-        point2.disappear(disappear_time = cues['sim']['start'] + 7.5)
-        point2.axis_projections[0].disappear(disappear_time = cues['sim']['start'] + 7.5)
-        point2.axis_projections[1].disappear(disappear_time = cues['sim']['start'] + 7.5)
-        zoom_arrow.disappear(disappear_time = cues['sim']['start'] + 7.5)
-
+        #point2.disappear(disappear_time = cues['sim']['start'] + 8.5)
+        #point2.axis_projections[0].disappear(disappear_time = cues['sim']['start'] + 8.5)
+        #point2.axis_projections[1].disappear(disappear_time = cues['sim']['start'] + 8.5)
+        #zoom_arrow.disappear(disappear_time = cues['sim']['start'] + 8.5)
 
         #Prep for next scene
-        to_disappear = [blob, graph, sim, graph2]
-        for thing in to_disappear:
-            thing.disappear(disappear_time = cues['sim']['end'])
+        to_disappear = [blob, equation, zoom_arrow, graph, sim, graph2]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = cues['sim']['end'] - (len(to_disappear) - 1 - i) * 0.05)
 '''
 '''
 class LastVideoChicken(Scene, MutationScene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('form', {'duration': 8}),
+            ('form', {'duration': 4}),
             ('sim', {'duration': 8}),
         ])
         super().__init__()
@@ -521,15 +583,15 @@ class LastVideoChicken(Scene, MutationScene):
 
         #Prep for next scene
         to_disappear = [form_chik, graph, sim, graph2]
-        for thing in to_disappear:
-            thing.disappear(disappear_time = cues['sim']['end'])
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = cues['sim']['end'] - (len(to_disappear) - 1 - i) * 0.05)
 '''
 '''
 class Logo(Scene):
     def __init__(self):
 
         self.subscenes = collections.OrderedDict([
-            ('logo', {'duration': 4})
+            ('logo', {'duration': 2})
         ])
         super().__init__()
 
@@ -562,9 +624,9 @@ class BlueGreenCards(Scene):
     def __init__(self):
 
         self.subscenes = collections.OrderedDict([
-            ('blue', {'duration': 4}),
-            ('blue_stats', {'duration': 4}),
-            ('green_stats', {'duration': 9}),
+            ('blue', {'duration': 26}),
+            ('blue_stats', {'duration': 12}),
+            ('green_stats', {'duration': 63}),
             #('sim', {'duration': 12}),
         ])
         super().__init__()
@@ -584,7 +646,7 @@ class BlueGreenCards(Scene):
         )
         b_blob.ref_obj.children[0].children[0].data.resolution = 0.2
         apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
-        b_blob.add_to_blender(appear_time = cues['blue']['start'])
+        b_blob.add_to_blender(appear_time = cues['blue']['start'] + 1)
 
         b_blob2 = import_object(
             'boerd_blob', 'creatures',
@@ -594,15 +656,15 @@ class BlueGreenCards(Scene):
         )
         b_blob2.ref_obj.children[0].children[0].data.resolution = 0.2
         apply_material(b_blob2.ref_obj.children[0].children[0], 'creature_color3')
-        b_blob2.add_to_blender(appear_time = cues['blue']['start'] + 1)
+        b_blob2.add_to_blender(appear_time = cues['blue']['start'] + 3.5)
 
         b_blob.move_to(
             new_location = [-8, 0, 0],
-            start_time = cues['blue']['start'] + 1
+            start_time = cues['blue']['start'] + 3.5
         )
         b_blob2.move_to(
             new_location = [8, 0, 0],
-            start_time = cues['blue']['start'] + 1
+            start_time = cues['blue']['start'] + 3.5
         )
 
         arrow = gesture.Gesture(
@@ -618,15 +680,15 @@ class BlueGreenCards(Scene):
             scale = 2,
             color = 'color2'
         )
-        arrow.add_to_blender(appear_time = cues['blue']['start'] + 1)
+        arrow.add_to_blender(appear_time = cues['blue']['start'] + 3.5)
 
 
         #Second blue blob disappears to make way for the green blob
-        arrow.disappear(disappear_time = cues['blue']['start'] + 2.5)
-        b_blob2.disappear(disappear_time = cues['blue']['start'] + 2.5)
+        arrow.disappear(disappear_time = cues['blue']['start'] + 7.5)
+        b_blob2.disappear(disappear_time = cues['blue']['start'] + 7.5)
         b_blob.move_to(
             new_location = [0, 0, 0],
-            start_time = cues['blue']['start'] + 2
+            start_time = cues['blue']['start'] + 7
         )
 
         #Green blob appears
@@ -639,21 +701,30 @@ class BlueGreenCards(Scene):
         )
         g_blob.ref_obj.children[0].children[0].data.resolution = 0.2
         apply_material(g_blob.ref_obj.children[0].children[0], 'creature_color7')
-        g_blob.add_to_blender(appear_time = cues['blue']['start'] + 3)
+        g_blob.add_to_blender(appear_time = cues['blue']['start'] + 12)
 
         b_blob.move_to(
             new_location = [-8, 0, 0],
-            start_time = cues['blue']['start'] + 3
+            start_time = cues['blue']['start'] + 12
         )
         g_blob.move_to(
             new_location = [8, 0, 0],
-            start_time = cues['blue']['start'] + 3
+            start_time = cues['blue']['start'] + 12
         )
-        arrow.add_to_blender(appear_time = cues['blue']['start'] + 3 + 1/60)
+        arrow.add_to_blender(appear_time = cues['blue']['start'] + 12 + 1/60)
 
+        mutations = tex_bobject.TexBobject(
+            '\\text{"Mutation"} \\phantom{shmehhh}', #Shmeh to differentiate
+                                                     #from other tex file with
+                                                     #no quotes
+            scale = 1.5,
+            location = [0, 3, 0],
+            centered = True
+        )
+        mutations.add_to_blender(appear_time = cues['blue']['start'] + 15)
+        mutations.disappear(disappear_time = cues['blue']['end'])
 
         #blue stats
-
         b_blob.move_to(
             new_location = [-11, 0, 0],
             new_scale = 2.5,
@@ -680,7 +751,7 @@ class BlueGreenCards(Scene):
         b_stats.ref_obj.parent = b_blob.ref_obj
         b_stats.add_to_blender(
             appear_time = cues['blue_stats']['start'],
-            subbobject_timing = [0, 60, 120],
+            subbobject_timing = [0, 390, 480],
         )
 
 
@@ -703,11 +774,13 @@ class BlueGreenCards(Scene):
 
         cam_bobj.move_to(
             new_location = [5, 1.2, 3],
-            start_time = cues['green_stats']['start'] + 1
+            start_time = cues['green_stats']['start'] + 5,
+            end_time = cues['green_stats']['start'] + 23.5
         )
         cam_bobj.move_to(
             new_location = CAMERA_LOCATION,
-            start_time = cues['green_stats']['start'] + 3
+            start_time = cues['green_stats']['start'] + 27,
+            end_time = cues['green_stats']['start'] + 28
         )
 
         g_birth_chance = tex_bobject.TexBobject(
@@ -730,8 +803,8 @@ class BlueGreenCards(Scene):
         )
         g_stats.ref_obj.parent = g_blob.ref_obj
         g_stats.add_to_blender(
-            appear_time = cues['green_stats']['start'] + 5,
-            subbobject_timing = [0, 60, 120],
+            appear_time = cues['green_stats']['start'] + 36,
+            subbobject_timing = [180, 0, 30],
         )
 
         b_mut_chance = tex_bobject.TexBobject(
@@ -739,10 +812,10 @@ class BlueGreenCards(Scene):
         )
         b_stats.add_tex_bobject(b_mut_chance)
         b_mut_chance.add_to_blender(
-            appear_time = cues['green_stats']['start'] + 8
+            appear_time = cues['green_stats']['start'] + 54.5
         )
         b_stats.arrange_tex_bobjects(
-            start_time = cues['green_stats']['start'] + 8
+            start_time = cues['green_stats']['start'] + 54.5
         )
 
         #Prep for sim
@@ -756,11 +829,11 @@ class BlueGreenCards(Scene):
         )
         arrow.disappear(disappear_time = cues['green_stats']['end'])
 '''
-'''
+#'''
 class FirstMutationSim(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('sim', {'duration': 12}),
+            ('sim', {'duration': 29}),
         ])
         super().__init__()
 
@@ -848,7 +921,17 @@ class FirstMutationSim(Scene):
         sim.add_to_blender(
             appear_time = cues['sim']['start']
         )
-'''
+
+        b_blob.move_to(
+            new_location = [-11, 0, 0],
+            start_time = scene_end - 0.5,
+            new_scale = 2.5
+        )
+
+        to_disappear = [b_stats, g_blob, g_stats, sim]
+        for thing in to_disappear:
+            thing.disappear(disappear_time = cues['sim']['end'])
+#'''
 '''
 class BlueEquation(Scene):
     def __init__(self):
@@ -1650,12 +1733,11 @@ class RedYellow(Scene):
         for thing in remaining:
             thing.disappear(disappear_time = scene_end)
 '''
-#'''
+'''
 class RedYellowSim(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('sim', {'duration': 10}),
-            ('banana', {'duration': 10}),
+            ('sim', {'duration': 24}),
         ])
         super().__init__()
 
@@ -1663,8 +1745,9 @@ class RedYellowSim(Scene):
         super().play()
         print('Scene end is ' + str(self.duration))
 
-        #self.set_up()
+        self.set_up()
         self.sim()
+        #self.graph()
 
     def set_up(self):
         cues = self.subscenes
@@ -1788,7 +1871,7 @@ class RedYellowSim(Scene):
             appear_time = cues['sim']['start'] - 0.5,
         )
 
-        #Red blob and stats
+        #Yellow blob
         y_blob = import_object(
             'boerd_blob', 'creatures',
             location = [8.9, 5.5, 0],
@@ -1833,7 +1916,552 @@ class RedYellowSim(Scene):
         sim.add_to_blender(
             appear_time = cues['sim']['start']
         )
-#'''
+
+        """def graph(self):
+        cues = self.subscenes
+        scene_end = self.duration"""
+
+        graph = graph_bobject.GraphBobject(
+            **MutationScene.second_mutation_sim_graph_kwargs
+        )
+        graph.add_to_blender(appear_time = cues['sim']['start'])
+        func = sim.get_creature_count_by_t(color = 'creature_color_1')
+        graph.add_new_function_and_curve(func, color = 3)
+
+        func = sim.get_creature_count_by_t(color = 'creature_color_2')
+        graph.add_new_function_and_curve(func, color = 7)
+
+        func = sim.get_creature_count_by_t(color = 'creature_color_3')
+        graph.add_new_function_and_curve(func, color = 6)
+
+        func = sim.get_creature_count_by_t(color = 'creature_color_4')
+        graph.add_new_function_and_curve(func, color = 4)
+
+        graph.animate_function_curve(
+            start_time = cues['sim']['start'] + sim.start_delay / FRAME_RATE,
+            end_time = cues['sim']['start'] + (sim.start_delay + sim.sim_duration * sim.frames_per_time_step) / FRAME_RATE,
+            uniform_along_x = True,
+            index = 0
+        )
+        graph.animate_function_curve(
+            start_time = cues['sim']['start'] + sim.start_delay / FRAME_RATE,
+            end_time = cues['sim']['start'] + (sim.start_delay + sim.sim_duration * sim.frames_per_time_step) / FRAME_RATE,
+            uniform_along_x = True,
+            index = 1
+        )
+        graph.animate_function_curve(
+            start_time = cues['sim']['start'] + sim.start_delay / FRAME_RATE,
+            end_time = cues['sim']['start'] + (sim.start_delay + sim.sim_duration * sim.frames_per_time_step) / FRAME_RATE,
+            uniform_along_x = True,
+            index = 2
+        )
+        graph.animate_function_curve(
+            start_time = cues['sim']['start'] + sim.start_delay / FRAME_RATE,
+            end_time = cues['sim']['start'] + (sim.start_delay + sim.sim_duration * sim.frames_per_time_step) / FRAME_RATE,
+            uniform_along_x = True,
+            index = 3
+        )
+
+        #I messed up and rendered without the disappear code, so I did it all manually.
+        """to_disappear = [b_blob, g_blob, r_blob, sim, graph]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(
+                disappear_time = cues['sim']['end'] - (len(to_disappear) - 1 - i) * 0.05
+            )"""
+'''
+'''
+class TheDoorIsOpen(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('blob_tree', {'duration': 6}),
+            ('big_tree', {'duration': 6}),
+            ('tree_swap', {'duration': 10}),
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+        print('Scene end is ' + str(scene_end))
+
+        #Blue blob
+        b_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [-11, 0, 0],
+            scale = 2.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        b_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
+
+        g_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-8/1.6, 1/1.6, 0),
+                        'head': (-3/1.6, 3/1.6, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-9/1, 4/1, 0),
+                        'head': (-6.67/1, 4/1, 0)
+                    }
+                },
+            ],
+            scale = 1.6,
+            color = 'color2'
+        )
+
+        #Green blob
+        g_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [0, 4, 0],
+            scale = 2.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        g_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(g_blob.ref_obj.children[0].children[0], 'creature_color7')
+
+        r_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-8/1.6, -1/1.6, 0),
+                        'head': (-3/1.6, -3/1.6, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-10/1, 1/1, 0),
+                        'head': (-9/1, -1/1, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-1.5, 0, 0),
+                        'head': (1.5, 0, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (-8/1.6, -1/1.6, 0),
+                        'head': (-3/1.6, -3/1.6, 0)
+                    }
+                },
+            ],
+            scale = 1.6,
+            color = 'color2'
+        )
+
+        #Red blob
+        r_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [0, -4, 0],
+            scale = 2.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        r_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(r_blob.ref_obj.children[0].children[0], 'creature_color6')
+
+        #Red blob
+        y_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [11, 0, 0],
+            scale = 2.5,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        y_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(y_blob.ref_obj.children[0].children[0], 'creature_color4')
+
+        y_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (8/1.6, -1/1.6, 0),
+                        'tail': (3/1.6, -3/1.6, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (-3.5/1, -4/1, 0),
+                        'tail': (-5.833/1, -4/1, 0)
+                    }
+                }
+            ],
+            scale = 1.6,
+            color = 'color2'
+        )
+
+        b_blob.add_to_blender(appear_time = cues['blob_tree']['start'])
+        g_arrow.add_to_blender(appear_time = cues['blob_tree']['start'] + 0.1)
+        g_blob.add_to_blender(appear_time = cues['blob_tree']['start'] + 0.2)
+        r_arrow.add_to_blender(appear_time = cues['blob_tree']['start'] + 0.3)
+        r_blob.add_to_blender(appear_time = cues['blob_tree']['start'] + 0.4)
+        y_arrow.add_to_blender(appear_time = cues['blob_tree']['start'] + 0.5)
+        y_blob.add_to_blender(appear_time = cues['blob_tree']['start'] + 0.6)
+
+        """y_blob.pulse(
+            time = cues['blob_tree']['start'] + 2,
+            duration_time = 2
+        )"""
+        y_blob.blob_wave(
+            start_time = cues['blob_tree']['start'] + 2,
+            duration = 2
+        )
+        b_blob.pulse(
+            time = cues['blob_tree']['start'] + 4,
+            duration_time = 2
+        )
+
+        #big_tree
+        b_blob.move_to(
+            new_location = [-11, 4, 0],
+            start_time = cues['big_tree']['start'] + 2
+        )
+        g_blob.move_to(
+            new_location = [-11 / 3 - 1, 4, 0],
+            start_time = cues['big_tree']['start'] + 2
+        )
+        g_arrow.morph_figure(1, start_time = cues['big_tree']['start'] + 2)
+        g_arrow.move_to(new_scale = 1, start_time = cues['big_tree']['start'] + 2)
+        r_blob.move_to(
+            new_location = [-11 * 2 / 3 - 0.5, -4, 0],
+            start_time = cues['big_tree']['start'] + 2
+        )
+        r_arrow.morph_figure(1, start_time = cues['big_tree']['start'] + 2)
+        r_arrow.move_to(new_scale = 1, start_time = cues['big_tree']['start'] + 2)
+        y_blob.move_to(
+            new_location = [-1.5, -4, 0],
+            start_time = cues['big_tree']['start'] + 2
+        )
+        y_arrow.morph_figure(1, start_time = cues['big_tree']['start'] + 2)
+        y_arrow.move_to(new_scale = 1, start_time = cues['big_tree']['start'] + 2)
+
+        q1 = tex_bobject.TexBobject(
+            '\\text{?}',
+            location = [0, 2, 0],
+            scale = 2,
+            centered = True
+        )
+        q2 = tex_bobject.TexBobject(
+            '\\text{?}',
+            location = [3, -1, 0],
+            scale = 2,
+            centered = True
+        )
+        q3 = tex_bobject.TexBobject(
+            '\\text{?}',
+            location = [4.5, -5, 0],
+            scale = 2,
+            centered = True
+        )
+        q1_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (-0.33, 0.67, 0),
+                        'tail': (-1, -1.33, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        q2_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (2.1, -1.8, 0),
+                        'tail': (0.2, -3.3, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        q3_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (3.4, -5, 0),
+                        'tail': (0.7, -5, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        qs = [q1_arrow, q1, q2_arrow, q2, q3_arrow, q3]
+        for i, q in enumerate(qs):
+            q.add_to_blender(appear_time = cues['big_tree']['start'] + 3 + 0.1 * i)
+
+        q4 = tex_bobject.TexBobject(
+            '\\text{?}',
+            location = [4.5, 4, 0],
+            scale = 2,
+            centered = True
+        )
+        q4_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (4.2, 2.6, 0),
+                        'tail': (3.5, 0.4, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        dotdotdot = tex_bobject.TexBobject(
+            '\\text{...}',
+            location = [7.25, 1, 0],
+            scale = 2,
+            centered = True
+        )
+        dot_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (6, -0.1, 0),
+                        'tail': (4, -1, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+
+        qs2 = [q4_arrow, q4, dot_arrow, dotdotdot]
+        for i, q in enumerate(qs2):
+            q.add_to_blender(appear_time = cues['big_tree']['start'] + 4 + 0.1 * i)
+
+        chick = import_object(
+            'chicken', 'creatures',
+            location = [11, 5, 0],
+            scale = 2
+        )
+        chk_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (9, 3, 0),
+                        'tail': (7.7, 1.2, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        bun = import_object(
+            'stanford_bunny', 'creatures',
+            location = [11, -4.5, 0],
+            scale = 2
+        )
+        bun_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head': (8.6, -2, 0),
+                        'tail': (7.7, -1.2 + 0.67, 0)
+                    }
+                }
+            ],
+            color = 'color2'
+        )
+        ams = [chk_arrow, chick, bun_arrow, bun]
+        for i, q in enumerate(ams):
+            q.add_to_blender(appear_time = cues['big_tree']['start'] + 5 + 0.1 * i)
+
+        #tree_swap
+        #Just blue and yellow
+        to_hide = [
+            q1, q2, q3, q4, q1_arrow, q2_arrow, q3_arrow, q4_arrow,
+            chick, bun, dotdotdot, chk_arrow, bun_arrow, dot_arrow,
+            g_blob, g_arrow, r_blob, y_arrow
+        ]
+        for thing in to_hide:
+            thing.disappear(disappear_time = cues['tree_swap']['start'] + 7.5 - 1/60)
+
+        b_blob.move_to(
+            new_location = [-8, 0, 0],
+            new_scale = 4,
+            start_time = cues['tree_swap']['start'] + 7
+        )
+        y_blob.move_to(
+            new_location = [8, 0, 0],
+            new_scale = 4,
+            start_time = cues['tree_swap']['start'] + 7
+        )
+        r_arrow.morph_figure(2, start_time = cues['tree_swap']['start'] + 7)
+        r_arrow.move_to(new_scale = 2, start_time = cues['tree_swap']['start'] + 7)
+
+        #put things back to original small tree
+        b_blob.move_to(
+            new_location = [-11, 0, 0],
+            new_scale = 2.5,
+            start_time = cues['tree_swap']['start'] + 8
+        )
+        g_blob.move_to(
+            new_location = [0, 4, 0],
+            start_time = cues['tree_swap']['start'] + 8
+        )
+        r_blob.move_to(
+            new_location = [0, -4, 0],
+            start_time = cues['tree_swap']['start'] + 8
+        )
+        y_blob.move_to(
+            new_location = [11, 0, 0],
+            new_scale = 2.5,
+            start_time = cues['tree_swap']['start'] + 8
+        )
+
+        to_unhide = [g_arrow, y_arrow, g_blob, r_blob]
+        for thing in to_unhide:
+            thing.add_to_blender(appear_time = cues['tree_swap']['start'] + 8)
+        g_arrow.move_to(new_scale = 1.6, start_time = cues['tree_swap']['start'] + 8)
+        y_arrow.move_to(new_scale = 1.6, start_time = cues['tree_swap']['start'] + 8)
+        r_arrow.morph_figure(3, start_time = cues['tree_swap']['start'] + 8)
+        r_arrow.move_to(new_scale = 1.6, start_time = cues['tree_swap']['start'] + 8)
+
+        #Okay, now back to the complex one
+        to_unhide = [
+            q1, q2, q3, q4, q1_arrow, q2_arrow, q3_arrow, q4_arrow,
+            chick, bun, dotdotdot, chk_arrow, bun_arrow, dot_arrow,
+        ]
+        for thing in to_unhide:
+            thing.add_to_blender(appear_time = cues['tree_swap']['start'] + 9)
+
+        b_blob.move_to(
+            new_location = [-11, 4, 0],
+            start_time = cues['tree_swap']['start'] + 9
+        )
+        g_blob.move_to(
+            new_location = [-11 / 3 - 1, 4, 0],
+            start_time = cues['tree_swap']['start'] + 9
+        )
+        g_arrow.morph_figure(1, start_time = cues['tree_swap']['start'] + 9)
+        g_arrow.move_to(new_scale = 1, start_time = cues['tree_swap']['start'] + 9)
+        r_blob.move_to(
+            new_location = [-11 * 2 / 3 - 0.5, -4, 0],
+            start_time = cues['tree_swap']['start'] + 9
+        )
+        r_arrow.morph_figure(1, start_time = cues['tree_swap']['start'] + 9)
+        r_arrow.move_to(new_scale = 1, start_time = cues['tree_swap']['start'] + 9)
+        y_blob.move_to(
+            new_location = [-1.5, -4, 0],
+            start_time = cues['tree_swap']['start'] + 9
+        )
+        y_arrow.morph_figure(1, start_time = cues['tree_swap']['start'] + 9)
+        y_arrow.move_to(new_scale = 1, start_time = cues['tree_swap']['start'] + 9)
+
+
+
+        """remaining = [
+            g_arrow, r_arrow, y_arrow
+        ]
+        for thing in remaining:
+            thing.disappear(disappear_time = scene_end)"""
+'''
+'''
+class RNA(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('blob_tree', {'duration': 11}),
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        rna = import_object(
+            'rna', 'biochem',
+            scale = 50,
+            location = [0, 2, 0]
+        )
+        rna.add_to_blender(
+            appear_time = 0,
+        )
+        rna.de_explode(
+            start_time = 0.5,
+            duration = 2,
+            delay_step = 5
+        )
+        rna.move_to(
+            new_scale = 8,
+            new_location = [0, 0, 0],
+            start_time = 0.5,
+            end_time = 7
+        )
+        """rna.spiny(
+            start_time = 1,
+            end_time = scene_end,
+            spin_rate = 0.2
+        )"""
+'''
+'''
+class NextVideo(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('graph', {'duration': 16}),
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        sim = drawn_world.DrawnWorld(
+            **MutationScene.second_mutation_sim_kwargs
+        )
+
+        graph = graph_bobject.GraphBobject(
+            **MutationScene.second_mutation_sim_graph_end_kwargs
+        )
+        graph.add_to_blender(appear_time = cues['graph']['start'])
+        func = sim.get_creature_count_by_t(color = 'creature_color_1')
+        graph.add_new_function_and_curve(func, color = 3)
+
+        func = sim.get_creature_count_by_t(color = 'creature_color_2')
+        graph.add_new_function_and_curve(func, color = 7)
+
+        func = sim.get_creature_count_by_t(color = 'creature_color_3')
+        graph.add_new_function_and_curve(func, color = 6)
+
+        func = sim.get_creature_count_by_t(color = 'creature_color_4')
+        graph.add_new_function_and_curve(func, color = 4)
+
+
+        y_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [10, -1, 0],
+            scale = 3,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        y_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(y_blob.ref_obj.children[0].children[0], 'creature_color4')
+        y_blob.add_to_blender(appear_time = cues['graph']['start'])
+
+'''
 
 """def play_scenes():
     last = LastVideo()
