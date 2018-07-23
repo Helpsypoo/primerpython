@@ -219,7 +219,8 @@ class MutationScene(object):
             'frames_per_time_step' : frames_per_time_step,
             'sim_duration' : sim_duration,
             'initial_creatures' : None,
-            'save' : True,
+            #'save' : True,
+            'load' : 'mfr_bg_sim',
             'gene_updates' : [
                 #Other alleles
                 ['shape', 'shape1', 'birth_modifier', 1, 0],
@@ -237,6 +238,9 @@ class MutationScene(object):
                 ['color', 'creature_color_2', 'mutation_chance', 0, 0],
             ]
         }
+        start_delay = 0.5
+        frames_per_time_step = 10 #Might not actually be what the final anim used
+        sim_duration = 100
         second_mutation_sim_kwargs = {
             'name' : 'mutation_sim',
             'location' : [-8, -2.5, 0],
@@ -829,7 +833,7 @@ class BlueGreenCards(Scene):
         )
         arrow.disappear(disappear_time = cues['green_stats']['end'])
 '''
-#'''
+'''
 class FirstMutationSim(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -931,12 +935,12 @@ class FirstMutationSim(Scene):
         to_disappear = [b_stats, g_blob, g_stats, sim]
         for thing in to_disappear:
             thing.disappear(disappear_time = cues['sim']['end'])
-#'''
+'''
 '''
 class BlueEquation(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('blue', {'duration': 18}),
+            ('blue', {'duration': 60}),
         ])
         super().__init__()
 
@@ -964,9 +968,12 @@ class BlueEquation(Scene):
             "B + \\big(R-D\\big) \\times N",
             "B + \\big(R-D\\big) \\times N",
             "B + \\big(R-D\\big) \\times N",
+            "B + \\big(R-D\\big) \\times N",
+            "B + \\big(R-D\\big) \\times N",
             "B + \\big(R(1-M)-D\\big) \\times N",
+            "B + \\big(R(1-0.1)-D\\big) \\times N",
+            "B + \\big(R(0.9)-D\\big) \\times N",
             "B + \\big(R(1-M)-D\\big) \\times N",
-
             centered = True
         )
         equals = tex_bobject.TexBobject(
@@ -982,7 +989,7 @@ class BlueEquation(Scene):
         equation = tex_complex.TexComplex(
             lhs, equals, rhs,
             location = (2, 0, 0),
-            scale = 1.2,
+            scale = 1.5,
             centered = True
         )
         equation.add_annotation(
@@ -1009,11 +1016,19 @@ class BlueEquation(Scene):
                     [1, 0, 0],
                     [2, 0, 0],
                     [3, 0, 0],
-                    [4, 0, 0, None]
+                    [4, 0, 0],
+                    [5, 0, 0],
+                    [6, 0, 0],
+                    [7, 0, 0],
+                    [8, 0, 0, None]
                 ],
             ],
             labels = [
                 [],
+                ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
+                ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
+                ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
+                ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
                 ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
                 ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
                 ['\\text{Spontaneous}', '\\text{birth rate} \\phantom{blurghh}'],
@@ -1029,18 +1044,27 @@ class BlueEquation(Scene):
                     [0, 3, 3, None],  #form, first char, last char
                     [1, 3, 3, None],
                     [2, 3, 3],
-                    [3, 3, 8],
-                    [4, 3, 8, None],
+                    [3, 3, 3],
+                    [4, 3, 3],
+                    [5, 3, 8],
+                    [6, 3, 10],
+                    [7, 3, 8],
+                    [8, 3, 8, None],
                 ],
             ],
             labels = [
                 [],
                 [],
                 ['\\text{Replication chance}', '\\text{per creature}'],
+                ['\\text{Replication chance}', '\\text{per creature}'],
+                ['\\text{Replication chance}', '\\text{per creature}'],
+                ['\\text{Adjusted}', '\\text{replication chance} \\phantom{blurghh}', '\\text{per creature}'],
+                ['\\text{Adjusted}', '\\text{replication chance} \\phantom{blurghh}', '\\text{per creature}'],
                 ['\\text{Adjusted}', '\\text{replication chance} \\phantom{blurghh}', '\\text{per creature}'],
                 [],
             ],
-            alignment = 'top'
+            alignment = 'top',
+            angle = math.pi / 6
         )
         equation.add_annotation(
             targets = [
@@ -1048,20 +1072,28 @@ class BlueEquation(Scene):
                 [
                     [0, 5, 5, None],  #form, first char, last char
                     [1, 5, 5, None],
-                    [2, 5, 5],
-                    [3, 10, 10],
-                    [4, 10, 10, None],
+                    [2, 5, 5, None],
+                    [3, 5, 5],
+                    [4, 5, 5],
+                    [5, 10, 10],
+                    [6, 12, 12],
+                    [7, 10, 10],
+                    [8, 10, 10, None],
                 ],
             ],
             labels = [
                 [],
                 [],
+                [],
+                ['\\text{Death chance}', '\\text{per creature}'],
+                ['\\text{Death chance}', '\\text{per creature}'],
+                ['\\text{Death chance}', '\\text{per creature}'],
                 ['\\text{Death chance}', '\\text{per creature}'],
                 ['\\text{Death chance}', '\\text{per creature}'],
                 [],
             ],
             alignment = 'bottom',
-            angle = [0, 0, 0, - math.pi / 6, 0]
+            angle = [0, 0, 0, - math.pi / 6, - math.pi / 6, - math.pi / 6, - math.pi / 6, - math.pi / 6, 0]
         )
         equation.add_annotation(
             targets = [
@@ -1070,46 +1102,125 @@ class BlueEquation(Scene):
                     [0, 4, 4, None],  #form, first char, last char
                     [1, 4, 4, None],
                     [2, 4, 4, None],
-                    [3, 7, 7],
-                    [4, 7, 7, None],
+                    [3, 4, 4, None],
+                    [4, 4, 4, None],
+                    [5, 7, 7],
+                    [6, 8, 8],
+                    [7, 6, 6, None],
+                    [8, 7, 7, None],
                 ],
             ],
             labels = [
                 [],
                 [],
                 [],
+                [],
+                [],
                 ['\\text{Mutation}', '\\text{chance}'],
+                ['\\text{Mutation}', '\\text{chance}'],
+                [],
                 [],
             ],
             alignment = 'bottom',
             angle = math.pi / 6
         )
+        equation.add_annotation(
+            targets = [
+                2, #tex_bobject
+                [
+                    [0, 4, 4, None],  #form, first char, last char
+                    [1, 4, 4, None],
+                    [2, 4, 4, None],
+                    [3, 4, 4, None],
+                    [4, 8, 8],
+                    [5, 13, 13],
+                    [6, 15, 15],
+                    [7, 13, 13],
+                    [8, 13, 13, None],
+                ],
+            ],
+            labels = [
+                [],
+                [],
+                [],
+                [],
+                ['\\text{Current}', '\\text{creature}', '\\text{total} \\phantom{shmeh}'],
+                ['\\text{Current}', '\\text{creature}', '\\text{total} \\phantom{shmeh}'],
+                ['\\text{Current}', '\\text{creature}', '\\text{total} \\phantom{shmeh}'],
+                ['\\text{Current}', '\\text{creature}', '\\text{total} \\phantom{shmeh}'],
+                [],
+            ],
+            alignment = 'top',
+            angle = [0, 0, 0, 0, math.pi / 6, 0, 0, 0, 0]
+        )
+
+        #Make mutation terms white
+        for i in range(4, 9):
+            char = rhs.lookup_table[5][i]
+            char.color_shift(
+                start_time = cues['blue']['start'] - 1,
+                duration = None,
+                color = COLORS_SCALED[1]
+            )
+        for i in range(8, 10):
+            char = rhs.lookup_table[6][i]
+            char.color_shift(
+                start_time = cues['blue']['start'] + 52,
+                duration = None,
+                color = COLORS_SCALED[1]
+            )
+        for i in range(7, 8):
+            char = rhs.lookup_table[7][i]
+            char.color_shift(
+                start_time = cues['blue']['start'] + 52,
+                duration = None,
+                color = COLORS_SCALED[1]
+            )
+
+        #Keyframes
         equation.add_to_blender(
             appear_time = cues['blue']['start']
         )
-        lhs.morph_figure(1, start_time = cues['blue']['start'] + 1)
-        rhs.morph_figure(1, start_time = cues['blue']['start'] + 2)
-        rhs.morph_figure(2, start_time = cues['blue']['start'] + 3)
+        lhs.morph_figure(1, start_time = cues['blue']['start'] + 1.5)
+        rhs.morph_figure(1, start_time = cues['blue']['start'] + 4)
+
         per_creature_term = []
         for i in range(2, 9):
             per_creature_term.append(rhs.lookup_table[2][i])
         for char in per_creature_term:
-            char.pulse(time = cues['blue']['start'] + 3)
-            char.color_shift(start_time = cues['blue']['start'] + 3)
+            char.pulse(
+                time = cues['blue']['start'] + 6,
+                duration_time = 2.5
+            )
+            char.color_shift(
+                start_time = cues['blue']['start'] + 6,
+                duration = 150
+            )
+
+        rhs.morph_figure(2, start_time = cues['blue']['start'] + 10.5)
+        rhs.morph_figure(3, start_time = cues['blue']['start'] + 12.5)
+        rhs.morph_figure(4, start_time = cues['blue']['start'] + 14.5)
+
 
         R = rhs.lookup_table[2][3]
-        R.pulse(time = cues['blue']['start'] + 5)
-        R.color_shift(start_time = cues['blue']['start'] + 5)
+        R.pulse(
+            time = cues['blue']['start'] + 23.5,
+            duration_time = 3.5
+        )
+        R.color_shift(
+            start_time = cues['blue']['start'] + 23.5,
+            duration = 210
+        )
 
         #Show blue blobs replicate
         b_blob.move_to(
-            new_location = [-13, 0.75, 0],
+            new_location = [-13, 6.75, 0],
             new_scale = 0.5,
-            start_time = cues['blue']['start'] + 6
+            start_time = cues['blue']['start'] + 29
         )
         rep_anim_bobjs = []
         for i in range(10):
-            if i != 4:
+            if i != 0:
                 blob = import_object(
                     'boerd_blob', 'creatures',
                     location = [-13, 6.75 - i * 1.5, 0],
@@ -1121,7 +1232,7 @@ class BlueEquation(Scene):
                     blob.ref_obj.children[0].children[0],
                     'creature_color3'
                 )
-                blob.add_to_blender(appear_time = cues['blue']['start'] + 6)
+                blob.add_to_blender(appear_time = cues['blue']['start'] + 29 + 0.05 * i)
                 rep_anim_bobjs.append(blob)
 
             arrow = gesture.Gesture(
@@ -1134,7 +1245,7 @@ class BlueEquation(Scene):
                 }],
                 color = 'color2'
             )
-            arrow.add_to_blender(appear_time = cues['blue']['start'] + 7 + 0.1 * i)
+            arrow.add_to_blender(appear_time = cues['blue']['start'] + 30 + 0.05 * i)
             rep_anim_bobjs.append(arrow)
 
             blob = import_object(
@@ -1153,12 +1264,12 @@ class BlueEquation(Scene):
                     blob.ref_obj.children[0].children[0],
                     'creature_color7'
                 )"""
-            blob.add_to_blender(appear_time = cues['blue']['start'] + 7 + 0.1 * i)
+            blob.add_to_blender(appear_time = cues['blue']['start'] + 30.5 + 0.05 * i)
             rep_anim_bobjs.append(blob)
 
         blob.color_shift(
             color = COLORS_SCALED[6],
-            start_time = cues['blue']['start'] + 9,
+            start_time = cues['blue']['start'] + 42.5,
             duration = None,
             obj = blob.ref_obj.children[0].children[0]
         )
@@ -1184,29 +1295,31 @@ class BlueEquation(Scene):
             ],
             color = 'color2'
         )
-        bracket.add_to_blender(appear_time = cues['blue']['start'] + 8)
-        bracket.morph_figure(1, start_time = cues['blue']['start'] + 9)
-        bracket.disappear(disappear_time = cues['blue']['start'] + 10)
+        bracket.add_to_blender(appear_time = cues['blue']['start'] + 33 )
+        bracket.morph_figure(1, start_time = cues['blue']['start'] + 43.5)
+        bracket.disappear(disappear_time = cues['blue']['start'] + 47.5)
 
         #Put things back after showing replication diagram thing
         for bobj in rep_anim_bobjs:
-            bobj.disappear(disappear_time = cues['blue']['start'] + 11)
+            bobj.disappear(disappear_time = cues['blue']['start'] + 47.5)
         b_blob.move_to(
             new_location = b_blob_start_location,
             new_scale = 2.5,
-            start_time = cues['blue']['start'] + 11
+            start_time = cues['blue']['start'] + 47
         )
 
-        rhs.morph_figure(3, start_time = cues['blue']['start'] + 15)
+        rhs.morph_figure(5, start_time = cues['blue']['start'] + 49.5)
+        rhs.morph_figure(6, start_time = cues['blue']['start'] + 52)
+        rhs.morph_figure(7, start_time = cues['blue']['start'] + 53.5)
 
-        rhs.morph_figure(4, start_time = cues['blue']['start'] + 17)
-        lhs.morph_figure(2, start_time = cues['blue']['start'] + 17)
+        lhs.morph_figure(2, start_time = cues['blue']['end'] - 0.5)
+        rhs.morph_figure(8, start_time = cues['blue']['end'] - 0.5)
 '''
 '''
 class GreenEquation(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('green', {'duration': 18}),
+            ('green', {'duration': 75}),
         ])
         super().__init__()
 
@@ -1247,7 +1360,7 @@ class GreenEquation(Scene):
         bequation = tex_complex.TexComplex(
             blhs, bequals, brhs,
             location = (2, 0, 0),
-            scale = 1.2,
+            scale = 1.5,
             centered = True
         )
         bequation.add_to_blender(
@@ -1276,7 +1389,7 @@ class GreenEquation(Scene):
         g_blob.ref_obj.children[0].children[0].data.resolution = 0.2
         apply_material(g_blob.ref_obj.children[0].children[0], 'creature_color7')
         g_blob.add_to_blender(
-            appear_frame = cues['green']['start']
+            appear_time = cues['green']['start']
         )
 
 
@@ -1284,7 +1397,7 @@ class GreenEquation(Scene):
             "B + \\big(R-D\\big) \\times N",
             "B_2 + \\big(R_2-D_2\\big) \\times N_2",
             "B_2 + \\big(R_2-D_2\\big) \\times N_2 + \\substack{\\text{From} \\\\ \\text{Mutation}}",
-            "B_2 + \\big(R_2-D_2\\big) \\times N_2 - R_1M_1N_1",
+            "B_2 + \\big(R_2-D_2\\big) \\times N_2 + R_1M_1N_1",
             centered = True
         )
         gequals = tex_bobject.TexBobject(
@@ -1298,11 +1411,11 @@ class GreenEquation(Scene):
         gequation = tex_complex.TexComplex(
             glhs, gequals, grhs,
             location = (2, -4, 0),
-            scale = 1.2,
+            scale = 1.4,
             centered = True
         )
         gequation.add_to_blender(
-            appear_time = cues['green']['start'] + 1,
+            appear_time = cues['green']['start'] + 2,
             animate = False
         )
 
@@ -1310,19 +1423,12 @@ class GreenEquation(Scene):
         for i in range(6, 12):
             char = brhs.lookup_table[1][i]
             if i == 6:
-                duration = 5.5 * FRAME_RATE
+                duration = 30 * FRAME_RATE #Time from shift until figure 2
             else:
                 duration = None
             char.color_shift(
                 start_time = cues['green']['start'] - 1,
                 duration = duration,
-                color = COLORS_SCALED[1]
-            )
-        for i in range(12, 14):
-            char = brhs.lookup_table[2][i]
-            char.color_shift(
-                start_time = cues['green']['start'] + 4,
-                duration = None,
                 color = COLORS_SCALED[1]
             )
         for i in range(13, len(grhs.lookup_table[2])):
@@ -1333,10 +1439,27 @@ class GreenEquation(Scene):
                 color = COLORS_SCALED[1]
             )
 
-        brhs.morph_figure(1, start_time = cues['green']['start'] + 2)
-        grhs.morph_figure(1, start_time = cues['green']['start'] + 2)
-        grhs.morph_figure('next', start_time = cues['green']['start'] + 3)
-        brhs.morph_figure(2, start_time = cues['green']['start'] + 4)
+        brhs.morph_figure(1, start_time = cues['green']['start'] + 12)
+        grhs.morph_figure(1, start_time = cues['green']['start'] + 12)
+        grhs.morph_figure('next', start_time = cues['green']['start'] + 20)
+
+        brhs.morph_figure(2, start_time = cues['green']['start'] + 30)
+        for i in range(12, 14):
+            char = brhs.lookup_table[2][i]
+            char.color_shift(
+                start_time = cues['green']['start'] + 30,
+                duration = None,
+                color = COLORS_SCALED[1]
+            )
+
+        for i in range(7, 14):
+            char = brhs.lookup_table[2][i]
+            char.color_shift(
+                start_time = cues['green']['start'] + 32,
+                #duration = None,
+                color = COLORS_SCALED[3]
+            )
+
 
         bg_arrow = gesture.Gesture(
             gesture_series = [{
@@ -1349,7 +1472,7 @@ class GreenEquation(Scene):
             color = 'color2',
             scale = 2
         )
-        bg_arrow.add_to_blender(appear_time = cues['green']['start'] + 5)
+        bg_arrow.add_to_blender(appear_time = cues['green']['start'] + 40)
         arrow_curve = bg_arrow.lookup_table[0][0]
         arrow_curve.color_shift(
             color_gradient = {
@@ -1358,7 +1481,7 @@ class GreenEquation(Scene):
             }
         )
 
-        grhs.morph_figure('next', start_time = cues['green']['start'] + 6)
+        grhs.morph_figure('next', start_time = cues['green']['start'] + 42.5)
 
         sg = import_object(
             'sunglasses',
@@ -1370,19 +1493,24 @@ class GreenEquation(Scene):
         sg.ref_obj.parent_bone = g_blob.ref_obj.children[0].pose.bones["brd_bone_neck"].name
         sg.ref_obj.parent_type = 'BONE'
         sg.add_to_blender(
-            appear_time = cues['green']['start'] + 7
+            appear_time = cues['green']['start'] + 59
         )
         sg.move_to(
-            start_time = cues['green']['start'] + 7,
+            start_time = cues['green']['start'] + 59,
             displacement = [0, -3, 0]
         )
+
+        #Prep for next scene
+        to_disappear = [b_blob, bequation, bg_arrow, g_blob, gequation]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = cues['green']['end'] - (len(to_disappear) - 1 - i) * 0.05)
 '''
 '''
 class RedYellow(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('rad', {'duration': 10}),
-            ('yallow', {'duration': 10}),
+            ('rad', {'duration': 71.5}),
+            ('yallow', {'duration': 44.5}),
         ])
         super().__init__()
 
@@ -1402,7 +1530,7 @@ class RedYellow(Scene):
         )
         b_blob.ref_obj.children[0].children[0].data.resolution = 0.2
         apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
-        b_blob.add_to_blender(appear_time = cues['rad']['start'])
+        b_blob.add_to_blender(appear_time = cues['rad']['start'] + 0.5)
 
         #blue stats
         b_birth_chance = tex_bobject.TexBobject(
@@ -1428,7 +1556,7 @@ class RedYellow(Scene):
         )
         b_stats.ref_obj.parent = b_blob.ref_obj
         b_stats.add_to_blender(
-            appear_time = cues['rad']['start'],
+            appear_time = cues['rad']['start'] + 0.5,
             #subbobject_timing = [0, 60, 120, ],
         )
 
@@ -1460,7 +1588,7 @@ class RedYellow(Scene):
             scale = 1.6,
             color = 'color2'
         )
-        g_arrow.add_to_blender(appear_time = cues['rad']['start'] + 1)
+        g_arrow.add_to_blender(appear_time = cues['rad']['start'] + 1.5)
 
         #Green blob and stats
         g_blob = import_object(
@@ -1472,7 +1600,7 @@ class RedYellow(Scene):
         )
         g_blob.ref_obj.children[0].children[0].data.resolution = 0.2
         apply_material(g_blob.ref_obj.children[0].children[0], 'creature_color7')
-        g_blob.add_to_blender(appear_time = cues['rad']['start'] + 2)
+        g_blob.add_to_blender(appear_time = cues['rad']['start'] + 2.5)
 
         g_birth_chance = tex_bobject.TexBobject(
             *MutationScene.g_birth_chance_args_lab,
@@ -1494,17 +1622,17 @@ class RedYellow(Scene):
         )
         g_stats.ref_obj.parent = g_blob.ref_obj
         g_stats.add_to_blender(
-            appear_time = cues['rad']['start'] + 2,
+            appear_time = cues['rad']['start'] + 2.5,
         )
 
         #Red
         #Move the green blob
         g_blob.move_to(
             new_location = [5, 4, 0],
-            start_time = cues['rad']['start'] + 3
+            start_time = cues['rad']['start'] + 16.5
         )
 
-        g_arrow.morph_figure(1, start_time = cues['rad']['start'] + 3)
+        g_arrow.morph_figure(1, start_time = cues['rad']['start'] + 16.5)
 
         r_arrow = gesture.Gesture(
             gesture_series = [
@@ -1526,7 +1654,7 @@ class RedYellow(Scene):
             scale = 1.6,
             color = 'color2'
         )
-        r_arrow.add_to_blender(appear_time = cues['rad']['start'] + 3)
+        r_arrow.add_to_blender(appear_time = cues['rad']['start'] + 16.5)
 
         #Red blob and stats
         r_blob = import_object(
@@ -1538,7 +1666,7 @@ class RedYellow(Scene):
         )
         r_blob.ref_obj.children[0].children[0].data.resolution = 0.2
         apply_material(r_blob.ref_obj.children[0].children[0], 'creature_color6')
-        r_blob.add_to_blender(appear_time = cues['rad']['start'] + 3)
+        r_blob.add_to_blender(appear_time = cues['rad']['start'] + 16.5)
 
         r_birth_chance = tex_bobject.TexBobject(
             *MutationScene.r_birth_chance_args_lab,
@@ -1569,17 +1697,61 @@ class RedYellow(Scene):
         )
         b_stats.add_tex_bobject(b_mut_chance2)
         b_mut_chance2.add_to_blender(
-            appear_time = cues['rad']['start'] + 4
+            appear_time = cues['rad']['start'] + 18
         )
         b_stats.arrange_tex_bobjects(
-            start_time = cues['rad']['start'] + 4
+            start_time = cues['rad']['start'] + 18
         )
-        b_mut_chance.morph_figure(1, start_time = cues['rad']['start'] + 5)
-        b_mut_chance2.morph_figure(1, start_time = cues['rad']['start'] + 6)
+
+        sub_one = b_mut_chance.lookup_table[0][1]
+        sub_one.pulse(
+            time = cues['rad']['start'] + 27.5,
+            duration_time = 1
+        )
+        sub_one.pulse(
+            time = cues['rad']['start'] + 28.5,
+            duration_time = 1
+        )
+
+        b_mut_chance.morph_figure(1, start_time = cues['rad']['start'] + 36)
+        b_mut_chance2.morph_figure(1, start_time = cues['rad']['start'] + 42.5)
+
+        r_birth_chance.pulse(
+            time = cues['rad']['start'] + 46,
+            duration_time = 4
+        )
+        r_death_chance.pulse(
+            time = cues['rad']['start'] + 53,
+            duration_time = 8
+        )
+
+        sub_one2 = b_mut_chance2.lookup_table[1][1]
+        sub_one2.pulse(
+            time = cues['rad']['start'] + 28,
+            duration_time = 1
+        )
+        sub_one2.pulse(
+            time = cues['rad']['start'] + 29,
+            duration_time = 1
+        )
 
 
+        cam_bobj = bobject.Bobject(location = CAMERA_LOCATION)
+        cam_bobj.add_to_blender(appear_time = 0)
+        cam_obj = bpy.data.objects['Camera']
+        cam_obj.location = [0, 0, 0]
+        cam_obj.parent = cam_bobj.ref_obj
 
-
+        cam_bobj.move_to(
+            new_location = [5, -2.5, 3],
+            start_time = cues['rad']['start'] + 67.5,
+            #end_time = cues['rad']['start'] + 23.5
+        )
+        cam_bobj.move_to(
+            new_location = CAMERA_LOCATION,
+            start_time = cues['rad']['start'] + 71,
+            #end_time = cues['rad']['start'] + 28
+        )
 
 
 
@@ -1618,16 +1790,7 @@ class RedYellow(Scene):
         r_arrow.morph_figure(1, start_time = cues['yallow']['start'])
 
 
-        r_mut_chance = tex_bobject.TexBobject(
-            *MutationScene.r_mut_chance_args_lab,
-        )
-        r_stats.add_tex_bobject(r_mut_chance)
-        r_mut_chance.add_to_blender(
-            appear_time = cues['yallow']['start'] + 3
-        )
-        r_stats.arrange_tex_bobjects(
-            start_time = cues['yallow']['start'] + 3
-        )
+
 
         #Red blob and stats
         y_blob = import_object(
@@ -1639,7 +1802,7 @@ class RedYellow(Scene):
         )
         y_blob.ref_obj.children[0].children[0].data.resolution = 0.2
         apply_material(y_blob.ref_obj.children[0].children[0], 'creature_color4')
-        y_blob.add_to_blender(appear_time = cues['yallow']['start'] + 3)
+        y_blob.add_to_blender(appear_time = cues['yallow']['start'] + 0.5)
 
         y_birth_chance = tex_bobject.TexBobject(
             *MutationScene.y_birth_chance_args_lab,
@@ -1661,7 +1824,7 @@ class RedYellow(Scene):
         )
         y_stats.ref_obj.parent = y_blob.ref_obj
         y_stats.add_to_blender(
-            appear_time = cues['yallow']['start'] + 1,
+            appear_time = cues['yallow']['start'] + 0.5,
         )
 
         y_arrow = gesture.Gesture(
@@ -1677,10 +1840,46 @@ class RedYellow(Scene):
             scale = 1.6,
             color = 'color2'
         )
-        y_arrow.add_to_blender(appear_time = cues['yallow']['start'] + 1)
+        y_arrow.add_to_blender(appear_time = cues['yallow']['start'] + 0.5)
 
         #This somehow get set to zero messed up somewhere above.
         y_blob.ref_obj.scale = [2.5, 2.5, 2.5]
+
+
+        r_mut_chance = tex_bobject.TexBobject(
+            *MutationScene.r_mut_chance_args_lab,
+        )
+        r_stats.add_tex_bobject(r_mut_chance)
+        r_mut_chance.add_to_blender(
+            appear_time = cues['yallow']['start'] + 7.5
+        )
+        r_stats.arrange_tex_bobjects(
+            start_time = cues['yallow']['start'] + 7.5
+        )
+
+        r_mut_chance.pulse(
+            time = cues['yallow']['start'] + 9.5,
+            duration_time = 7.5
+        )
+        sub_three = r_mut_chance.lookup_table[0][1]
+        #This somehow get set to zero messed up somewhere above.
+        sub_three.ref_obj.scale = [1, 1, 1]
+        sub_three.pulse(
+            time = cues['yallow']['start'] + 12.5,
+            duration_time = 2
+        )
+        sub_four = r_mut_chance.lookup_table[0][2]
+        sub_four.ref_obj.scale = [1, 1, 1]
+        sub_four.pulse(
+            time = cues['yallow']['start'] + 15.5,
+            duration_time = 1.5
+        )
+
+        y_rep_chance.pulse(
+            time = cues['yallow']['start'] + 19.5,
+            duration_time = 4
+        )
+
 
         b_blob.move_to(
             new_location = [-12.1, 5.5, 0],
@@ -1973,9 +2172,9 @@ class RedYellowSim(Scene):
 class TheDoorIsOpen(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('blob_tree', {'duration': 6}),
-            ('big_tree', {'duration': 6}),
-            ('tree_swap', {'duration': 10}),
+            ('blob_tree', {'duration': 11}),
+            ('big_tree', {'duration': 26}),
+            ('tree_swap', {'duration': 47}),
         ])
         super().__init__()
 
@@ -2074,7 +2273,7 @@ class TheDoorIsOpen(Scene):
         r_blob.ref_obj.children[0].children[0].data.resolution = 0.2
         apply_material(r_blob.ref_obj.children[0].children[0], 'creature_color6')
 
-        #Red blob
+        #Orange blob
         y_blob = import_object(
             'boerd_blob', 'creatures',
             location = [11, 0, 0],
@@ -2082,7 +2281,7 @@ class TheDoorIsOpen(Scene):
             wiggle = True,
             cycle_length = scene_end * FRAME_RATE
         )
-        y_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        y_blob.ref_obj.children[0].children[0].data.resolution = 0.05
         apply_material(y_blob.ref_obj.children[0].children[0], 'creature_color4')
 
         y_arrow = gesture.Gesture(
@@ -2119,37 +2318,34 @@ class TheDoorIsOpen(Scene):
             duration_time = 2
         )"""
         y_blob.blob_wave(
-            start_time = cues['blob_tree']['start'] + 2,
+            start_time = cues['blob_tree']['start'] + 5,
             duration = 2
         )
-        b_blob.pulse(
-            time = cues['blob_tree']['start'] + 4,
-            duration_time = 2
-        )
+
 
         #big_tree
         b_blob.move_to(
             new_location = [-11, 4, 0],
-            start_time = cues['big_tree']['start'] + 2
+            start_time = cues['big_tree']['start'] + 0.5
         )
         g_blob.move_to(
             new_location = [-11 / 3 - 1, 4, 0],
-            start_time = cues['big_tree']['start'] + 2
+            start_time = cues['big_tree']['start'] + 0.5
         )
-        g_arrow.morph_figure(1, start_time = cues['big_tree']['start'] + 2)
-        g_arrow.move_to(new_scale = 1, start_time = cues['big_tree']['start'] + 2)
+        g_arrow.morph_figure(1, start_time = cues['big_tree']['start'] + 0.5)
+        g_arrow.move_to(new_scale = 1, start_time = cues['big_tree']['start'] + 0.5)
         r_blob.move_to(
             new_location = [-11 * 2 / 3 - 0.5, -4, 0],
-            start_time = cues['big_tree']['start'] + 2
+            start_time = cues['big_tree']['start'] + 0.5
         )
-        r_arrow.morph_figure(1, start_time = cues['big_tree']['start'] + 2)
-        r_arrow.move_to(new_scale = 1, start_time = cues['big_tree']['start'] + 2)
+        r_arrow.morph_figure(1, start_time = cues['big_tree']['start'] + 0.5)
+        r_arrow.move_to(new_scale = 1, start_time = cues['big_tree']['start'] + 0.5)
         y_blob.move_to(
             new_location = [-1.5, -4, 0],
-            start_time = cues['big_tree']['start'] + 2
+            start_time = cues['big_tree']['start'] + 0.5
         )
-        y_arrow.morph_figure(1, start_time = cues['big_tree']['start'] + 2)
-        y_arrow.move_to(new_scale = 1, start_time = cues['big_tree']['start'] + 2)
+        y_arrow.morph_figure(1, start_time = cues['big_tree']['start'] + 0.5)
+        y_arrow.move_to(new_scale = 1, start_time = cues['big_tree']['start'] + 0.5)
 
         q1 = tex_bobject.TexBobject(
             '\\text{?}',
@@ -2207,7 +2403,7 @@ class TheDoorIsOpen(Scene):
         )
         qs = [q1_arrow, q1, q2_arrow, q2, q3_arrow, q3]
         for i, q in enumerate(qs):
-            q.add_to_blender(appear_time = cues['big_tree']['start'] + 3 + 0.1 * i)
+            q.add_to_blender(appear_time = cues['big_tree']['start'] + 2 + 0.1 * i)
 
         q4 = tex_bobject.TexBobject(
             '\\text{?}',
@@ -2228,7 +2424,7 @@ class TheDoorIsOpen(Scene):
             color = 'color2'
         )
         dotdotdot = tex_bobject.TexBobject(
-            '\\text{...}',
+            '\\text{?}', '\\text{...}',
             location = [7.25, 1, 0],
             scale = 2,
             centered = True
@@ -2284,9 +2480,15 @@ class TheDoorIsOpen(Scene):
             ],
             color = 'color2'
         )
+        dotdotdot.morph_figure(1, start_time = cues['big_tree']['start'] + 6.5)
         ams = [chk_arrow, chick, bun_arrow, bun]
         for i, q in enumerate(ams):
-            q.add_to_blender(appear_time = cues['big_tree']['start'] + 5 + 0.1 * i)
+            q.add_to_blender(appear_time = cues['big_tree']['start'] + 7 + 0.1 * i)
+
+        b_blob.blob_wave(
+            start_time = cues['big_tree']['start'] + 11,
+            duration = 2
+        )
 
         #tree_swap
         #Just blue and yellow
@@ -2296,93 +2498,116 @@ class TheDoorIsOpen(Scene):
             g_blob, g_arrow, r_blob, y_arrow
         ]
         for thing in to_hide:
-            thing.disappear(disappear_time = cues['tree_swap']['start'] + 7.5 - 1/60)
+            thing.disappear(disappear_time = cues['tree_swap']['start'] + 8 - 1/60)
 
         b_blob.move_to(
             new_location = [-8, 0, 0],
             new_scale = 4,
-            start_time = cues['tree_swap']['start'] + 7
+            start_time = cues['tree_swap']['start'] + 7.5
         )
         y_blob.move_to(
             new_location = [8, 0, 0],
             new_scale = 4,
-            start_time = cues['tree_swap']['start'] + 7
+            start_time = cues['tree_swap']['start'] + 7.5
         )
-        r_arrow.morph_figure(2, start_time = cues['tree_swap']['start'] + 7)
-        r_arrow.move_to(new_scale = 2, start_time = cues['tree_swap']['start'] + 7)
+        r_arrow.morph_figure(2, start_time = cues['tree_swap']['start'] + 7.5)
+        r_arrow.move_to(new_scale = 2, start_time = cues['tree_swap']['start'] + 7.5)
 
         #put things back to original small tree
         b_blob.move_to(
             new_location = [-11, 0, 0],
             new_scale = 2.5,
-            start_time = cues['tree_swap']['start'] + 8
+            start_time = cues['tree_swap']['start'] + 18.5
         )
         g_blob.move_to(
             new_location = [0, 4, 0],
-            start_time = cues['tree_swap']['start'] + 8
+            start_time = cues['tree_swap']['start'] + 18.5
         )
         r_blob.move_to(
             new_location = [0, -4, 0],
-            start_time = cues['tree_swap']['start'] + 8
+            start_time = cues['tree_swap']['start'] + 18.5
         )
         y_blob.move_to(
             new_location = [11, 0, 0],
             new_scale = 2.5,
-            start_time = cues['tree_swap']['start'] + 8
+            start_time = cues['tree_swap']['start'] + 18.5
         )
 
         to_unhide = [g_arrow, y_arrow, g_blob, r_blob]
         for thing in to_unhide:
-            thing.add_to_blender(appear_time = cues['tree_swap']['start'] + 8)
-        g_arrow.move_to(new_scale = 1.6, start_time = cues['tree_swap']['start'] + 8)
-        y_arrow.move_to(new_scale = 1.6, start_time = cues['tree_swap']['start'] + 8)
-        r_arrow.morph_figure(3, start_time = cues['tree_swap']['start'] + 8)
-        r_arrow.move_to(new_scale = 1.6, start_time = cues['tree_swap']['start'] + 8)
+            thing.add_to_blender(appear_time = cues['tree_swap']['start'] + 18.5)
+        g_arrow.move_to(new_scale = 1.6, start_time = cues['tree_swap']['start'] + 18.5)
+        y_arrow.move_to(new_scale = 1.6, start_time = cues['tree_swap']['start'] + 18.5)
+        r_arrow.morph_figure(3, start_time = cues['tree_swap']['start'] + 18.5)
+        r_arrow.move_to(new_scale = 1.6, start_time = cues['tree_swap']['start'] + 18.5)
+
+        y_blob.blob_wave(
+            start_time = cues['tree_swap']['start'] + 21.5,
+            duration = 2
+        )
+        b_blob.blob_wave(
+            start_time = cues['tree_swap']['start'] + 31,
+            duration = 2
+        )
+        y_blob.blob_wave(
+            start_time = cues['tree_swap']['start'] + 35.5,
+            duration = 2
+        )
 
         #Okay, now back to the complex one
         to_unhide = [
             q1, q2, q3, q4, q1_arrow, q2_arrow, q3_arrow, q4_arrow,
-            chick, bun, dotdotdot, chk_arrow, bun_arrow, dot_arrow,
+            chick, bun, chk_arrow, bun_arrow, dot_arrow,
         ]
         for thing in to_unhide:
-            thing.add_to_blender(appear_time = cues['tree_swap']['start'] + 9)
+            thing.add_to_blender(appear_time = cues['tree_swap']['start'] + 39)
+        dotdotdot2 = tex_bobject.TexBobject(
+            '\\text{...}',
+            location = [7.25, 1, 0],
+            scale = 2,
+            centered = True
+        )
+        dotdotdot2.add_to_blender(appear_time = cues['tree_swap']['start'] + 39)
 
         b_blob.move_to(
             new_location = [-11, 4, 0],
-            start_time = cues['tree_swap']['start'] + 9
+            start_time = cues['tree_swap']['start'] + 39
         )
         g_blob.move_to(
             new_location = [-11 / 3 - 1, 4, 0],
-            start_time = cues['tree_swap']['start'] + 9
+            start_time = cues['tree_swap']['start'] + 39
         )
-        g_arrow.morph_figure(1, start_time = cues['tree_swap']['start'] + 9)
-        g_arrow.move_to(new_scale = 1, start_time = cues['tree_swap']['start'] + 9)
+        g_arrow.morph_figure(1, start_time = cues['tree_swap']['start'] + 39)
+        g_arrow.move_to(new_scale = 1, start_time = cues['tree_swap']['start'] + 39)
         r_blob.move_to(
             new_location = [-11 * 2 / 3 - 0.5, -4, 0],
-            start_time = cues['tree_swap']['start'] + 9
+            start_time = cues['tree_swap']['start'] + 39
         )
-        r_arrow.morph_figure(1, start_time = cues['tree_swap']['start'] + 9)
-        r_arrow.move_to(new_scale = 1, start_time = cues['tree_swap']['start'] + 9)
+        r_arrow.morph_figure(1, start_time = cues['tree_swap']['start'] + 39)
+        r_arrow.move_to(new_scale = 1, start_time = cues['tree_swap']['start'] + 39)
         y_blob.move_to(
             new_location = [-1.5, -4, 0],
-            start_time = cues['tree_swap']['start'] + 9
+            start_time = cues['tree_swap']['start'] + 39
         )
-        y_arrow.morph_figure(1, start_time = cues['tree_swap']['start'] + 9)
-        y_arrow.move_to(new_scale = 1, start_time = cues['tree_swap']['start'] + 9)
+        y_arrow.morph_figure(1, start_time = cues['tree_swap']['start'] + 39)
+        y_arrow.move_to(new_scale = 1, start_time = cues['tree_swap']['start'] + 39)
 
 
 
-        """remaining = [
-            g_arrow, r_arrow, y_arrow
+        #Prep for next scene
+        to_disappear = [
+            b_blob, g_arrow, r_arrow, g_blob, r_blob, y_arrow, y_blob,
+            q1_arrow, q2_arrow, q3_arrow, q1, q2, q3, q4_arrow, dot_arrow,
+            q4, dotdotdot2, chk_arrow, bun_arrow, chick, bun
         ]
-        for thing in remaining:
-            thing.disappear(disappear_time = scene_end)"""
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = scene_end - (len(to_disappear) - 1 - i) * 0.02)
 '''
 '''
 class RNA(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('blob_tree', {'duration': 11}),
+            ('blob_tree', {'duration': 29}),
         ])
         super().__init__()
 
@@ -2393,34 +2618,81 @@ class RNA(Scene):
 
         rna = import_object(
             'rna', 'biochem',
-            scale = 50,
-            location = [0, 2, 0]
+            scale = 45,
+            location = [0, 6, 0]
         )
         rna.add_to_blender(
-            appear_time = 0,
+            appear_time = -1.5,
         )
         rna.de_explode(
-            start_time = 0.5,
+            start_time = -1.5,
             duration = 2,
-            delay_step = 5
+            delay_step = 6
         )
         rna.move_to(
             new_scale = 8,
-            new_location = [0, 0, 0],
-            start_time = 0.5,
+            new_location = [0, -1, 0],
+            start_time = -1.5,
             end_time = 7
         )
-        """rna.spiny(
-            start_time = 1,
-            end_time = scene_end,
-            spin_rate = 0.2
-        )"""
+
+        rna_tex = tex_bobject.TexBobject(
+            '\\text{"RNA"}',
+            scale = 3,
+            location = [-1, 5, 0],
+            centered = True
+        )
+        rna_tex.add_to_blender(appear_time = 3.5)
+
+        #It's just like the blue blobs!
+        b_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [-10, 0, 0],
+            scale = 4,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        b_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
+
+        b_blob.add_to_blender(appear_time = 15)
+
+        rna.move_to(
+            new_scale = 6,
+            new_location = [6, 0, 0],
+            start_time = 15
+        )
+
+        rna_tex.disappear(disappear_time = 15.5)
+
+        equals = tex_bobject.TexBobject(
+            '\!=',
+            scale = 5,
+            location = [-4, 0, 0],
+            centered = True
+        )
+        equals.add_to_blender(appear_time = 15)
+
+        equals.disappear(disappear_time = 18.5)
+        b_blob.disappear(disappear_time = 18.5)
+        rna.move_to(
+            new_location = [0, 0, 0],
+            new_scale = 8,
+            start_time = 18
+        )
+        rna.spiny(
+            start_time = 18,
+            spin_rate = 0.2,
+            end_time = scene_end - 1
+        )
+
+        rna.disappear(disappear_time = scene_end)
 '''
 '''
 class NextVideo(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('graph', {'duration': 16}),
+            ('graph', {'duration': 10}),
         ])
         super().__init__()
 
@@ -2436,7 +2708,7 @@ class NextVideo(Scene):
         graph = graph_bobject.GraphBobject(
             **MutationScene.second_mutation_sim_graph_end_kwargs
         )
-        graph.add_to_blender(appear_time = cues['graph']['start'])
+        graph.add_to_blender(appear_time = cues['graph']['start'] + 1)
         func = sim.get_creature_count_by_t(color = 'creature_color_1')
         graph.add_new_function_and_curve(func, color = 3)
 
@@ -2453,19 +2725,236 @@ class NextVideo(Scene):
         y_blob = import_object(
             'boerd_blob', 'creatures',
             location = [10, -1, 0],
+            rotation_euler = [0, - math.pi / 6, 0],
             scale = 3,
             wiggle = True,
             cycle_length = scene_end * FRAME_RATE
         )
         y_blob.ref_obj.children[0].children[0].data.resolution = 0.2
         apply_material(y_blob.ref_obj.children[0].children[0], 'creature_color4')
-        y_blob.add_to_blender(appear_time = cues['graph']['start'])
+        y_blob.add_to_blender(appear_time = cues['graph']['start'] + 1)
 
+        y_blob.blob_wave(
+            start_time = 1,
+            duration = cues['graph']['duration']
+        )
+
+        y_blob.disappear(disappear_time = scene_end)
+        graph.disappear(disappear_time = scene_end)
 '''
+'''
+class EndCard(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('card', {'duration': 18}),
+        ])
+        super().__init__()
 
-"""def play_scenes():
-    last = LastVideo()
-    last.play()
-    #ext = Extinction()
-    #ext.play()
-"""
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        """bpy.ops.mesh.primitive_plane_add()
+        play_bar = bpy.context.object
+        play_bar.scale[0] = 15
+        play_bar.scale[1] = 90 / 720 * 8.4
+        play_bar.location = [0, -8.4 + play_bar.scale[1], 0]
+
+        bpy.ops.mesh.primitive_plane_add()
+        vid_rec = bpy.context.object
+        vid_rec.scale[0] = 410 / 1280 * 15
+        vid_rec.scale[1] = 230 / 720 * 8.4
+        vid_rec.location = [9, -3, 0]
+
+        bpy.ops.mesh.primitive_cylinder_add()
+        sub_cir = bpy.context.object
+        sub_cir.scale = [98 / 1280 * 30, 98 / 1280 * 30, 0]
+        sub_cir.location = [-11.5, -2.8, 0]"""
+
+        #Whole end area
+        """bpy.ops.mesh.primitive_plane_add()
+        end_area = bpy.context.object
+        end_area.scale[0] = 1225 / 1280 * 15
+        end_area.scale[1] = 518 / 720 * 8.4
+        end_area.location = [0, 0.2, -0.1]"""
+
+
+
+
+        logo = svg_bobject.SVGBobject(
+            "Layer",
+            #file_name = "PrimerLogoWhite",
+            location = (-9.2, -1.87, 0),
+            scale = 1.4
+        )
+        for bobj in logo.rendered_curve_bobjects:
+            apply_material(bobj.ref_obj.children[0], 'color2')
+        stroke = logo.rendered_curve_bobjects[0]
+        apply_material(stroke.ref_obj.children[0], 'color3')
+        logo.morph_chains[0][0].ref_obj.location[2] = -1
+        logo.add_to_blender(
+            appear_time = cues['card']['start'],
+            #subbobject_timing = [90, 30, 40, 50, 60, 70, 80],
+            subbobject_timing = [42, 30, 33, 36, 39, 42, 45],
+            animate = True
+        )
+
+
+        reddit = import_object(
+            'reddit', 'svgblend',
+            scale = 2.297,
+            location = (5, 4 - 0.5, 0)
+        )
+        reddit.add_to_blender(appear_time = 0)
+        disc = tex_bobject.TexBobject(
+            '\\text{/r/primerlearning}',
+            location = [6.5, 2.5 - 0.5, 0],
+            color = 'color2',
+            scale = 0.8
+        )
+        disc.add_to_blender(appear_time = 0)
+
+        patreon = import_object(
+            'patreon', 'svgblend',
+            scale = 2.297,
+            location = (-11.5, 4 - 0.5, 0)
+        )
+        patreon.add_to_blender(appear_time = 0)
+        thanks = tex_bobject.TexBobject(
+            '\\text{Special thanks:}',
+            location = [-9, 5.8 - 0.5, 0],
+            color = 'color2'
+        )
+        thanks.add_to_blender(appear_time = 0)
+        js = tex_bobject.TexBobject(
+            '\\text{Jordan Scales}',
+            location = [-8.9, 4.3 - 0.5, 0],
+            color = 'color2',
+            scale = 1.4
+        )
+        js.add_to_blender(appear_time = 1)
+
+        cp = svg_bobject.SVGBobject(
+            'chinese_patron',
+            location = [-8.55, 3.1 - 0.5, 0],
+            color = 'color2',
+            scale = 0.085
+        )
+        cp.add_to_blender(appear_time = 1)
+
+        links = tex_bobject.TexBobject(
+            '\\text{(Links in the description)}',
+            location = [0, 7.3, 0],
+            centered = True,
+            scale = 1,
+        )
+        links.add_to_blender(appear_time = 0)
+
+        remaining = [reddit, disc, logo, patreon, thanks, js, cp, links]
+        for thing in remaining:
+            thing.disappear(disappear_time = scene_end)
+'''
+#'''
+class Thumbnail(Scene):
+    def __init__(self):
+        self.subscenes = collections.OrderedDict([
+            ('blob_tree', {'duration': 29}),
+        ])
+        super().__init__()
+
+    def play(self):
+        super().play()
+        cues = self.subscenes
+        scene_end = self.duration
+
+        rna = import_object(
+            'rna', 'biochem',
+            scale = 45,
+            location = [0, 6, 0]
+        )
+        rna.add_to_blender(
+            appear_time = -1.5,
+        )
+        rna.de_explode(
+            start_time = -1.5,
+            duration = 2,
+            delay_step = 6
+        )
+        rna.move_to(
+            new_scale = 8,
+            new_location = [0, -1, 0],
+            start_time = -1.5,
+            end_time = 7
+        )
+
+        rna_tex = tex_bobject.TexBobject(
+            '\\text{"RNA"}',
+            scale = 3,
+            location = [-1, 5, 0],
+            centered = True
+        )
+        rna_tex.add_to_blender(appear_time = 3.5)
+
+        #It's just like the blue blobs!
+        b_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [-10, 0, 0],
+            scale = 4,
+            wiggle = True,
+            cycle_length = scene_end * FRAME_RATE
+        )
+        b_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+        apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
+
+        b_blob.add_to_blender(appear_time = 15)
+
+        rna.move_to(
+            new_scale = 6,
+            new_location = [6, 0, 0],
+            start_time = 15
+        )
+
+        rna_tex.disappear(disappear_time = 15.5)
+
+        equals = tex_bobject.TexBobject(
+            '\!=',
+            scale = 5,
+            location = [-4, 0, 0],
+            centered = True
+        )
+        equals.add_to_blender(appear_time = 15)
+
+        the_origin = tex_bobject.TexBobject(
+            '\\text{The Beginning}',
+            scale = 5,
+            location = [0, 6, 0],
+            centered = True,
+            color = 'color2'
+        )
+        the_origin.add_to_blender(appear_time = 15)
+
+        of_life = tex_bobject.TexBobject(
+            '\\text{Of Life}',
+            scale = 5,
+            location = [0, -6, 0],
+            centered = True,
+            color = 'color2'
+        )
+        of_life.add_to_blender(appear_time = 15)
+
+        equals.disappear(disappear_time = 18.5)
+        b_blob.disappear(disappear_time = 18.5)
+        rna.move_to(
+            new_location = [0, 0, 0],
+            new_scale = 8,
+            start_time = 18
+        )
+        rna.spiny(
+            start_time = 18,
+            spin_rate = 0.2,
+            end_time = scene_end - 1
+        )
+
+        rna.disappear(disappear_time = scene_end)
+#'''

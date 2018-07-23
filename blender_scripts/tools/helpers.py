@@ -596,7 +596,7 @@ def import_object(filename, *folders, **kwargs):
         if 'cycle_length' not in kwargs:
             wiggle_cycle_length = BLINK_CYCLE_LENGTH
         else:
-            wiggle_cycle_length = kwargs['cycle_length']
+            wiggle_cycle_length = int(kwargs['cycle_length'])
         wiggle_slow_factor = 1
         wind_down_time = FRAME_RATE / wiggle_slow_factor
 

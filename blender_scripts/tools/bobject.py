@@ -285,8 +285,21 @@ class Bobject(object):
             )
         #bpy.context.scene.update()
 
+    #Deprecated, because why just pick one axis?
     def spiny(
         self,
+        **kwargs
+        #spin_rate = 1, #Revolutions per second
+        #start_time = None,
+        #end_time = None,
+        #start_frame = None,
+        #end_frame = None
+    ):
+        self.spin(**kwargs) #Default axis is y
+
+    def spin(
+        self,
+        axis = 1,
         spin_rate = 1, #Revolutions per second
         start_time = None,
         end_time = None,
@@ -312,9 +325,9 @@ class Bobject(object):
         obj = self.ref_obj
         obj.keyframe_insert(data_path="rotation_euler", frame = start_frame)
 
-        new_y = spin_rate * 2 * math.pi * (start_frame - end_frame) / FRAME_RATE
+        new_y = spin_rate * 2 * math.pi * (end_frame - start_frame) / FRAME_RATE
 
-        obj.rotation_euler[1] = new_y
+        obj.rotation_euler[axis] = new_y
         obj.keyframe_insert(
             data_path="rotation_euler",
             frame = end_frame
@@ -416,7 +429,7 @@ class Bobject(object):
             if 'rotation' not in color_gradient:
                 color_gradient['rotation'] = [0, 0, - math.pi / 2]
             if 'translation' not in color_gradient:
-                color_gradient['translation'] = [0, 0.5, 0]
+                color_gradient['translation'] = [0, 0, 0]
             if 'scale' not in color_gradient:
                 color_gradient['scale'] = [0.2, 0.2, 0]
 
@@ -424,8 +437,8 @@ class Bobject(object):
 
     def blob_wave(
         self,
-        start_time,
-        duration
+        start_time = 0,
+        duration = 0
     ):
         #This function only works for blob creatures. Maybe they deserve their
         #own subclass of bobject.
@@ -535,7 +548,7 @@ class Bobject(object):
         start_frame = start_time * FRAME_RATE
         duration_frames = duration * FRAME_RATE
 
-        seed = self.ref_obj       
+        seed = self.ref_obj
         de_explode_children(seed, start_frame, duration_frames, delay, delay_step)
 
 def de_explode_children(obj, start_frame, duration_frames, delay, delay_step):

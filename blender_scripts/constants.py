@@ -6,7 +6,7 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'medium'
+RENDER_QUALITY = 'final'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
@@ -28,8 +28,8 @@ if RENDER_QUALITY == 'high':
     LAMPS_TO_A_SIDE = 1
     LAMP_TYPE = 'SUN'
     ICO_SUBDIVISIONS = 6
-    CONTROL_POINTS_PER_SPLINE = 60 #TODO: figure out the threshold for noticing a difference
-    PARTICLES_PER_MESH = 100000 #Could be smaller if morphing smaller objects
+    CONTROL_POINTS_PER_SPLINE = 40 #TODO: figure out the threshold for noticing a difference
+    PARTICLES_PER_MESH = 300000 #Could be smaller if morphing smaller objects
     #Could even be a function of scale
     #Or number of other objects
 
@@ -140,7 +140,7 @@ Sim motion constants
 CREATURE_BUBBLE_WIDTH = 0.1
 BOUNCE_DAMP_FACTOR = 0.8
 FLOOR_PADDING = 1
-BLINK_CHANCE = 0.01
+BLINK_CHANCE = 0.005
 BLINK_LENGTH = 11
 BLINK_CYCLE_LENGTH = 600
 #Could make a constant for the velocity parameters

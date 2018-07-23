@@ -10,7 +10,8 @@ def render_with_skips(start, stop):
     as copies of their equivalents.
     """
 
-    render_range = list(range(start, stop))
+    render_range = list(range(start, stop + 1))
+    #+1 because range should for frames should be inclusive
 
     # create JSON like dictionary to store each
     # animated object's fcurve data at each frame.

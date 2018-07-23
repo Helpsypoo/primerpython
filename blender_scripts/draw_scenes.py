@@ -145,7 +145,7 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION):
 
     #set up timeline
     bpy.data.scenes["Scene"].frame_start = 0
-    bpy.data.scenes["Scene"].frame_end = total_duration * FRAME_RATE
+    bpy.data.scenes["Scene"].frame_end = total_duration * FRAME_RATE - 1
     bpy.context.scene.frame_set(0)
 
     #create camera and light
@@ -308,23 +308,23 @@ def test_sim():
     print_time_report()
 
 def tex_test():
-    initialize_blender(total_duration = 5)
+    initialize_blender(total_duration = 3)
 
 
-    ming = tex_bobject.TexBobject(
-        '\\text{I}',
-        '\\text{said}',
-        '\\text{HANK}',
+    """ming = tex_bobject.TexBobject(
+        '\\text{You\'re}',
+        '\\text{the}',
+        '\\text{best!}',
         centered = True,
         scale = 8
     )
     ming.add_to_blender(appear_time = 0)
 
-    ming.morph_figure('next', start_time = 1.5)
+    ming.morph_figure('next', start_time = 1)
 
-    ming.morph_figure('next', start_time = 3)
+    ming.morph_figure('next', start_time = 2)
 
-    ming.disappear(disappear_time = 5)
+    ming.disappear(disappear_time = 3.5)"""
 
     '''reddit = import_object(
         'reddit', 'svgblend',
@@ -338,6 +338,35 @@ def tex_test():
         location = (5, 0, 0)
     )
     patreon.add_to_blender(appear_frame = 0)'''
+
+    patreon = import_object(
+        'patreon', 'svgblend',
+        scale = 6,
+        location = (-8, 0, 0)
+    )
+    patreon.add_to_blender(appear_time = 0)
+    thanks = tex_bobject.TexBobject(
+        '\\text{Special thanks:}',
+        location = [-1.5, 3.8, 0],
+        color = 'color2',
+        scale = 2
+    )
+    thanks.add_to_blender(appear_time = 0)
+    js = tex_bobject.TexBobject(
+        '\\text{You}',
+        location = [-2.5, -2, 0],
+        color = 'color2',
+        scale = 8
+    )
+    js.add_to_blender(
+        appear_time = 1,
+        animate = False
+    )
+
+    remaining = [patreon, thanks, js]
+    for thing in remaining:
+        thing.disappear(disappear_time = 3)
+
     print_time_report()
 
 def morph_test():
@@ -571,18 +600,228 @@ def graph_test():
         x_of_t = func
     )"""
 
-def bcard():
-    initialize_blender()
-    primer = import_object('logo')
+def marketing():
+    scene_end = 12
+    initialize_blender(total_duration = scene_end)
+    #primer = import_object('logo')
+    #primer.add_to_blender(appear_frame = 0)
 
-    primer.add_to_blender(appear_frame = 0)
+
+
+    """blob = import_object(
+        'boerd_blob', 'creatures',
+        location = [0, 0, 0],
+        scale = 6
+    )
+    blob.ref_obj.children[0].children[0].data.resolution = 0.05
+    apply_material(blob.ref_obj.children[0].children[0], 'creature_color3')
+    blob.add_to_blender(appear_time = -1)"""
+
+    """blob = import_object(
+        'boerd_blob_squat', 'creatures',
+        scale = 6,
+        location = [6, -1, 0]
+    )
+    blob.ref_obj.children[0].children[0].data.resolution = 0.05
+    apply_material(blob.ref_obj.children[0].children[0], 'creature_color4')
+    blob.add_to_blender(appear_time = -1)"""
+
+    #blob.blob_wave(
+    #    start_time = 0,
+    #    duration = 5
+    #)
+
+    """glasses = import_object(
+        'glasses',
+        scale = 1.505,
+        location = [1.01899, -1.11603, 0.41565],
+        rotation_euler = [-90 * math.pi / 180, 66.6 * math.pi / 180, 0]
+    )
+    glasses.add_to_blender(appear_time = -1)
+
+    glasses.ref_obj.parent = blob.ref_obj.children[0]
+    glasses.ref_obj.parent_bone = blob.ref_obj.children[0].pose.bones["brd_bone_neck"].name
+    glasses.ref_obj.parent_type = 'BONE'"""
+
+    heart = import_object('heart', scale = 4)
+    tele = import_object(
+        'teleporter', 'primitives',
+        scale = 25,
+        rotation_euler = [math.pi / 2, 0, math.pi / 2]
+    )
+    tele.spin(
+        axis = 2,
+        start_time = 0,
+        end_time = 10,
+        spin_rate = 2
+    )
+    form_heart = bobject.MeshMorphBobject(name = 'form_heart')
+    form_heart.add_subbobject_to_series(tele)
+    form_heart.add_subbobject_to_series(heart)
+
+    form_heart.add_to_blender(
+        appear_frame = -1,
+        animate = False
+    )
+
+    form_heart.morph_bobject(
+        0, 1,
+        start_time = 0,
+        end_time = 4,
+        dissolve_time = 120
+    )
+
+    heart.spin(
+        axis = 1,
+        start_time = 0,
+        end_time = 4,
+        spin_rate = 1
+    )
+
+    heart.pulse(
+        time = 4.5,
+        duration_time = 1
+    )
+    heart.pulse(
+        time = 5.5,
+        duration_time = 1
+    )
+
+    mat = heart.ref_obj.children[0].active_material
+    nodes = mat.node_tree.nodes
+    nodes[0].inputs[0].default_value = COLORS_SCALED[5]
+    nodes[1].inputs[0].default_value = COLORS_SCALED[5]
+
+    glossy_factor = nodes[3].inputs[0]
+    glossy_factor.keyframe_insert(
+        data_path = 'default_value',
+        frame = 4.5 * FRAME_RATE
+    )
+    glossy_factor.default_value = 0.7
+    glossy_factor.keyframe_insert(
+        data_path = 'default_value',
+        frame = 6 * FRAME_RATE
+    )
+
+
+    blob1 = import_object(
+        'boerd_blob', 'creatures',
+        location = [-20, -12, 0],
+        rotation_euler = [0, 0, -math.pi / 4],
+        scale = 5,
+        wiggle = True,
+        cycle_length = scene_end * FRAME_RATE
+    )
+    apply_material(blob1.ref_obj.children[0].children[0], 'creature_color3')
+    blob1.ref_obj.children[0].children[0].data.resolution = 0.05
+    blob1.add_to_blender(
+        appear_time = 0
+    )
+    blob1.move_to(
+        new_location = [-12, -6, 0],
+        start_time = 4
+    )
+    blob1.blob_wave(
+        start_time = 4,
+        duration = scene_end
+    )
+
+    blob2 = import_object(
+        'boerd_blob', 'creatures',
+        location = [20, -12, 0],
+        rotation_euler = [0, 0, math.pi / 4],
+        scale = 5,
+        wiggle = True,
+        cycle_length = scene_end * FRAME_RATE
+    )
+    apply_material(blob2.ref_obj.children[0].children[0], 'creature_color3')
+    blob2.ref_obj.children[0].children[0].data.resolution = 0.05
+    blob2.add_to_blender(
+        appear_time = 0
+    )
+    blob2.move_to(
+        new_location = [12, -6, 0],
+        start_time = 4
+    )
+    blob2.blob_wave(
+        start_time = 4,
+        duration = scene_end
+    )
+
+    blob3 = import_object(
+        'boerd_blob', 'creatures',
+        location = [20, 12, 0],
+        rotation_euler = [0, 0,  3 * math.pi / 4],
+        scale = 5,
+        wiggle = True,
+        cycle_length = scene_end * FRAME_RATE
+    )
+    apply_material(blob3.ref_obj.children[0].children[0], 'creature_color3')
+    blob3.ref_obj.children[0].children[0].data.resolution = 0.05
+    blob3.add_to_blender(
+        appear_time = 0
+    )
+    blob3.move_to(
+        new_location = [12, 6, 0],
+        start_time = 4
+    )
+    blob3.blob_wave(
+        start_time = 4,
+        duration = scene_end
+    )
+
+    blob4 = import_object(
+        'boerd_blob', 'creatures',
+        location = [-20, 12, 0],
+        rotation_euler = [0, 0, - 3 * math.pi / 4],
+        scale = 5,
+        wiggle = True,
+        cycle_length = scene_end * FRAME_RATE
+    )
+    apply_material(blob4.ref_obj.children[0].children[0], 'creature_color3')
+    blob4.ref_obj.children[0].children[0].data.resolution = 0.05
+    blob4.add_to_blender(
+        appear_time = 0
+    )
+    blob4.move_to(
+        new_location = [-12, 6, 0],
+        start_time = 4
+    )
+    blob4.blob_wave(
+        start_time = 4,
+        duration = scene_end
+    )
+
+    #Thank you
+    thank = tex_bobject.TexBobject(
+        '\\text{Thank}',
+        location = [0, 6, 0],
+        scale = 4,
+        color = 'color2',
+        centered = True
+    )
+    thank.add_to_blender(appear_time = 7)
+    you = tex_bobject.TexBobject(
+        '\\text{You!}',
+        location = [0, -6, 0],
+        scale = 4,
+        color = 'color2',
+        centered = True
+    )
+    you.add_to_blender(appear_time = 7.5)
+
+    remaining = [form_heart, blob1, blob2, blob3, blob4, thank, you]
+    for thing in remaining:
+        thing.disappear(disappear_time = scene_end)
 
 def main():
     #test_molecule()
+    #tex_test()
+    marketing()
 
     #draw_scenes_from_file(why_things_exist)
     #draw_scenes_from_file(replication_only)
-    draw_scenes_from_file(mutations)
+    #draw_scenes_from_file(mutations)
 
     #initialize_blender(total_duration = 15)
     #mutations.play_scenes()
