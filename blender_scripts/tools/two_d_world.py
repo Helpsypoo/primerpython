@@ -70,6 +70,7 @@ class TwoDWorld(Population):
             creature.locations = [None] * (self.animated_duration + 1) #duration+1 states
             creature.velocities = [None] * (self.animated_duration + 1)
         for t in range(self.animated_duration + 1): #duration steps, duration+1 states
+            print('   Spacetime for frame ' + str(t))
             for creature in creatures:
                 if t < creature.birthframe:
                     pass

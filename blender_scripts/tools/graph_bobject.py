@@ -426,6 +426,7 @@ class GraphBobject(Bobject):
         if end_frame == None:
             raise Warning('Need end frame to animate function curve, ya dick.')
 
+        print(self.functions_curves)
         data = self.functions_curves[index].ref_obj.children[0].data
 
         #Insert start and end keyframes for bevel_factor_end

@@ -2855,7 +2855,7 @@ class EndCard(Scene):
         for thing in remaining:
             thing.disappear(disappear_time = scene_end)
 '''
-#'''
+'''
 class Thumbnail(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
@@ -2957,4 +2957,4 @@ class Thumbnail(Scene):
         )
 
         rna.disappear(disappear_time = scene_end)
-#'''
+'''

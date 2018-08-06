@@ -14,7 +14,7 @@ if RENDER_QUALITY == 'final':
     LIGHT_SAMPLING_THRESHOLD = 0.0
     SAMPLE_COUNT = 64
     RENDER_QUALITY = 'high'
-    RENDER_TILE_SIZE = 512
+    RENDER_TILE_SIZE = 256
     #The 'final' stuff is over, so just setting to 'high' for rest of code
 else:
     RESOLUTION_PERCENTAGE = 30
@@ -132,7 +132,7 @@ BASE_REPLICATION_CHANCE = 0.001 #If this is higher than DEATH_CHANCE,
 DEFAULT_MUTATION_CHANCE = 0.5
 
 INITIAL_CREATURES = 10
-DEFAULT_POP_CAP = 3000
+DEFAULT_POP_CAP = 100 #3000
 
 '''
 Sim motion constants

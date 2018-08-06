@@ -50,6 +50,10 @@ import mutations
 imp.reload(mutations)
 from mutations import *
 
+import logistic_growth
+imp.reload(logistic_growth)
+from logistic_growth import *
+
 import population
 imp.reload(population)
 from population import *
@@ -101,6 +105,7 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION):
     scn.cycles.samples = SAMPLE_COUNT
     scn.cycles.preview_samples = SAMPLE_COUNT
     scn.cycles.light_sampling_threshold = LIGHT_SAMPLING_THRESHOLD
+    scn.cycles.transparent_max_bounces = 40
     scn.render.resolution_percentage = RESOLUTION_PERCENTAGE
     scn.render.use_compositing = False
     scn.render.use_sequencer = False
@@ -227,26 +232,16 @@ def test_object():
 
     initialize_blender(total_duration = scene_length)
 
-    blob2 = import_object(
-        'boerd_blob',
-        'creatures',
-        location = (0, 0, 0),
+    ear = import_object(
+        'inner_ear_2',
+        location = (5, -11, 0),
         scale = 5,
-        wiggle = True,
-        cycle_length = scene_length * FRAME_RATE
     )
-    for child in blob2.ref_obj.children[0].children:
-        if child.type == 'META':
-            if len(child.material_slots) > 0:
-                child.data.resolution = 0.1
-                apply_material(child, 'creature_color4')
+    apply_material(ear.ref_obj.children[0], 'creature_color4')
+    apply_material(ear.ref_obj.children[0].children[0], 'trans_color2')
     ##Create blender-side objects and manipulate
-    blob2.add_to_blender(
+    ear.add_to_blender(
         appear_time = 0
-    )
-    blob2.blob_wave(
-        start_time = 1,
-        duration = 2
     )
 
 def test_sim():
@@ -817,11 +812,10 @@ def marketing():
 def main():
     #test_molecule()
     #tex_test()
-    marketing()
+    #test_object()
+    #marketing()
 
-    #draw_scenes_from_file(why_things_exist)
-    #draw_scenes_from_file(replication_only)
-    #draw_scenes_from_file(mutations)
+    draw_scenes_from_file(logistic_growth)
 
     #initialize_blender(total_duration = 15)
     #mutations.play_scenes()

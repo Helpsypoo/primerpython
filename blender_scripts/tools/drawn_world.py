@@ -66,7 +66,7 @@ class DrawnWorld(TwoDWorld, Bobject):
             self.get_saved_world(load)
         else:
             world = TwoDWorld(
-                duration = sim_duration,
+                sim_duration = sim_duration,
                 overlap_okay = overlap_okay,
                 initial_creatures = initial_creatures,
                 gene_updates = gene_updates,

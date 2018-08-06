@@ -129,7 +129,9 @@ class TexComplex(Bobject):
         alignment = 'top',
         labels = None,
         angle = 0,
-        length = 1.5
+        length = 1.5,
+        label_scale = 0.67,
+        gest_scale = 1
     ):
         #calc points from targets
         gesture_series = []
@@ -256,7 +258,11 @@ class TexComplex(Bobject):
 
         container = bobject.Bobject(name = 'annotation')
 
-        gest = gesture.Gesture(gesture_series = gesture_series, color = 'color2')
+        gest = gesture.Gesture(
+            gesture_series = gesture_series,
+            color = 'color2',
+            scale = gest_scale
+        )
         container.add_subbobject(gest)
         tex_bobj.annotations.append([container, targets[1], alignment])
         self.annotations.append([container, targets[0]])
@@ -295,7 +301,7 @@ class TexComplex(Bobject):
             *t_bobjs,
             multiline = True,
             centered = True,
-            scale = 0.67,
+            scale = label_scale,
             name = 'label',
             location = (0, dy, 0),#label_anchor
             rotation_euler = [0, 0, -gest.subbobjects[0].ref_obj.rotation_euler[2]]

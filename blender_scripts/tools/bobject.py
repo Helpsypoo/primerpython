@@ -438,17 +438,19 @@ class Bobject(object):
     def blob_wave(
         self,
         start_time = 0,
-        duration = 0
+        duration = 0,
+        end_pause_duration = 0
     ):
         #This function only works for blob creatures. Maybe they deserve their
         #own subclass of bobject.
         start_frame = start_time * FRAME_RATE
-        duration = duration * FRAME_RATE
+        end_pause_frames = end_pause_duration * FRAME_RATE
+        duration_frames = duration * FRAME_RATE
 
         wave_cycle_length = 8
         cycle_error = 4
-        num_wave_cycles = math.floor(duration / wave_cycle_length)
-        duration = num_wave_cycles * wave_cycle_length
+        num_wave_cycles = math.floor(duration_frames / wave_cycle_length)
+        duration_frames = num_wave_cycles * wave_cycle_length
 
         l_arm_up_z = 1
         l_arm_down_z = -1
@@ -488,16 +490,18 @@ class Bobject(object):
         #And back
         l_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + duration - wave_cycle_length  + uniform(-cycle_error, cycle_error)
+            frame = start_frame + duration_frames - wave_cycle_length  + uniform(-cycle_error, cycle_error)
+        )
+        #if end_pause_frames != 0:
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + duration_frames - wave_cycle_length + end_pause_frames
         )
         l_arm.rotation_quaternion = initial_angle
         l_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + duration
+            frame = start_frame + duration_frames + end_pause_frames
         )
-
-
-
 
         #Right arm
         r_arm.keyframe_insert(
@@ -526,12 +530,16 @@ class Bobject(object):
         #And back
         r_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + duration - wave_cycle_length + uniform(-cycle_error, cycle_error)
+            frame = start_frame + duration_frames - wave_cycle_length + uniform(-cycle_error, cycle_error)
+        )
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + duration_frames - wave_cycle_length + end_pause_frames
         )
         r_arm.rotation_quaternion = initial_angle
         r_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + duration
+            frame = start_frame + duration_frames + end_pause_frames
         )
 
     def de_explode(

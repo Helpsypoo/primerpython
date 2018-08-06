@@ -79,15 +79,14 @@ class Population(object):
 
         #Using class attribute Population.genes as a default
         self.genes = deepcopy(Population.genes)
-        if 'duration' in kwargs:
-            self.duration = kwargs['duration']
+        if 'sim_duration' in kwargs:
+            self.duration = kwargs['sim_duration']
         else:
             self.duration = DEFAULT_WORLD_DURATION
         if 'gene_updates' in kwargs:
             self.updates = kwargs['gene_updates']
         else:
             self.updates = []
-
         if 'initial_creatures' in kwargs:
             self.initial_creatures = kwargs['initial_creatures']
         else:
@@ -102,7 +101,6 @@ class Population(object):
             self.name = kwargs['name']
         else:
             self.name = 'population'
-
 
         #Each update arg should be of the form
         #update = [gene, allele, property, value, frame]
@@ -212,13 +210,22 @@ class Population(object):
             cre.deathday == None or cre.deathday > t]
         for cre in alive:
             replication_chance = BASE_REPLICATION_CHANCE
+            #Death chance is here because I decided to share the crowding
+            #effect evenly between replication and death. We need the death
+            #chance to calculate the overall effect.
+            death_chance = BASE_DEATH_CHANCE
+
             for gene in cre.alleles:
                 replication_chance *= \
                     self.genes[gene][cre.alleles[gene]]\
                                                     ['replication_modifier']
+                death_chance *= \
+                    self.genes[gene][cre.alleles[gene]]['death_modifier']
+            crowding_rep_mod = (replication_chance - death_chance) / self.pop_cap / 2
+            pop_size = self.count_creatures_at_t(t)
 
             replicate_roll = random()
-            if replicate_roll < replication_chance:
+            if replicate_roll < replication_chance - crowding_rep_mod * pop_size:
                 baby = creature.Creature()
                 self.creatures.append(baby)
                 #Assign genes, checking for mutations
@@ -270,15 +277,22 @@ class Population(object):
         #Simple function that ramps death chance up around the population cap
         #Default cap is 3000, so it mostly functions to stop crashes/freezes
         #when I put in the wrong parameters.
-        crowding_death_mod = 1 + (pop_size / self.pop_cap) ** 10
+        #crowding_death_mod = 1 + (pop_size / self.pop_cap) ** 10
 
         for creature in alive:
-            death_chance = BASE_DEATH_CHANCE * crowding_death_mod
+            death_chance = BASE_DEATH_CHANCE
+            #Replication chance is here because I decided to share the crowding
+            #effect evenly between replication and death. We need the replication
+            #chance to calculate the overall effect.
+            replication_chance = BASE_REPLICATION_CHANCE
             for gene in creature.alleles:
                 death_chance *= \
                     self.genes[gene][creature.alleles[gene]]['death_modifier']
+                replication_chance *= \
+                    self.genes[gene][creature.alleles[gene]]['replication_modifier']
+            crowding_death_mod = (replication_chance - death_chance) / self.pop_cap / 2
             death_roll = random()
-            if death_roll < death_chance:
+            if death_roll < death_chance + crowding_death_mod * pop_size:
                 creature.deathday = t + 1
 
     def get_creature_names(self):

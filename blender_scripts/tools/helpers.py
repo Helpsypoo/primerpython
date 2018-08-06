@@ -139,7 +139,7 @@ def make_translucent_material(rgb = None, name = None):
         #Range exactly 3 so a fourth component (alpha) isn't affected
         rgb[i] /= 255
 
-    strength = 4 #Arbitrary, could make this a constant
+    strength = 0.1 #Arbitrary, could make this a constant
 
     color = bpy.data.materials.new(name = name)
     color.use_nodes = True
