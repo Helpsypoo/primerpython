@@ -178,13 +178,13 @@ class TexComplex(Bobject):
             if len(target) > 3 and target[3] == None: #No bobjs, empty gesture. HEH.
                 if alignment == 'top':
                     #y += 0 * self.scale[1] * tex_bobj.scale[1]
-                    head = ((right_most + left_most) / 2,
+                    head = ((right_most + left_most) / 2 / gest_scale,
                             y + length,
                             0)
                     rot = (0, 0, 0)
                 elif alignment == 'bottom':
                     #y -= 0 * self.scale[1] * tex_bobj.scale[1]
-                    head = ((right_most + left_most) / 2,
+                    head = ((right_most + left_most) / 2 / gest_scale,
                             y - length,
                             0)
                     rot = (0, 0, math.pi)
@@ -203,14 +203,14 @@ class TexComplex(Bobject):
                 (len(target) == 3 and len(bobjs) > 1): #Bracket
                 if alignment == 'top':
                     y += 0.2 * self.scale[1] * tex_bobj.scale[1]
-                    annotation_point = ((right_most + left_most) / 2, y + length, 0)
-                    left_point = (left_most, y, 0)
-                    right_point = (right_most, y, 0)
+                    annotation_point = ((right_most + left_most) / 2 / gest_scale, y + length, 0)
+                    left_point = (left_most / gest_scale, y, 0)
+                    right_point = (right_most / gest_scale, y, 0)
                 elif alignment == 'bottom':
                     y -= 0.2 * self.scale[1] * tex_bobj.scale[1]
-                    annotation_point = ((right_most + left_most) / 2, y - length, 0)
-                    left_point = [right_most, y, 0]
-                    right_point = [left_most, y, 0]
+                    annotation_point = ((right_most + left_most) / 2 / gest_scale, y - length, 0)
+                    left_point = [right_most / gest_scale, y, 0]
+                    right_point = [left_most / gest_scale, y, 0]
                     #if label_anchor == None:
                     #    label_anchor = list(annotation_point)
                 gesture_series.append(
@@ -228,18 +228,18 @@ class TexComplex(Bobject):
                 (len(target) == 3 and len(bobjs) == 1): #Arrow
                 if alignment == 'top':
                     y += 0.4 * self.scale[1] * tex_bobj.scale[1]
-                    head = ((right_most + left_most) / 2 + math.tan(this_angle) * 0.4,
+                    head = ((right_most + left_most) / 2 / gest_scale + math.tan(this_angle) * 0.4,
                             y,
                             0)
-                    tail = ((right_most + left_most) / 2 + math.tan(this_angle) * length,
+                    tail = ((right_most + left_most) / 2 / gest_scale + math.tan(this_angle) * length,
                             y + length,
                             0)
                 elif alignment == 'bottom':
                     y -= 0.4 * self.scale[1] * tex_bobj.scale[1]
-                    head = ((right_most + left_most) / 2 - math.tan(this_angle) * 0.4,
+                    head = ((right_most + left_most) / 2 / gest_scale - math.tan(this_angle) * 0.4,
                             y,
                             0)
-                    tail = ((right_most + left_most) / 2 - math.tan(this_angle) * length,
+                    tail = ((right_most + left_most) / 2 / gest_scale - math.tan(this_angle) * length,
                             y - length,
                             0)
                     #if label_anchor == None:

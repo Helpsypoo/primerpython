@@ -6,7 +6,7 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'final'
+RENDER_QUALITY = 'medium'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
@@ -75,7 +75,8 @@ elif color_scheme == 2:
         #[106, 141, 115, 1]
         [214, 59, 80, 1],
         #[255, 0, 0, 1]
-        [105, 143, 63, 1]
+        [105, 143, 63, 1],
+        [145, 146.5, 147, 1]
     ]
 elif color_scheme == 3:
     #Coolors Exported Palette - coolors.co/191308-bbd8b3-f3b61f-48a0c9-72120d

@@ -33,7 +33,7 @@ class LastVideoExp(Scene):
         self.subscenes = collections.OrderedDict([
             ('last_video', {'duration': 12}),
             ('sim_summary', {'duration': 12}),
-            ('quantitative', {'duration': 12}),
+            ('quantitative', {'duration': 40}),
         ])
         super().__init__()
 
@@ -273,50 +273,292 @@ class LastVideoExp(Scene):
     def quantitative(self):
         cues = self.subscenes['quantitative']
 
-        rhs1 = tex_bobject.TexBobject(
-            "\\big(R-D\\big) \\times N",
-            centered = True
-        )
-        equals1 = tex_bobject.TexBobject(
-            "\!=",
-            centered = True
-        )
-        lhs1 = tex_bobject.TexBobject(
-            "\\Delta",
-            "\\Delta",
-            "\\Delta",
-            centered = True
-        )
-        equation1 = tex_complex.TexComplex(
-            lhs1, equals1, rhs1,
-            location = (0, 0, 0),
-            scale = 2,
-            centered = True
-        )
-        equation1.add_annotation(
-            targets = [
-                0, #tex_bobject
-                [
-                    [0, 0, 0, None],  #form, first char, last char
-                    [1, 0, 0],
-                    [2, 0, 0, None]
+        def make_equation():
+            self.rhs1 = tex_bobject.TexBobject(
+                "\\big(R-D\\big) \\times N",
+                "\\big(R-D\\big) \\times N",
+                "\\big(R-D\\big) \\times N",
+                "\\big(R-D\\big) \\times N",
+                "\\big(0.1-D\\big) \\times N",
+                "\\big(0.1-0.05\\big) \\times N",
+                centered = True
+            )
+            self.equals1 = tex_bobject.TexBobject(
+                "\!=",
+                centered = True
+            )
+            self.lhs1 = tex_bobject.TexBobject(
+                "\\Delta",
+                "\\Delta",
+                "\\Delta",
+                centered = True
+            )
+            self.equation1 = tex_complex.TexComplex(
+                self.lhs1, self.equals1, self.rhs1,
+                location = (0, 0, 0),
+                scale = 2,
+                centered = True
+            )
+            self.equation1.add_annotation(
+                targets = [
+                    0, #tex_bobject
+                    [
+                        [0, 0, 0, None],  #form, first char, last char
+                        [1, 0, 0],
+                        [2, 0, 0, None]
+                    ],
                 ],
-            ],
-            labels = [
-                [],
-                ['\\text{Total}', '\\text{expected}', '\\text{change}'],
-                [],
-            ],
-            alignment = 'top',
-            gest_scale = 0.7
+                labels = [
+                    [],
+                    ['\\text{Total}', '\\text{expected}', '\\text{change}'],
+                    [],
+                ],
+                alignment = 'top',
+                gest_scale = 0.7
+            )
+            self.equation1.add_annotation(
+                targets = [
+                    2, #tex_bobject
+                    [
+                        [0, 1, 1, None],  #form, first char, last char
+                        [1, 1, 1],
+                        [2, 1, 1],
+                        [3, 1, 1],
+                        [4, 1, 3, 'arrow'],
+                        [5, 1, 3, 'arrow'],
+                    ],
+                ],
+                labels = [
+                    [],
+                    ['\\text{Replication chance}', '\\text{per creature}'],
+                    ['\\text{Replication chance}', '\\text{per creature}'],
+                    ['\\text{Replication chance}', '\\text{per creature}'],
+                    ['\\text{Replication chance}', '\\text{per creature}'],
+                    ['\\text{Replication chance}', '\\text{per creature}'],
+                ],
+                alignment = 'bottom',
+                gest_scale = 0.7
+            )
+            self.equation1.add_annotation(
+                targets = [
+                    2, #tex_bobject
+                    [
+                        [0, 3, 3, None],  #form, first char, last char
+                        [1, 3, 3, None],
+                        [2, 3, 3],
+                        [3, 3, 3],
+                        [4, 5, 5],
+                        [5, 5, 8, 'arrow']
+                    ],
+                ],
+                labels = [
+                    [],
+                    [],
+                    ['\\text{Death chance}', '\\text{per creature}'],
+                    ['\\text{Death chance}', '\\text{per creature}'],
+                    ['\\text{Death chance}', '\\text{per creature}'],
+                    ['\\text{Death chance}', '\\text{per creature}'],
+                ],
+                alignment = 'top',
+                gest_scale = 0.7
+            )
+            self.equation1.add_annotation(
+                targets = [
+                    2, #tex_bobject
+                    [
+                        [0, 6, 6, None],  #form, first char, last char
+                        [1, 6, 6, None],
+                        [2, 6, 6, None],
+                        [3, 6, 6],
+                        [4, 8, 8],
+                        [5, 11, 11]
+                    ],
+                ],
+                labels = [
+                    [],
+                    [],
+                    [],
+                    ['\\text{Current number}', '\\text{of creatures}'],
+                    ['\\text{Current number}', '\\text{of creatures}'],
+                    ['\\text{Current number}', '\\text{of creatures}'],
+                ],
+                alignment = 'bottom',
+                gest_scale = 0.7
+            )
+
+        def manipulate_equation():
+            self.equation1.add_to_blender(appear_time = cues['start'])
+            self.lhs1.morph_figure(1, start_time = cues['start'] + 2)
+            self.rhs1.morph_figure(1, start_time = cues['start'] + 3)
+            self.rhs1.morph_figure(2, start_time = cues['start'] + 4)
+            self.rhs1.morph_figure(3, start_time = cues['start'] + 5)
+
+            self.equation1.move_to(
+                start_time = cues['start'] + 6,
+                new_location = [-7, 0, 0],
+                new_scale = 1.5
+            )
+
+            self.rhs1.morph_figure(4, start_time = cues['start'] + 7)
+            self.rhs1.morph_figure(5, start_time = cues['start'] + 8)
+
+
+            self.equation1.move_to(
+                start_time = cues['start'] + 17,
+                new_location = [-7, -2, 0]
+            )
+
+        #make_equation()
+        #manipulate_equation()
+
+        def func(x):
+            return 0.05 * x
+
+        dn_graph1 = graph_bobject.GraphBobject(
+            func,
+            x_range = [0, 40],
+            y_range = [0, 1.5],
+            tick_step = [5, 0.5],
+            width = 10,
+            height = 5,
+            x_label = 'N',
+            x_label_pos = 'end',
+            y_label = '\\Delta',
+            y_label_pos = 'end',
+            location = (7, -1, 0),
+            centered = True,
+            arrows = True,
+        )
+        dn_graph1.add_to_blender(appear_time = cues['start'] + 6)
+
+        #Moved these to manipulate_equation
+        '''rhs1.morph_figure(4, start_time = cues['start'] + 7)
+        rhs1.morph_figure(5, start_time = cues['start'] + 8)'''
+
+        dn_graph1.animate_function_curve(
+            start_time = cues['start'] + 8,
+            end_time = cues['start'] + 9
         )
 
-        equation1.add_to_blender(appear_time = cues['start'])
-        lhs1.morph_figure(1, start_time = cues['start'] + 2)
+
+        appear_coord = [5, 0.25, 0]
+        point = dn_graph1.add_point_at_coord(
+            coord = appear_coord,
+            appear_time = cues['start'] + 9,
+            axis_projections = True,
+            track_curve = 0
+        )
+
+        x_of_t = []
+        #    [0, 5.25],
+        #    [1, 5.25 * (1.05)],
+        #    [2, 5.25 * (1.05) ** 2],
+        #    [3, 5.25 * (1.05) ** 3]
+        for x in range(20):
+            dn_graph1.animate_point(
+                point = point,
+                start_time = cues['start'] + 10 + x / 8,
+                end_time = cues['start'] + 10.0625 + x / 8,
+                end_coord = [5.25 * 1.05 ** x]
+            )
+
+        dn_graph1.move_to(
+            start_time = cues['start'] + 14,
+            new_location = [7, 3.5, 0],
+            #new_scale = 0.67
+        )
+        point.disappear(disappear_time = cues['start'] + 14)
+        point.axis_projections[0].disappear(disappear_time = cues['start'] + 14)
+        point.axis_projections[1].disappear(disappear_time = cues['start'] + 14)
+
+        start = 5
+        r = 0.05
+        def func(x):
+            return start * (1 + r) ** x
+        cap = 40
+        def func2(x):
+            return start * cap / (start + (cap - start) * math.exp(-r*x))
+
+        nt_graph1 = graph_bobject.GraphBobject(
+            func,
+            func2,
+            x_range = [0, 70],
+            y_range = [0, 100],
+            tick_step = [10, 20],
+            width = 10,
+            height = 5,
+            x_label = 't',
+            x_label_pos = 'end',
+            y_label = 'N',
+            y_label_pos = 'end',
+            location = (7, -4.5, 0),
+            centered = True,
+            arrows = True,
+            #scale = 0.67
+        )
+        nt_graph1.add_to_blender(appear_time = cues['start'] + 14)
+
+        nt_graph1.animate_function_curve(
+            start_time = cues['start'] + 15,
+            end_time = cues['start'] + 16
+        )
+
+        #Moved to manipulate_equation
+        '''equation1.move_to(
+            start_time = cues['start'] + 17,
+            new_location = [-7, -2, 0]
+        )'''
+
+        label = tex_bobject.TexBobject(
+            '\\text{Unlimited growth}',
+            '\\text{Limited growth?}',
+            scale = 2,
+            location = [-14.5, 6, 0]
+        )
+        label.add_to_blender(appear_time = cues['start'] + 17)
+
+        label.morph_figure(1, start_time = cues['start'] + 18)
+
+        cam_bobj = bobject.Bobject(location = CAMERA_LOCATION)
+        cam_bobj.add_to_blender(appear_time = 0)
+        cam_obj = bpy.data.objects['Camera']
+        cam_obj.location = [0, 0, 0]
+        cam_obj.parent = cam_bobj.ref_obj
+
+        cam_bobj.move_to(
+            new_location = [7.7, -3.7, 15.3],
+            start_time = cues['start'] + 20,
+            end_time = cues['start'] + 20.5
+        )
+        '''cam_bobj.move_to(
+            new_location = CAMERA_LOCATION,
+            start_time = cues['green_stats']['start'] + 27,
+            end_time = cues['green_stats']['start'] + 28
+        )'''
+
+        #nt_graph1.morph_curve(1, start_time = cues['start'] + 21)
+        nt_graph1.active_function_index = 1
+        nt_graph1.change_window(
+            start_time = cues['start'] + 21,
+            new_x_range = [0, 120],
+            new_y_range = [0, 40],
+            new_tick_step = [20, 20]
+        )
+
+        nt_graph1.highlight_region(
+            start_time = cues['start'] + 22,
+            end_time = cues['start'] + 24,
+            x_region = [0, 40],
+            y_region = [0, 40]
+        )
 
 
         #Prep for next scene
-        to_disappear = [equation1]
+        to_disappear = [
+            #self.equation1,
+            dn_graph1,
+            nt_graph1
+        ]
         for i, thing in enumerate(to_disappear):
             thing.disappear(disappear_time = cues['end'] - (len(to_disappear) - 1 - i) * 0.05)
 

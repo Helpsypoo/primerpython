@@ -476,7 +476,7 @@ def test_molecule():
     )"""
 
 def graph_test():
-    initialize_blender(total_duration = 1200)
+    initialize_blender(total_duration = 120)
 
     '''def func(x):
         return 10 * math.sin(3*x) * math.cos(x / 6) #+ math.sin(5*x)
@@ -485,115 +485,43 @@ def graph_test():
     '''
 
     def func(x):
-        return x / 5 #+ math.sin(5*x)
+        return 2 * math.sin(x) + 3
         #return 3 + 5 * x - 1.5 * x * x + (x ** 3) / 9.2
         #return 10 - (9 * (10 ** (10 - x)) / (10 ** 10))
         #return - x * x / 10 + 10
 
-    initial_creature_count = 10
-    initial_creatures = []
-    for i in range(initial_creature_count):
-        new_creature = creature.Creature(color = 'creature_color_1', shape = 'shape1')
-        initial_creatures.append(new_creature)
-    pop = population.Population(
-        duration = DEFAULT_WORLD_DURATION,
-        initial_creatures = initial_creatures,
-        gene_updates = [
-            ['color', 'creature_color_1', 'birth_modifier', 50, 0],
-            ['shape', 'shape1', 'birth_modifier', 1, 0],
-            ['size', '1', 'birth_modifier', 1, 0],
-            ['color', 'creature_color_1', 'replication_modifier', 0, 0],
-            ['color', 'creature_color_1', 'death_modifier', 5, 0],
-        ]
-    )
-    num_sims = 5
-    funcs = []
-    for i in range(num_sims):
-        pop.simulate()
-        funcs.append(pop.get_creature_count_by_t())
-        #funcs.append(pop.get_creature_count_by_t())
-
     graph = graph_bobject.GraphBobject(
-        *funcs,
-        x_range = [0, 100],
-        y_range = [0, 20],
-        tick_step = [20, 5],
-        width = 10,
-        height = 10,
+        func,
+        x_range = [0, 10],
+        y_range = [0, 10],
+        tick_step = [5, 5],
+        width = 15,
+        height = 15,
         x_label = '\\text{Time}',
         x_label_pos = 'along',
         y_label = 'N',
         y_label_pos = 'along',
-        location = (-6.5, 0, 0),
+        location = (0, 0, 0),
         centered = True,
         arrows = True
     )
     graph.add_to_blender(curve_colors = 'fade_secondary')
-    graph.animate_function_curve(
+
+    graph.change_window(
+        start_time = 5,
+        new_x_range = [0, 6],
+        new_y_range = [0, 6],
+        new_tick_step = [2, 2]
+    )
+
+    '''graph.animate_function_curve(
         start_frame = 60,
         end_frame = 180,
         uniform_along_x = True,
         index = 0
-    )
-    graph.animate_all_function_curves(
-        start_frame = 180,
-        end_frame = 1060,
-        uniform_along_x = True,
-        skip = 1,
-        start_window = 0.5
-    )
-    try:
-        appear_coord = [0, funcs[0][0], 0]
-    except:
-        appear_coord = [0, funcs[0](0), 0]
-    point = graph.add_point_at_coord(
-        coord = appear_coord,
-        appear_frame = 30,
-        axis_projections = True,
-        track_curve = 0
-    )
-    graph.animate_point(
-        end_coord = [100, 0, 0],
-        start_frame = 60,
-        end_frame = 180,
-        point = point
-    )
-    #graph.morph_curve(1, start_frame = 360)
-    '''graph.multi_animate_point(
-        point = point,
-        start_frame = 480,
-        x_of_t = x_of_t
     )'''
 
-    """def func2(x): return 5 - x / 2
-    graph2 = graph_bobject.GraphBobject(
-        func2,
-        x_range = [0, 20],
-        y_range = [-10, 10],
-        tick_step = [5, 5],
-        width = 10,
-        height = 10,
-        x_label = 'N',
-        x_label_pos = 'end',
-        y_label = '\\Delta_{expected}',
-        y_label_pos = 'end',
-        location = (6.5, 0, 0),
-        centered = True,
-        arrows = True
-    )
-    graph2.add_to_blender()
-    appear_coord = [func[0], func2(func[0]), 0]
-    point2 = graph2.add_point_at_coord(
-        coord = appear_coord,
-        appear_frame = 30,
-        axis_projections = True,
-        track_curve = True
-    )
-    graph2.multi_animate_point(
-        start_frame = 60,
-        point = point2,
-        x_of_t = func
-    )"""
+
 
 def marketing():
     scene_end = 12
@@ -814,6 +742,8 @@ def main():
     #tex_test()
     #test_object()
     #marketing()
+
+    #graph_test()
 
     draw_scenes_from_file(logistic_growth)
 

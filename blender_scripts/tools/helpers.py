@@ -43,29 +43,13 @@ def define_materials():
     #Hook up the refraction shader to the output (nodes[0])
     clear.node_tree.links.new(nodes[1].outputs[0], nodes[0].inputs[0])
 
-    make_basic_material(rgb = deepcopy(COLORS[0]), name = 'color1')
-    make_basic_material(rgb = deepcopy(COLORS[1]), name = 'color2')
-    make_basic_material(rgb = deepcopy(COLORS[2]), name = 'color3')
-    make_basic_material(rgb = deepcopy(COLORS[3]), name = 'color4')
-    make_basic_material(rgb = deepcopy(COLORS[4]), name = 'color5')
-    make_basic_material(rgb = deepcopy(COLORS[5]), name = 'color6')
-    make_basic_material(rgb = deepcopy(COLORS[6]), name = 'color7')
-
-    make_creature_material(rgb = deepcopy(COLORS[0]), name = 'creature_color1')
-    make_creature_material(rgb = deepcopy(COLORS[1]), name = 'creature_color2')
-    make_creature_material(rgb = deepcopy(COLORS[2]), name = 'creature_color3')
-    make_creature_material(rgb = deepcopy(COLORS[3]), name = 'creature_color4')
-    make_creature_material(rgb = deepcopy(COLORS[4]), name = 'creature_color5')
-    make_creature_material(rgb = deepcopy(COLORS[5]), name = 'creature_color6')
-    make_creature_material(rgb = deepcopy(COLORS[6]), name = 'creature_color7')
-
-    make_translucent_material(rgb = deepcopy(COLORS[0]), name = 'trans_color1')
-    make_translucent_material(rgb = deepcopy(COLORS[1]), name = 'trans_color2')
-    make_translucent_material(rgb = deepcopy(COLORS[2]), name = 'trans_color3')
-    make_translucent_material(rgb = deepcopy(COLORS[3]), name = 'trans_color4')
-    make_translucent_material(rgb = deepcopy(COLORS[4]), name = 'trans_color5')
-    make_translucent_material(rgb = deepcopy(COLORS[5]), name = 'trans_color6')
-    make_translucent_material(rgb = deepcopy(COLORS[6]), name = 'trans_color7')
+    for i, col in enumerate(COLORS):
+        name = 'color' + str(i + 1)
+        make_basic_material(rgb = col, name = name)
+        name = 'creature_color' + str(i + 1)
+        make_creature_material(rgb = col, name = name)
+        name = 'trans_color' + str(i + 1)
+        make_translucent_material(rgb = col, name = name)
 
 def make_basic_material(rgb = None, name = None):
     if rgb == None or name == None:

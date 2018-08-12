@@ -56,7 +56,9 @@ class GraphBobject(Bobject):
         self.height = height - 2 * GRAPH_PADDING
         self.tick_step = tick_step #Either 'auto' or a list
         self.tick_labels_x = []
+        self.tick_bobjs_x = []
         self.tick_labels_y = []
+        self.tick_bobjs_y = []
 
         #Calculate factor for converting from function space to draw space
         self.domain_scale_factor = self.width / (self.x_range[1] - self.x_range[0])
@@ -185,9 +187,9 @@ class GraphBobject(Bobject):
             else:
                 raise Warning('Idk wtf to do with that tick step.')
 
-        #Positive x ticks
         if x_tick_step != None:
             current_tick = x_tick_step
+            #Positive x ticks
             while current_tick <= self.x_range[1]:
                 self.add_tick_x(current_tick)
                 current_tick += x_tick_step
@@ -198,7 +200,7 @@ class GraphBobject(Bobject):
                 self.add_tick_x(current_tick)
                 current_tick -= x_tick_step
 
-        if x_tick_step != None:
+        if y_tick_step != None:
             #Positive y ticks
             current_tick = y_tick_step
             while current_tick <= self.y_range[1]:
@@ -216,6 +218,8 @@ class GraphBobject(Bobject):
         cyl_bobj = import_object('cylinder', 'primitives', name = 'x_tick')
         apply_material(cyl_bobj.objects[0], 'color2')
         self.add_subbobject(cyl_bobj)
+        self.tick_bobjs_x.append(cyl_bobj)
+
         ref = cyl_bobj.ref_obj
         ref.location = (value * self.domain_scale_factor, 0, 0)
         ref.children[0].rotation_euler = (math.pi / 2, 0, 0)
@@ -237,6 +241,8 @@ class GraphBobject(Bobject):
         self.add_subbobject(label)
         self.tick_labels_x.append(label)
 
+        return cyl_bobj, label
+
     def add_tick_y(self, value):
         tick_scale = min(self.width, self.height) / 20
         cyl_bobj = import_object('cylinder', 'primitives', name = 'y_tick')
@@ -246,6 +252,7 @@ class GraphBobject(Bobject):
         ref.location = (0, value * self.range_scale_factor, 0)
         ref.children[0].rotation_euler = (0, math.pi / 2, 0)
         ref.children[0].scale = (AXIS_DEPTH / 2, AXIS_WIDTH / 2, tick_scale)
+        self.tick_bobjs_y.append(cyl_bobj)
 
         label_scale = 0.5
         label = tex_bobject.TexBobject(
@@ -260,6 +267,263 @@ class GraphBobject(Bobject):
         )
         self.add_subbobject(label)
         self.tick_labels_y.append(label)
+
+        #Only used when changing window, since in that case, the new bobjects
+        #aren't added when add_to_blender() is called on the
+        return cyl_bobj, label
+
+    def change_window(
+        self,
+        start_time = None,
+        end_time = None,
+        new_x_range = None,
+        new_y_range = None,
+        new_tick_step = None
+    ):
+        #Only works properly when lower bounds are zero.
+        #Or, more generally, when the mapping from old to new is simply a
+        #scale factor
+
+        if start_time == None:
+            raise Warning('Must define start time for change_window()')
+        start_frame = int(start_time * FRAME_RATE)
+
+        if end_time == None:
+            end_frame = start_frame + OBJECT_APPEARANCE_TIME
+        else:
+            end_frame = int(end_time * FRAME_RATE)
+
+
+        if new_x_range == None:
+            new_x_range = self.x_range
+        if new_y_range == None:
+            new_y_range = self.y_range
+        if new_tick_step == None:
+            new_tick_step = self.tick_step
+
+        #Add new ticks
+        tick_step = new_tick_step
+        if tick_step == 'auto':
+            num_steps_x = self.width / AUTO_TICK_SPACING_TARGET
+            x_tick_step = math.floor((new_x_range[1] - new_x_range[0]) / num_steps_x)
+
+            num_steps_y = self.height / AUTO_TICK_SPACING_TARGET
+            y_tick_step = math.floor((new_y_range[1] - new_y_range[0]) / num_steps_y)
+
+        else:
+            if isinstance(tick_step, list):
+                x_tick_step = tick_step[0]
+                y_tick_step = tick_step[1]
+            elif isinstance(tick_step, int) or isinstance(tick_step, float):
+                x_tick_step = y_tick_step = tick_step
+            else:
+                raise Warning('Idk wtf to do with that tick step.')
+
+        if x_tick_step != None:
+            current_tick = x_tick_step
+            #Positive x ticks
+            while current_tick <= new_x_range[1]:
+                stagger_frame = (new_x_range[1] - current_tick) / new_x_range[1] * OBJECT_APPEARANCE_TIME
+                needed = True
+                for existing_tick in self.tick_bobjs_x:
+                    if int(round(existing_tick.ref_obj.location[0] / self.domain_scale_factor)) == current_tick:
+                        needed = False
+                if needed == True:
+                    new_tick_bobjs = self.add_tick_x(current_tick)
+                    for bobj in new_tick_bobjs:
+                        bobj.add_to_blender(appear_frame = start_frame + OBJECT_APPEARANCE_TIME - stagger_frame)
+                current_tick += x_tick_step
+
+            #Negative x ticks
+            current_tick = -x_tick_step
+            while current_tick >= new_x_range[0]:
+                stagger_frame = (current_tick - new_x_range[0]) / new_x_range[1] * OBJECT_APPEARANCE_TIME
+                needed = True
+                for existing_tick in self.tick_bobjs_x:
+                    if int(round(existing_tick.ref_obj.location[0] / self.domain_scale_factor)) == current_tick:
+                        needed = False
+                if needed == True:
+                    new_tick_bobjs = self.add_tick_x(current_tick)
+                    for bobj in new_tick_bobjs:
+                        bobj.add_to_blender(appear_frame = start_frame + OBJECT_APPEARANCE_TIME - stagger_frame)
+                current_tick -= x_tick_step
+
+        if y_tick_step != None:
+            current_tick = y_tick_step
+            #Positive y ticks
+            while current_tick <= new_y_range[1]:
+                stagger_frame = (new_y_range[1] - current_tick) / new_y_range[1] * OBJECT_APPEARANCE_TIME
+                needed = True
+                for existing_tick in self.tick_bobjs_y:
+                    if int(round(existing_tick.ref_obj.location[0] / self.domain_scale_factor)) == current_tick:
+                        needed = False
+                if needed == True:
+                    new_tick_bobjs = self.add_tick_y(current_tick)
+                    for bobj in new_tick_bobjs:
+                        bobj.add_to_blender(appear_frame = start_frame + OBJECT_APPEARANCE_TIME - stagger_frame)
+                current_tick += y_tick_step
+
+            #Negative y ticks
+            current_tick = -y_tick_step
+            while current_tick >= new_y_range[0]:
+                stagger_frame = (current_tick - new_y_range[0]) / new_y_range[1] * OBJECT_APPEARANCE_TIME
+                needed = True
+                for existing_tick in self.tick_bobjs_y:
+                    if int(round(existing_tick.ref_obj.location[0] / self.domain_scale_factor)) == current_tick:
+                        needed = False
+                if needed == True:
+                    new_tick_bobjs = self.add_tick_y(current_tick)
+                    for bobj in new_tick_bobjs:
+                        bobj.add_to_blender(appear_frame = start_frame + OBJECT_APPEARANCE_TIME - stagger_frame)
+                current_tick -= y_tick_step
+
+        self.tick_step = new_tick_step
+
+        #Make old ticks disappear
+        #Move all ticks
+        x_scale_factor = (self.x_range[1] - self.x_range[0]) / \
+                       (new_x_range[1] - new_x_range[0])
+
+        for bobj in self.tick_labels_x + self.tick_bobjs_x:
+            #x = bobj.ref_obj.location[0]
+            int_pos = int(round(bobj.ref_obj.location[0] / self.domain_scale_factor))
+            if int_pos > 0:
+                stagger_frame = (self.x_range[1] - int_pos) / self.x_range[1] * OBJECT_APPEARANCE_TIME
+            elif int_pos < 0:
+                stagger_frame = (int_pos - self.x_range[0]) / self.x_range[0] * OBJECT_APPEARANCE_TIME
+            if int_pos % self.tick_step[0] != 0 or int_pos > new_x_range[1] or \
+                                    int_pos < new_x_range[0]:
+                bobj.disappear(disappear_frame = start_frame + stagger_frame)
+
+            bobj.move_to(
+                start_frame = start_frame,
+                end_frame = end_frame,
+                new_location = [
+                    bobj.ref_obj.location[0] * x_scale_factor,
+                    bobj.ref_obj.location[1],
+                    bobj.ref_obj.location[2],
+                ]
+            )
+
+        self.x_range = new_x_range
+        self.domain_scale_factor = self.width / (self.x_range[1] - self.x_range[0])
+
+        y_scale_factor = (self.y_range[1] - self.y_range[0]) / \
+                       (new_y_range[1] - new_y_range[0])
+        for bobj in self.tick_labels_y + self.tick_bobjs_y:
+            int_pos = int(round(bobj.ref_obj.location[1] / self.range_scale_factor))
+            if int_pos > 0:
+                stagger_frame = (self.y_range[1] - int_pos) / self.y_range[1] * OBJECT_APPEARANCE_TIME
+            elif int_pos < 0:
+                stagger_frame = (int_pos - self.y_range[0]) / self.y_range[0] * OBJECT_APPEARANCE_TIME
+            if int_pos % self.tick_step[1] != 0 or int_pos > new_y_range[1] or \
+                                    int_pos < new_y_range[0]:
+                bobj.disappear(disappear_frame = start_frame)
+
+            bobj.move_to(
+                start_frame = start_frame,
+                end_frame = end_frame,
+                new_location = [
+                    bobj.ref_obj.location[0],
+                    bobj.ref_obj.location[1] * y_scale_factor,
+                    bobj.ref_obj.location[2],
+                ]
+            )
+
+
+        self.y_range = new_y_range
+        self.range_scale_factor = self.height / (self.y_range[1] - self.y_range[0])
+
+        #Morph curve to fit new window
+        #Add function to function list again.
+        func = self.functions[self.active_function_index]
+        self.functions.append(func)
+        #Then make new coords set based on function.
+        self.functions_coords.append(self.func_to_coords(func_index = -1))
+        #Morph curve to new function
+        self.morph_curve(-1, start_time = start_time)
+
+    def highlight_region(
+        self,
+        start_time = None,
+        end_time = None,
+        x_region = None,
+        y_region = None,
+        color = 'color8',
+        highlight_direction = 'x'
+    ):
+        if start_time == None:
+            raise Warning('Must define start time for change_window()')
+        start_frame = int(start_time * FRAME_RATE)
+
+        if end_time == None:
+            #twice as long here to allow for appearance and disappearance
+            end_frame = start_frame +  2 * OBJECT_APPEARANCE_TIME
+        else:
+            end_frame = int(end_time * FRAME_RATE)
+
+        if x_region == None or y_region == None:
+            raise Warning("Need to define region to highlight region in graph")
+
+        x_region = [
+            x_region[0] * self.domain_scale_factor,
+            x_region[1] * self.domain_scale_factor
+        ]
+        y_region = [
+            y_region[0] * self.range_scale_factor,
+            y_region[1] * self.range_scale_factor
+        ]
+
+        bpy.ops.mesh.primitive_plane_add(location = [0, 0, 0])
+        rect = bpy.context.object
+
+        if highlight_direction == 'x':
+            region = bobject.Bobject(
+                objects = [rect],
+                location = [x_region[0], (y_region[1] - y_region[0])/2, 0],
+                name = 'region',
+                scale = [
+                    0,
+                    (y_region[1] - y_region[0])/2,
+                    0
+                ]
+            )
+            region.ref_obj.parent = self.ref_obj
+            apply_material(rect, color)
+            region.add_to_blender(appear_time = start_time)
+
+            #expand region
+            region.move_to(
+                start_frame = start_frame,
+                new_location = [
+                    (x_region[1] - x_region[0])/2,
+                    (y_region[1] - y_region[0])/2,
+                    0
+                ],
+                new_scale = [
+                    (x_region[1] - x_region[0])/2,
+                    (y_region[1] - y_region[0])/2,
+                    0
+                ]
+            )
+
+            #close region
+            region.move_to(
+                end_frame = end_frame,
+                new_location = [
+                    x_region[1],
+                    (y_region[1] - y_region[0])/2,
+                    0
+                ],
+                new_scale = [
+                    0,
+                    (y_region[1] - y_region[0])/2,
+                    0
+                ]
+            )
+
+            region.disappear(disappear_frame = end_frame + OBJECT_APPEARANCE_TIME)
+
 
     def add_function_curve(
         self,
