@@ -335,19 +335,19 @@ class Bobject(object):
 
     def pulse(
         self,
-        time = None,
-        frame = None,
+        start_time = None,
+        start_frame = None,
         factor = 1.2,
         attack = OBJECT_APPEARANCE_TIME,
         decay = OBJECT_APPEARANCE_TIME,
         duration_time = None,
         duration = None,
     ):
-        if time != None:
-            if frame != None:
-                raise Warning("You defined both frame and time. " +\
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start_frame and start_time. " +\
                               "Just do one, ya dick.")
-            frame = time * FRAME_RATE
+            start_frame = start_time * FRAME_RATE
         if duration_time != None:
             if duration != None:
                 raise Warning("You defined duration by both frames and time. " +\
@@ -358,19 +358,20 @@ class Bobject(object):
                 duration = OBJECT_APPEARANCE_TIME * 4
 
         obj = self.ref_obj
-        obj.keyframe_insert(data_path="scale", frame = frame)
+        obj.keyframe_insert(data_path="scale", frame = start_frame)
         obj.scale *= factor
-        obj.keyframe_insert(data_path="scale", frame = frame + attack)
-        obj.keyframe_insert(data_path="scale", frame = frame + duration - decay)
+        obj.keyframe_insert(data_path="scale", frame = start_frame + attack)
+        obj.keyframe_insert(data_path="scale", frame = start_frame + duration - decay)
         obj.scale /= factor
-        obj.keyframe_insert(data_path="scale", frame = frame + duration)
+        obj.keyframe_insert(data_path="scale", frame = start_frame + duration)
 
     def color_shift(
         self,
         color = COLORS_SCALED[3],
         start_time = None,
         start_frame = None,
-        duration = OBJECT_APPEARANCE_TIME * 4,
+        duration_time = 2,
+        duration = None,
         shift_time = OBJECT_APPEARANCE_TIME,
         obj = None,
         color_gradient = None
@@ -381,7 +382,8 @@ class Bobject(object):
                               "Just do one, ya dick.")
             start_frame = int(start_time * FRAME_RATE)
 
-        if duration != None:
+        if duration_time != None:
+            duration = duration_time * FRAME_RATE
             if duration < shift_time * 2:
                 shift_time = duration / 2
                 print('Adjusted shift time')

@@ -45,11 +45,11 @@ def define_materials():
 
     for i, col in enumerate(COLORS):
         name = 'color' + str(i + 1)
-        make_basic_material(rgb = col, name = name)
+        make_basic_material(rgb = deepcopy(col), name = name)
         name = 'creature_color' + str(i + 1)
-        make_creature_material(rgb = col, name = name)
+        make_creature_material(rgb = deepcopy(col), name = name)
         name = 'trans_color' + str(i + 1)
-        make_translucent_material(rgb = col, name = name)
+        make_translucent_material(rgb = deepcopy(col), name = name)
 
 def make_basic_material(rgb = None, name = None):
     if rgb == None or name == None:
@@ -123,7 +123,8 @@ def make_translucent_material(rgb = None, name = None):
         #Range exactly 3 so a fourth component (alpha) isn't affected
         rgb[i] /= 255
 
-    strength = 0.1 #Arbitrary, could make this a constant
+    strength = 4 #Arbitrary, could make this a constant
+    #strength = 0.1
 
     color = bpy.data.materials.new(name = name)
     color.use_nodes = True

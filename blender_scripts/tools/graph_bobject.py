@@ -440,6 +440,16 @@ class GraphBobject(Bobject):
         self.functions.append(func)
         #Then make new coords set based on function.
         self.functions_coords.append(self.func_to_coords(func_index = -1))
+
+        '''print()
+        print()
+        print()
+        for j in range(len(self.functions_coords)):
+            print(j, len(self.functions_coords[j]))
+        print()
+        print()
+        print()'''
+
         #Morph curve to new function
         self.morph_curve(-1, start_time = start_time)
 
@@ -449,7 +459,7 @@ class GraphBobject(Bobject):
         end_time = None,
         x_region = None,
         y_region = None,
-        color = 'color8',
+        color = 'color7',
         highlight_direction = 'x'
     ):
         if start_time == None:
@@ -477,10 +487,15 @@ class GraphBobject(Bobject):
         bpy.ops.mesh.primitive_plane_add(location = [0, 0, 0])
         rect = bpy.context.object
 
+
         if highlight_direction == 'x':
             region = bobject.Bobject(
                 objects = [rect],
-                location = [x_region[0], (y_region[1] - y_region[0])/2, 0],
+                location = [
+                    x_region[0],
+                    (y_region[1] + y_region[0])/2,
+                    0
+                ],
                 name = 'region',
                 scale = [
                     0,
@@ -496,8 +511,8 @@ class GraphBobject(Bobject):
             region.move_to(
                 start_frame = start_frame,
                 new_location = [
-                    (x_region[1] - x_region[0])/2,
-                    (y_region[1] - y_region[0])/2,
+                    (x_region[1] + x_region[0])/2,
+                    (y_region[1] + y_region[0])/2,
                     0
                 ],
                 new_scale = [
@@ -512,7 +527,7 @@ class GraphBobject(Bobject):
                 end_frame = end_frame,
                 new_location = [
                     x_region[1],
-                    (y_region[1] - y_region[0])/2,
+                    (y_region[1] + y_region[0])/2,
                     0
                 ],
                 new_scale = [
@@ -523,7 +538,56 @@ class GraphBobject(Bobject):
             )
 
             region.disappear(disappear_frame = end_frame + OBJECT_APPEARANCE_TIME)
+        if highlight_direction == 'y':
+            region = bobject.Bobject(
+                objects = [rect],
+                location = [
+                    (x_region[1] + x_region[0])/2,
+                    y_region[0],
+                    0
+                ],
+                name = 'region',
+                scale = [
+                    (x_region[1] - x_region[0])/2,
+                    0,
+                    0
+                ]
+            )
+            region.ref_obj.parent = self.ref_obj
+            apply_material(rect, color)
+            region.add_to_blender(appear_time = start_time)
 
+            #expand region
+            region.move_to(
+                start_frame = start_frame,
+                new_location = [
+                    (x_region[1] + x_region[0])/2,
+                    (y_region[1] + y_region[0])/2,
+                    0
+                ],
+                new_scale = [
+                    (x_region[1] - x_region[0])/2,
+                    (y_region[1] - y_region[0])/2,
+                    0
+                ]
+            )
+
+            #close region
+            region.move_to(
+                end_frame = end_frame,
+                new_location = [
+                    (x_region[1] + x_region[0])/2,
+                    y_region[1],
+                    0
+                ],
+                new_scale = [
+                    (x_region[1] - x_region[0])/2,
+                    0,
+                    0
+                ]
+            )
+
+            region.disappear(disappear_frame = end_frame + OBJECT_APPEARANCE_TIME)
 
     def add_function_curve(
         self,
@@ -723,10 +787,11 @@ class GraphBobject(Bobject):
                               "Just do one, ya dick.")
             end_frame = int(end_time * FRAME_RATE)
 
-        num_curves = len(self.functions) - skip
+        num_curves = len(self.functions_curves) - skip
         start_interval = (end_frame - start_frame) * start_window / num_curves
 
         for i in range(num_curves):
+            print(i)
             self.animate_function_curve(
                 start_frame = start_frame + start_interval * i,
                 end_frame = start_frame + start_interval * i + \
@@ -817,8 +882,11 @@ class GraphBobject(Bobject):
                 x += x_step
 
             #Ensure last val in range is included.
-            if x_vals[-1] < self.x_range[1]:
-                x_vals.append(self.x_range[1])
+            #Actually, don't, because this can lead to curves with different
+            #numbers of points if the range changes, and the presence of the
+            #last point doesn't really matter for (would-be) continuous functions
+            #if x_vals[-1] < self.x_range[1]:
+            #    x_vals.append(self.x_range[1])
 
             for x in x_vals:
                 y = self.evaluate_function(input = x, index = func_index)
@@ -1228,6 +1296,7 @@ class GraphBobject(Bobject):
             curve_object.data.shape_keys.key_blocks[-1].interpolation = 'KEY_LINEAR'
 
         final_coords = self.functions_coords[to_curve_index]
+        print(len(final_coords))
         #Add another coord to the beginning and end because NURBS curves
         #don't draw all the way to the exteme points.
         start_coord = [
@@ -1243,8 +1312,12 @@ class GraphBobject(Bobject):
         ]
         final_coords.append(end_coord)
 
+        for j in range(len(self.functions_coords)):
+            print(j, len(self.functions_coords[j]))
+
         bpy.ops.object.mode_set(mode = 'EDIT')
         for j in range(len(curve_object.data.splines[0].points)):
+            print(j)
             x, y, z = final_coords[j]
             curve_object.data.splines[0].points[j].co = (x, y, z, 1)
         bpy.ops.object.mode_set(mode = 'OBJECT')

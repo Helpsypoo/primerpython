@@ -113,7 +113,12 @@ class TexComplex(Bobject):
             #If any annotations are targeting the current t_bobj, move them too
             for annotation in self.annotations:
                 if annotation[1] == i:
-                    if start_frame != None:
+                    #Avoid adding starting keyframe if it's in the right place
+                    #already. This is correct if the start position is already
+                    #keyframed, but it might mess up if that's not the case.
+                    #A more robust way would check the fcurve.
+                    if start_frame != None and \
+                            annotation[0].ref_obj.location[0] != t_bobj.ref_obj.location[0]:
                         annotation[0].ref_obj.keyframe_insert(data_path = 'location', frame = start_frame)
                     annotation[0].ref_obj.location[0] = t_bobj.ref_obj.location[0]
                     if end_frame != None:
@@ -141,8 +146,6 @@ class TexComplex(Bobject):
             bobjs = []
             path = tex_bobj.paths[target[0]]
             for i in range(target[1], target[2] + 1):
-                #print(j)
-                #print(i)
                 bobjs.append(tex_bobj.imported_svg_data[path]['curves'][i])
 
             left_most = math.inf

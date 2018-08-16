@@ -76,7 +76,7 @@ elif color_scheme == 2:
         [214, 59, 80, 1],
         #[255, 0, 0, 1]
         [105, 143, 63, 1],
-        [145, 146.5, 147, 1]
+        [145, 146.5, 147, 1] #Grat from averaging 1 and 2
     ]
 elif color_scheme == 3:
     #Coolors Exported Palette - coolors.co/191308-bbd8b3-f3b61f-48a0c9-72120d
@@ -133,7 +133,7 @@ BASE_REPLICATION_CHANCE = 0.001 #If this is higher than DEATH_CHANCE,
 DEFAULT_MUTATION_CHANCE = 0.5
 
 INITIAL_CREATURES = 10
-DEFAULT_POP_CAP = 100 #3000
+DEFAULT_POP_CAP = 50 #3000
 
 '''
 Sim motion constants

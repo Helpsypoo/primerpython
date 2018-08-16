@@ -120,7 +120,9 @@ class TexBobject(SVGBobject):
         final_index,
         start_time = None,
         start_frame = None,
-        duration = DEFAULT_MORPH_TIME
+        duration = DEFAULT_MORPH_TIME,
+        transition_type = None,
+        arrange_super = True
     ):
         if start_time != None:
             if start_frame != None:
@@ -135,7 +137,8 @@ class TexBobject(SVGBobject):
         super().morph_figure(
             final_index,
             start_frame = start_frame,
-            duration = duration
+            duration = duration,
+            transition_type = transition_type
         )
 
         #This code messes up the counters, making the numbers all wobbly.
@@ -144,7 +147,8 @@ class TexBobject(SVGBobject):
         #For now, this just checks whether the superbobject TexComplex is a
         #counter, and then skips if so.
         if isinstance(self.superbobject, tex_complex.TexComplex) \
-            and 'sim_counter' not in self.superbobject.name:
+            and 'sim_counter' not in self.superbobject.name and \
+            arrange_super == True:
             self.superbobject.arrange_tex_bobjects(
                 start_frame = start_frame,
                 end_frame = start_frame + duration

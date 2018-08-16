@@ -303,7 +303,47 @@ def test_sim():
     print_time_report()
 
 def tex_test():
-    initialize_blender(total_duration = 3)
+    initialize_blender(total_duration = 100)
+
+    plug_Ns = []
+    delta_outs = []
+    num_states = 51
+    for i in range(0, max):
+        Nstring = "\\big(0.1-0.05 - 0.001\\times" + str(i) + "\\big) \\times" + str(i)
+        plug_Ns.append(Nstring)
+        delta = (0.05 - 0.001 * i) * i
+        delta_string = str('{0:.2f}'.format(delta))
+        delta_outs.append(delta_string)
+
+    rhs2 = tex_bobject.TexBobject(
+        *plug_Ns,
+        transition_type = 'instant',
+        centered = True
+    )
+    equals2 = tex_bobject.TexBobject(
+        "\!=",
+        transition_type = 'instant',
+        centered = True
+    )
+    lhs2 = tex_bobject.TexBobject(
+        *delta_outs,
+        transition_type = 'instant',
+        centered = True
+    )
+    equation2 = tex_complex.TexComplex(
+        lhs2, equals2, rhs2,
+        location = (0, 0, 0),
+        scale = 2,
+        centered = True
+    )
+    equation2.add_to_blender(appear_time = 0.5, animate = False)
+
+    for i in range(1, num_states):
+        if i == 10:
+            arrange_super = True
+        else: arrange_super = False
+        rhs2.morph_figure(i, start_time = 1 + i * 0.05, arrange_super = arrange_super)
+        lhs2.morph_figure(i, start_time = 1 + i * 0.05, arrange_super = False)
 
 
     """ming = tex_bobject.TexBobject(
@@ -334,7 +374,7 @@ def tex_test():
     )
     patreon.add_to_blender(appear_frame = 0)'''
 
-    patreon = import_object(
+    """patreon = import_object(
         'patreon', 'svgblend',
         scale = 6,
         location = (-8, 0, 0)
@@ -360,7 +400,7 @@ def tex_test():
 
     remaining = [patreon, thanks, js]
     for thing in remaining:
-        thing.disappear(disappear_time = 3)
+        thing.disappear(disappear_time = 3)"""
 
     print_time_report()
 
@@ -520,8 +560,6 @@ def graph_test():
         uniform_along_x = True,
         index = 0
     )'''
-
-
 
 def marketing():
     scene_end = 12

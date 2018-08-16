@@ -695,7 +695,8 @@ class SVGBobject(Bobject):
         final_index,
         start_time = None,
         start_frame = None,
-        duration = DEFAULT_MORPH_TIME
+        duration = DEFAULT_MORPH_TIME,
+        transition_type = None
     ):
         if start_time != None:
             if start_frame != None:
@@ -711,7 +712,10 @@ class SVGBobject(Bobject):
         #print('Start frame = ' + str(start_frame))
         #print('End frame = ' + str(end_frame))
 
-        if self.transition_type == 'morph':
+        if transition_type == None:
+            transition_type = self.transition_type
+
+        if transition_type == 'morph':
             for curve, chain in zip(self.rendered_curve_bobjects, self.morph_chains):
                 morph_pairs.append([curve, chain[final_index]])
 
