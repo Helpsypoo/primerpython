@@ -221,7 +221,9 @@ class TwoDWorld(Population):
         #if creatures are too close, add a small repulsion to
         #previous velocity and recalculate position
         creatures = self.creatures
-        for other_creature in creatures:
+        alive = [x for x in creatures if \
+                    x.birthframe <= t and x.deathframe > t]
+        for other_creature in alive:
             if creature != other_creature and \
             creatures.index(other_creature) < creatures.index(creature) and \
             other_creature.locations and \

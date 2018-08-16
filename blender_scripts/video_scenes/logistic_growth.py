@@ -35,6 +35,7 @@ class LastVideoExp(Scene):
             ('sim_summary', {'duration': 12}),
             ('quantitative', {'duration': 100}),
             ('competition', {'duration': 100}),
+            ('take_stock', {'duration': 100}),
         ])
         super().__init__()
 
@@ -46,7 +47,8 @@ class LastVideoExp(Scene):
         #self.last_video()
         #self.sim_summary()
         #self.quantitative()
-        self.competition()
+        #self.competition()
+        self.take_stock()
 
     def last_video(self):
         #Stretch goal: Make blobs look around in a more directed way
@@ -1242,6 +1244,13 @@ class LastVideoExp(Scene):
                     {
                         'type': 'arrow',
                         'points': {
+                            'tail': (-2.5 / 1.6, 0 / 1.6, 0),
+                            'head': (2.5 / 1.6, 0 / 1.6, 0)
+                        }
+                    },
+                    {
+                        'type': 'arrow',
+                        'points': {
                             'tail': (-2.5 / 1.6, 1.5 / 1.6, 0),
                             'head': (2.5 / 1.6, 3 / 1.6, 0)
                         }
@@ -1253,7 +1262,7 @@ class LastVideoExp(Scene):
 
             self.g_blob = import_object(
                 'boerd_blob', 'creatures',
-                location = [5.5, 4, 0],
+                location = [5.5, 0, 0],
                 scale = 3,
                 wiggle = True,
                 cycle_length = scene_end * FRAME_RATE
@@ -1265,7 +1274,7 @@ class LastVideoExp(Scene):
                 'D = 5\%'
             )
             self.g_rep_chance = tex_bobject.TexBobject(
-                'R = 9\%'
+                'R = 8\%'
             )
             self.g_stats = tex_complex.TexComplex(
                 self.g_rep_chance, self.g_death_chance,
@@ -1301,7 +1310,7 @@ class LastVideoExp(Scene):
             apply_material(self.o_blob.ref_obj.children[0].children[0], 'creature_color4')
 
             self.o_death_chance = tex_bobject.TexBobject(
-                'D = 4\%'
+                'D = 3\%'
             )
             self.o_rep_chance = tex_bobject.TexBobject(
                 'R = 10\%'
@@ -1314,7 +1323,6 @@ class LastVideoExp(Scene):
                 scale = 1.5 / self.o_blob.ref_obj.scale[0]
             )
             self.o_stats.ref_obj.parent = self.o_blob.ref_obj
-
         def manipulate():
             self.b_blob.add_to_blender(appear_time = cues['start'])
             self.b_stats.add_to_blender(
@@ -1326,75 +1334,160 @@ class LastVideoExp(Scene):
                 start_time = cues['start'] + 1.5,
                 new_location = [-11, 0, 0],
             )
-            self.g_arrow.add_to_blender(appear_time = cues['start'] + 1.5)
+            self.g_arrow.add_to_blender(appear_time = cues['start'] + 10.5)
             self.g_blob.add_to_blender(appear_time = cues['start'] + 10.5)
             self.g_stats.add_to_blender(
                 appear_time = cues['start'] + 10.5,
                 #subbobject_timing = [0, 60, 120, ],
             )
+            self.g_rep_chance.pulse(
+                start_time = cues['start'] + 12.5
+            )
 
+            self.g_blob.move_to(
+                new_location = [5.5, 4, 0],
+                start_time = cues['start'] + 16.5
+            )
+            self.g_arrow.morph_figure(1, start_time = cues['start'] + 16.5)
             self.o_arrow.add_to_blender(appear_time = cues['start'] + 16.5)
             self.o_blob.add_to_blender(appear_time = cues['start'] + 16.5)
             self.o_stats.add_to_blender(
                 appear_time = cues['start'] + 16.5,
             )
+            self.o_death_chance.pulse(
+                start_time = cues['start'] + 19.5
+            )
 
-        '''#################'''
-        #make()
-        #manipulate()
-        '''#################'''
-
-        start_delay = 0.5
-        frames_per_time_step = 1
-        sim_duration = 500
-        initial_creature_count = 5
-        initial_creatures = []
-        for i in range(initial_creature_count):
-            new_creature = creature.Creature(color = 'creature_color_1', shape = 'shape1')
-            initial_creatures.append(new_creature)
-        sim = drawn_world.DrawnWorld(
-            name = 'sim',
-            location = [-7, -1.75, 0],
-            scale = 0.55,
-            start_delay = start_delay,
-            frames_per_time_step = frames_per_time_step,
-            sim_duration = sim_duration,
-            initial_creatures = initial_creatures,
-            #save = True,
-            #load = 'b_logistic',
-            gene_updates = [
-                #Other alleles
-                ['shape', 'shape1', 'birth_modifier', 1, 0],
-                ['size', '1', 'birth_modifier', 1, 0],
-                ['shape', 'shape1', 'mutation_chance', 0, 0],
-                ['size', '1', 'mutation_chance', 0, 0],
-                #Color 1
-                ['color', 'creature_color_1', 'replication_modifier', 100, 0],
-                ['color', 'creature_color_1', 'death_modifier', 50, 0],
-                ['color', 'creature_color_1', 'mutation_chance', 0, 0],
+            to_disappear = [
+                self.b_blob,
+                self.g_blob,
+                self.g_arrow,
+                self.o_blob,
+                self.o_arrow
             ]
-        )
-        #sim.add_to_blender(appear_time = cues['start'] + 68)
+            for i, thing in enumerate(to_disappear):
+                thing.disappear(disappear_time = cues['end'] - (len(to_disappear) - 1 - i) * 0.05)
+        def sim():
+            start_delay = 0.5
+            frames_per_time_step = 1
+            sim_duration = 500
+            initial_creature_count = 5
+            initial_creatures = []
+            for i in range(initial_creature_count):
+                new_creature = creature.Creature(color = 'creature_color_1', shape = 'shape1')
+                initial_creatures.append(new_creature)
+            mutation_chance = 0.01
+            sim = drawn_world.DrawnWorld(
+                name = 'sim',
+                location = [-8.5, 0, 0],
+                scale = 0.55,
+                start_delay = start_delay,
+                frames_per_time_step = frames_per_time_step,
+                sim_duration = sim_duration,
+                initial_creatures = initial_creatures,
+                #save = True,
+                load = 'competition_best4',
+                gene_updates = [
+                    #Other alleles
+                    ['shape', 'shape1', 'birth_modifier', 1, 0],
+                    ['size', '1', 'birth_modifier', 1, 0],
+                    ['shape', 'shape1', 'mutation_chance', 0, 0],
+                    ['size', '1', 'mutation_chance', 0, 0],
+                    #Color 1
+                    ['color', 'creature_color_1', 'replication_modifier', 70, 0],
+                    ['color', 'creature_color_1', 'death_modifier', 20, 0],
+                    ['color', 'creature_color_1', 'mutation_chance', [0, mutation_chance, 0, mutation_chance], 0],
+                    #Color 2
+                    ['color', 'creature_color_2', 'replication_modifier', 50, 0],
+                    ['color', 'creature_color_2', 'death_modifier', 20, 0],
+                    ['color', 'creature_color_2', 'mutation_chance', 0, 0],
+                    #Color 4
+                    ['color', 'creature_color_4', 'replication_modifier', 70, 0],
+                    ['color', 'creature_color_4', 'death_modifier', 0, 0],
+                    ['color', 'creature_color_4', 'mutation_chance', 0, 0],
+                ]
+            )
+            sim.add_to_blender(appear_time = cues['start'] + 68)
 
-        func = sim.get_creature_count_by_t(color = 'creature_color_1')
+            func = sim.get_creature_count_by_t(color = 'creature_color_1')
+            graph = graph_bobject.GraphBobject(
+                func,
+                x_range = [0, sim_duration],
+                y_range = [0, 50],
+                tick_step = [int(sim_duration / 5), 25],
+                width = 14,
+                height = 10,
+                x_label = 't',
+                x_label_pos = 'end',
+                y_label = 'N',
+                y_label_pos = 'end',
+                location = (5.5, -0.5, 0),
+                centered = True,
+                arrows = True,
+                #scale = 0.67,
+                high_res_curve_indices = [0, 1, 2, 3]
+            )
+            graph.add_to_blender(appear_time = cues['start'] + 68)
 
-        graph = graph_bobject.GraphBobject(
-            func,
-            #func2,
-            x_range = [0, sim_duration],
-            y_range = [0, 50],
-            tick_step = [sim_duration / 5, 25],
-            width = 10,
-            height = 10,
-            x_label = 't',
-            x_label_pos = 'end',
-            y_label = 'N',
-            y_label_pos = 'end',
-            location = (0, 0, 0),
-            centered = True,
-            arrows = True,
-            #scale = 0.67,
-            #high_res_curve_indices = [0, 1, 2]
+            func2 = sim.get_creature_count_by_t(color = 'creature_color_2')
+            func3 = sim.get_creature_count_by_t(color = 'creature_color_4')
+            func4 = sim.get_creature_count_by_t()
+            graph.add_new_function_and_curve(
+                func2,
+                color = 7
+            )
+            graph.add_new_function_and_curve(
+                func3,
+                color = 4
+            )
+            '''graph.add_new_function_and_curve(
+                func4,
+                color = 2,
+                #curve_mat_modifier = 'fade',
+                z_shift = -0.05
+            )'''
+
+            for i in range(len(graph.functions_curves)):
+                graph.animate_function_curve(
+                    start_time = cues['start'] + 68 + start_delay,
+                    end_time = cues['start'] + 68 + start_delay + frames_per_time_step * sim_duration / FRAME_RATE,
+                    index = i,
+                    uniform_along_x = True
+                )
+
+        '''#################'''
+        make()
+        manipulate()
+        sim()
+        '''#################'''
+
+    def take_stock(self):
+        cues = self.subscenes['take_stock']
+        scene_end = cues['duration']
+
+        rep = tex_bobject.TexBobject(
+            '\\text{Replication}',
+            location = [-13, 5, 0],
+            scale = 3
         )
-        graph.add_to_blender(appear_time = cues['start'] + 14)
+        def rep_graph():
+            pass
+
+        rep_graph()
+
+        mut = tex_bobject.TexBobject(
+            '\\text{Mutation}',
+            location = [-13, 0, 0],
+            scale = 3
+        )
+        com = tex_bobject.TexBobject(
+            '\\text{Competition}',
+            location = [-13, -5, 0],
+            scale = 3
+        )
+
+
+
+        for thing in [rep, mut, com]:
+            thing.add_to_blender(appear_time = cues['start'])
 #'''
