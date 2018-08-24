@@ -54,10 +54,6 @@ import logistic_growth
 imp.reload(logistic_growth)
 from logistic_growth import *
 
-"""import fecal_transplant
-imp.reload(fecal_transplant)
-from fecal_transplant import *"""
-
 import population
 imp.reload(population)
 from population import *
@@ -69,30 +65,6 @@ from gesture import *
 import tex_complex
 imp.reload(tex_complex)
 from tex_complex import TexComplex
-
-'''
-Workflow improvements
-- Make a decision about specifying start/end or start/duration and make
-    keyframing functions follow that convention.
-- Automate rendering
-- Write function to run sims until it finds one with the right results
-- Make sims take more arguments (e.g., pop cap, closeness)
-
-New functionality
-- Family tree
-
-Open source
-- Code organization centered on creation workflow
-e.g., Add kwargs to class init functions to customize on instantiation
-- Clean up imports
-- Delete old print statements and commented-out blocks
-
-Performance
-- Final render speed
--- Possibly convert metaballs to mesh, or something
--- Hide bobjects that haven't appeared yet so they don't need to be syncronized
---  for render.
-'''
 
 def initialize_blender(total_duration = DEFAULT_SCENE_DURATION):
     #clear objects and materials
@@ -309,102 +281,20 @@ def test_sim():
 def tex_test():
     initialize_blender(total_duration = 100)
 
-    plug_Ns = []
-    delta_outs = []
-    num_states = 51
-    for i in range(0, max):
-        Nstring = "\\big(0.1-0.05 - 0.001\\times" + str(i) + "\\big) \\times" + str(i)
-        plug_Ns.append(Nstring)
-        delta = (0.05 - 0.001 * i) * i
-        delta_string = str('{0:.2f}'.format(delta))
-        delta_outs.append(delta_string)
-
-    rhs2 = tex_bobject.TexBobject(
-        *plug_Ns,
-        transition_type = 'instant',
-        centered = True
-    )
-    equals2 = tex_bobject.TexBobject(
-        "\!=",
-        transition_type = 'instant',
-        centered = True
-    )
-    lhs2 = tex_bobject.TexBobject(
-        *delta_outs,
-        transition_type = 'instant',
-        centered = True
-    )
-    equation2 = tex_complex.TexComplex(
-        lhs2, equals2, rhs2,
-        location = (0, 0, 0),
-        scale = 2,
-        centered = True
-    )
-    equation2.add_to_blender(appear_time = 0.5, animate = False)
-
-    for i in range(1, num_states):
-        if i == 10:
-            arrange_super = True
-        else: arrange_super = False
-        rhs2.morph_figure(i, start_time = 1 + i * 0.05, arrange_super = arrange_super)
-        lhs2.morph_figure(i, start_time = 1 + i * 0.05, arrange_super = False)
-
-
-    """ming = tex_bobject.TexBobject(
+    message = tex_bobject.TexBobject(
         '\\text{You\'re}',
         '\\text{the}',
         '\\text{best!}',
         centered = True,
         scale = 8
     )
-    ming.add_to_blender(appear_time = 0)
+    message.add_to_blender(appear_time = 0)
 
-    ming.morph_figure('next', start_time = 1)
+    message.morph_figure('next', start_time = 1)
 
-    ming.morph_figure('next', start_time = 2)
+    message.morph_figure('next', start_time = 2)
 
-    ming.disappear(disappear_time = 3.5)"""
-
-    '''reddit = import_object(
-        'reddit', 'svgblend',
-        scale = 4,
-        location = (-5, 0, 0)
-    )
-    reddit.add_to_blender(appear_frame = 0)
-    patreon = import_object(
-        'patreon', 'svgblend',
-        scale = 4,
-        location = (5, 0, 0)
-    )
-    patreon.add_to_blender(appear_frame = 0)'''
-
-    """patreon = import_object(
-        'patreon', 'svgblend',
-        scale = 6,
-        location = (-8, 0, 0)
-    )
-    patreon.add_to_blender(appear_time = 0)
-    thanks = tex_bobject.TexBobject(
-        '\\text{Special thanks:}',
-        location = [-1.5, 3.8, 0],
-        color = 'color2',
-        scale = 2
-    )
-    thanks.add_to_blender(appear_time = 0)
-    js = tex_bobject.TexBobject(
-        '\\text{You}',
-        location = [-2.5, -2, 0],
-        color = 'color2',
-        scale = 8
-    )
-    js.add_to_blender(
-        appear_time = 1,
-        animate = False
-    )
-
-    remaining = [patreon, thanks, js]
-    for thing in remaining:
-        thing.disappear(disappear_time = 3)"""
+    message.disappear(disappear_time = 3.5)
 
     print_time_report()
 
@@ -607,16 +497,16 @@ def marketing():
     comp.add_to_blender(appear_time = 0)
 
 def main():
+    """Use this as a test scene"""
+    tex_test()
+    """"""
+
     #test_molecule()
-    #tex_test()
     #test_object()
-    marketing()
-
+    #marketing()
     #graph_test()
-    #draw_scenes_from_file(logistic_growth)
 
-    #initialize_blender(total_duration = 15)
-    #mutations.play_scenes()
+    #draw_scenes_from_file(logistic_growth)
 
     #print_time_report()
     finish_noise()

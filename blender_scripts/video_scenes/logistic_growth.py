@@ -27,8 +27,8 @@ import helpers
 imp.reload(helpers)
 from helpers import *
 
-#'''
-class LastVideoExp(Scene):
+
+class LogisticGrowth(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
             ('last_video', {'duration': 14}),
@@ -53,8 +53,6 @@ class LastVideoExp(Scene):
         #self.natural()
 
     def last_video(self):
-        #Stretch goal: Make blobs look around in a more directed way
-
         cues = self.subscenes['last_video']
 
         sim_duration = 100
@@ -204,8 +202,6 @@ class LastVideoExp(Scene):
             thing.disappear(disappear_time = cues['end'] - (len(to_disappear) - 1 - i) * 0.05)
 
     def sim_summary(self):
-        #Stretch goal: Make sim pause step by step
-
         cues = self.subscenes['sim_summary']
 
         sim_duration = 60
@@ -277,7 +273,6 @@ class LastVideoExp(Scene):
             thing.disappear(disappear_time = cues['end'] - (len(to_disappear) - 1 - i) * 0.05)
 
     def quantitative(self):
-        #Stretch goal. Make blobs sad about starving
         cues = self.subscenes['quantitative']
 
         def make_equation():
@@ -1258,7 +1253,6 @@ class LastVideoExp(Scene):
             thing.disappear(disappear_time = cues['end'] - (i - 2) * 0.1)
 
     def competition(self):
-        #Stretch goal. Make blobs sad about starving
         cues = self.subscenes['competition']
         scene_end = cues['duration']
 
@@ -1972,5 +1966,3 @@ class LastVideoExp(Scene):
         selection.morph_figure(2, start_time = cues['start'] + 11)
 
         selection.disappear(disappear_time = cues['end'])
-
-#'''

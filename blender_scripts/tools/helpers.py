@@ -74,11 +74,6 @@ def add_color_gradient_to_mat(mat, color_gradient):
     color_node = nodes[-1]
     color_field = color_node.inputs[0]
 
-
-
-
-    #color.node_tree.links.remove(nodes[0].inputs[0].links[0])
-
     nodes.new(type = 'ShaderNodeMixRGB')
     mat.node_tree.links.new(nodes[num].outputs[0], color_field)
     nodes[-1].inputs[1].default_value = color_gradient['color_1']
@@ -190,14 +185,6 @@ def hide_self_and_descendants(obj, hide = True, keyframes = False, frame = None)
         if frame == None:
             raise Exception('in hide_self_and_descendants(), frame must be '
                             'specified if keyframes == True')
-        #if obj.hide == True and hide == True:
-        #    print("Calling hide_self_and_descendants on object that's "
-        #                  "already hidden")
-
-        #obj.hide = not hide
-        #obj.hide_render = not hide
-        #obj.keyframe_insert(data_path = 'hide', frame = frame - 1)
-        #obj.keyframe_insert(data_path = 'hide_render', frame = frame - 1)
         obj.hide = hide
         obj.hide_render = hide
         obj.keyframe_insert(data_path = 'hide', frame = frame)
@@ -687,7 +674,6 @@ def import_object(filename, *folders, **kwargs):
                     - a[2] * timing_factor,
                     - a[3] * timing_factor,
                 ]
-                #print(target_v)
 
                 acc_x = (target_v[0] - b[1]) / 2
                 acc_y = (target_v[1] - b[2]) / 2
@@ -700,7 +686,6 @@ def import_object(filename, *folders, **kwargs):
                     acc_y,
                     acc_z,
                 ]
-                #print(" " + str(b))
 
                 new_bobject.head_angle_vel[t] = list(map(sum, zip(a, b)))
 

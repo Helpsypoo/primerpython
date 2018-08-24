@@ -27,7 +27,6 @@ import helpers
 imp.reload(helpers)
 from helpers import *
 
-#'''
 class LastVideoExp(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([

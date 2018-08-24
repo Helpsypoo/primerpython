@@ -441,15 +441,6 @@ class GraphBobject(Bobject):
         #Then make new coords set based on function.
         self.functions_coords.append(self.func_to_coords(func_index = -1))
 
-        '''print()
-        print()
-        print()
-        for j in range(len(self.functions_coords)):
-            print(j, len(self.functions_coords[j]))
-        print()
-        print()
-        print()'''
-
         #Morph curve to new function
         self.morph_curve(-1, start_time = start_time)
 
@@ -631,16 +622,6 @@ class GraphBobject(Bobject):
 
         else:
             data.splines.new('NURBS')
-
-            '''if mat_modifier == 'fade':
-                #Reduce point density to allow more memory for more overlapping curves
-                #Keeping the final point doesn't actually seem to work quite right,
-                #but it looks good enough.
-                final = deepcopy(coords[-1])
-                #coords = coords[0::10]
-                coords.append(final)
-                pass'''
-
             #Add another coord to the beginning and end because NURBS curves
             #don't draw all the way to the exteme points.
             start_coord = [
@@ -890,14 +871,6 @@ class GraphBobject(Bobject):
 
             for x in x_vals:
                 y = self.evaluate_function(input = x, index = func_index)
-                '''try:
-                    y = self.evaluate_function(input = x, index = func_index)
-                except:
-                    raise Warning("It seems like fixing that off-by-one error didn't work.")
-                    #Graph draws point at end of the domain, but list functions
-                    #don't include that last point
-                    y = coords[-1][1] / self.range_scale_factor'''
-
                 coords.append([
                     x * self.domain_scale_factor,
                     y * self.range_scale_factor,
@@ -1010,8 +983,6 @@ class GraphBobject(Bobject):
             #"Feel free to comment out this warning if you did it on purpose.")
         if end_frame == None:
             end_frame = start_frame + OBJECT_APPEARANCE_TIME
-            #raise Warning('Need end frame to animate a point in the graph. ' + \
-            #              'You are a terrible person.')
 
         #This condition is a bit goofy but it allows points that normally track
         #the curve to deviate from the curve if desired, using this method's
@@ -1227,9 +1198,6 @@ class GraphBobject(Bobject):
                                   (t - x_of_t[i-1][0]) * frames_per_time_step)
 
             end_frame = start_frame + t * frames_per_time_step + update_time
-            #Haven't tested this, but trying to making it so I can pass a list
-            #of x values or a list of full coords as a denser way of animating
-            #several movements of non-curve-constrained points.
             if full_coords == True:
                 end_coord = x #Instead of just an x value,
                               #x could be a full spatial coord
