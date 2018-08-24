@@ -54,6 +54,10 @@ import logistic_growth
 imp.reload(logistic_growth)
 from logistic_growth import *
 
+"""import fecal_transplant
+imp.reload(fecal_transplant)
+from fecal_transplant import *"""
+
 import population
 imp.reload(population)
 from population import *
@@ -564,226 +568,52 @@ def graph_test():
 def marketing():
     scene_end = 12
     initialize_blender(total_duration = scene_end)
-    #primer = import_object('logo')
-    #primer.add_to_blender(appear_frame = 0)
 
+    x = 7.64349
+    y = -8.71545
 
-
-    """blob = import_object(
-        'boerd_blob', 'creatures',
-        location = [0, 0, 0],
-        scale = 6
+    b_blob = import_object(
+        'boerd_blob_stern', 'creatures',
+        location = [-x, y, 0],
+        rotation_euler = [0, 57.4 * math.pi / 180, 0],
+        scale = 12,
     )
-    blob.ref_obj.children[0].children[0].data.resolution = 0.05
-    apply_material(blob.ref_obj.children[0].children[0], 'creature_color3')
-    blob.add_to_blender(appear_time = -1)"""
+    b_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+    apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
+    b_blob.add_to_blender(appear_time = 0)
 
-    """blob = import_object(
-        'boerd_blob_squat', 'creatures',
-        scale = 6,
-        location = [6, -1, 0]
+    y_blob = import_object(
+        'boerd_blob_stern', 'creatures',
+        rotation_euler = [0, -57.4 * math.pi / 180, 0],
+        location = [x, y, 0],
+        scale = 12,
     )
-    blob.ref_obj.children[0].children[0].data.resolution = 0.05
-    apply_material(blob.ref_obj.children[0].children[0], 'creature_color4')
-    blob.add_to_blender(appear_time = -1)"""
+    y_blob.ref_obj.children[0].children[0].data.resolution = 0.2
+    apply_material(y_blob.ref_obj.children[0].children[0], 'creature_color4')
+    y_blob.add_to_blender(appear_time = 0)
 
-    #blob.blob_wave(
-    #    start_time = 0,
-    #    duration = 5
-    #)
-
-    """glasses = import_object(
-        'glasses',
-        scale = 1.505,
-        location = [1.01899, -1.11603, 0.41565],
-        rotation_euler = [-90 * math.pi / 180, 66.6 * math.pi / 180, 0]
-    )
-    glasses.add_to_blender(appear_time = -1)
-
-    glasses.ref_obj.parent = blob.ref_obj.children[0]
-    glasses.ref_obj.parent_bone = blob.ref_obj.children[0].pose.bones["brd_bone_neck"].name
-    glasses.ref_obj.parent_type = 'BONE'"""
-
-    heart = import_object('heart', scale = 4)
-    tele = import_object(
-        'teleporter', 'primitives',
-        scale = 25,
-        rotation_euler = [math.pi / 2, 0, math.pi / 2]
-    )
-    tele.spin(
-        axis = 2,
+    y_blob.blob_wave(
         start_time = 0,
-        end_time = 10,
-        spin_rate = 2
-    )
-    form_heart = bobject.MeshMorphBobject(name = 'form_heart')
-    form_heart.add_subbobject_to_series(tele)
-    form_heart.add_subbobject_to_series(heart)
-
-    form_heart.add_to_blender(
-        appear_frame = -1,
-        animate = False
+        duration = 12
     )
 
-    form_heart.morph_bobject(
-        0, 1,
-        start_time = 0,
-        end_time = 4,
-        dissolve_time = 120
+    comp = tex_bobject.TexBobject(
+        '\\text{COMPETITION} \\phantom{blargh}',
+        centered = True,
+        scale = 4.5,
+        location = [0, 5.5, 0],
+        color = 'color2'
     )
-
-    heart.spin(
-        axis = 1,
-        start_time = 0,
-        end_time = 4,
-        spin_rate = 1
-    )
-
-    heart.pulse(
-        time = 4.5,
-        duration_time = 1
-    )
-    heart.pulse(
-        time = 5.5,
-        duration_time = 1
-    )
-
-    mat = heart.ref_obj.children[0].active_material
-    nodes = mat.node_tree.nodes
-    nodes[0].inputs[0].default_value = COLORS_SCALED[5]
-    nodes[1].inputs[0].default_value = COLORS_SCALED[5]
-
-    glossy_factor = nodes[3].inputs[0]
-    glossy_factor.keyframe_insert(
-        data_path = 'default_value',
-        frame = 4.5 * FRAME_RATE
-    )
-    glossy_factor.default_value = 0.7
-    glossy_factor.keyframe_insert(
-        data_path = 'default_value',
-        frame = 6 * FRAME_RATE
-    )
-
-
-    blob1 = import_object(
-        'boerd_blob', 'creatures',
-        location = [-20, -12, 0],
-        rotation_euler = [0, 0, -math.pi / 4],
-        scale = 5,
-        wiggle = True,
-        cycle_length = scene_end * FRAME_RATE
-    )
-    apply_material(blob1.ref_obj.children[0].children[0], 'creature_color3')
-    blob1.ref_obj.children[0].children[0].data.resolution = 0.05
-    blob1.add_to_blender(
-        appear_time = 0
-    )
-    blob1.move_to(
-        new_location = [-12, -6, 0],
-        start_time = 4
-    )
-    blob1.blob_wave(
-        start_time = 4,
-        duration = scene_end
-    )
-
-    blob2 = import_object(
-        'boerd_blob', 'creatures',
-        location = [20, -12, 0],
-        rotation_euler = [0, 0, math.pi / 4],
-        scale = 5,
-        wiggle = True,
-        cycle_length = scene_end * FRAME_RATE
-    )
-    apply_material(blob2.ref_obj.children[0].children[0], 'creature_color3')
-    blob2.ref_obj.children[0].children[0].data.resolution = 0.05
-    blob2.add_to_blender(
-        appear_time = 0
-    )
-    blob2.move_to(
-        new_location = [12, -6, 0],
-        start_time = 4
-    )
-    blob2.blob_wave(
-        start_time = 4,
-        duration = scene_end
-    )
-
-    blob3 = import_object(
-        'boerd_blob', 'creatures',
-        location = [20, 12, 0],
-        rotation_euler = [0, 0,  3 * math.pi / 4],
-        scale = 5,
-        wiggle = True,
-        cycle_length = scene_end * FRAME_RATE
-    )
-    apply_material(blob3.ref_obj.children[0].children[0], 'creature_color3')
-    blob3.ref_obj.children[0].children[0].data.resolution = 0.05
-    blob3.add_to_blender(
-        appear_time = 0
-    )
-    blob3.move_to(
-        new_location = [12, 6, 0],
-        start_time = 4
-    )
-    blob3.blob_wave(
-        start_time = 4,
-        duration = scene_end
-    )
-
-    blob4 = import_object(
-        'boerd_blob', 'creatures',
-        location = [-20, 12, 0],
-        rotation_euler = [0, 0, - 3 * math.pi / 4],
-        scale = 5,
-        wiggle = True,
-        cycle_length = scene_end * FRAME_RATE
-    )
-    apply_material(blob4.ref_obj.children[0].children[0], 'creature_color3')
-    blob4.ref_obj.children[0].children[0].data.resolution = 0.05
-    blob4.add_to_blender(
-        appear_time = 0
-    )
-    blob4.move_to(
-        new_location = [-12, 6, 0],
-        start_time = 4
-    )
-    blob4.blob_wave(
-        start_time = 4,
-        duration = scene_end
-    )
-
-    #Thank you
-    thank = tex_bobject.TexBobject(
-        '\\text{Thank}',
-        location = [0, 6, 0],
-        scale = 4,
-        color = 'color2',
-        centered = True
-    )
-    thank.add_to_blender(appear_time = 7)
-    you = tex_bobject.TexBobject(
-        '\\text{You!}',
-        location = [0, -6, 0],
-        scale = 4,
-        color = 'color2',
-        centered = True
-    )
-    you.add_to_blender(appear_time = 7.5)
-
-    remaining = [form_heart, blob1, blob2, blob3, blob4, thank, you]
-    for thing in remaining:
-        thing.disappear(disappear_time = scene_end)
+    comp.add_to_blender(appear_time = 0)
 
 def main():
     #test_molecule()
     #tex_test()
     #test_object()
-    #marketing()
+    marketing()
 
     #graph_test()
-
-    draw_scenes_from_file(logistic_growth)
+    #draw_scenes_from_file(logistic_growth)
 
     #initialize_blender(total_duration = 15)
     #mutations.play_scenes()
