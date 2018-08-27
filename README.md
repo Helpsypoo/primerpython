@@ -37,4 +37,4 @@ OpenBabel if you want to do the molecule stuff http://openbabel.org/wiki/Main_Pa
 ## Gotchas  
 Blender comes packaged with its own version of python, so your local python installation and your favorite packages won't be there unless you install them to Blender's version.
 
-Many of the scenes from my videos depend on specific blend files that are imported for use as common objects or components of them. For example, the blob creatures components of the graphs. If at some point I try to turn this into a more broadly accessible tool, I'll have to include those files in the repo or procedurally generate them.
+Many of the scenes from my videos depend on specific blend files that are imported for use as common objects or components of them. For example, the blob creatures and components of the graphs. If at some point I try to turn this into a more broadly accessible tool, I'll have to include those files in the repo or procedurally generate them.
