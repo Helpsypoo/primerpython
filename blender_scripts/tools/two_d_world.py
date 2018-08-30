@@ -26,8 +26,6 @@ on in a 2D world.
 '''
 
 class TwoDWorld(Population):
-    #TODO Add kwargs handling so things like radius and animated_duration can be changed
-    #on instantiation
     #This really just extends the population class by adding spatial data
     def __init__ (
         self,

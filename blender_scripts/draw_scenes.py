@@ -37,6 +37,10 @@ import helpers
 imp.reload(helpers)
 from helpers import *
 
+import natural_sim
+imp.reload(natural_sim)
+from natural_sim import *
+
 sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts\\video_scenes')
 import why_things_exist
 imp.reload(why_things_exist)
@@ -108,7 +112,7 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION):
     scn.view_settings.view_transform = 'Raw'
 
 
-    scn.gravity = (0, -9.81, 0)
+    scn.gravity = (0, 0, -9.81)
 
     bpy.ops.world.new()
     world = bpy.data.worlds[-1]
@@ -496,11 +500,26 @@ def marketing():
     )
     comp.add_to_blender(appear_time = 0)
 
+def nat_sim_test():
+    initialize_blender()
+
+    sim = natural_sim.DrawnNaturalSim(
+        scale = 1.5
+    )
+    sim.sim.sim_next_day()
+    print(sim.sim.date_records[0]['date'])
+    print(sim.sim.date_records[0]['creatures'])
+    for cre in sim.sim.date_records[0]['creatures']:
+        print(cre.days)
+
+    sim.add_to_blender(appear_time = 1)
+
 def main():
     """Use this as a test scene"""
-    tex_test()
+    #tex_test()
     """"""
 
+    nat_sim_test()
     #test_molecule()
     #test_object()
     #marketing()
