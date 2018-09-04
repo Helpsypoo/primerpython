@@ -146,6 +146,62 @@ def make_translucent_material(rgb = None, name = None):
                   #which doesn't take alpha
     color.diffuse_color = rgb
 
+def material_clean_up():
+    #Function for removing some duplicate materials from repeated imports
+    for mat in bpy.data.materials:
+        if 'color' not in mat.name:
+            bpy.data.materials.remove(mat)
+
+def make_image_background(file_name):
+    #Background
+    world = bpy.context.scene.world
+    nodes = world.node_tree.nodes
+    nodes.new(type = 'ShaderNodeMixRGB')
+    nodes.new(type = 'ShaderNodeTexImage')
+    nodes.new(type = 'ShaderNodeTexCoord')
+
+    path_mix_input = nodes[2].inputs[2]
+
+    for l in world.node_tree.links:
+        if l.to_socket == path_mix_input:
+           world.node_tree.links.remove(l)
+
+    world.node_tree.links.new(nodes[5].outputs[0], nodes[2].inputs[2])
+    world.node_tree.links.new(nodes[4].outputs[0], nodes[5].inputs[1])
+    world.node_tree.links.new(nodes[6].outputs[0], nodes[5].inputs[2])
+    world.node_tree.links.new(nodes[7].outputs[5], nodes[6].inputs[0])
+
+    stars_path = os.path.join(IMG_DIR, file_name)
+    try:
+        img = bpy.data.images.load(stars_path)
+    except:
+        raise NameError("Cannot load image %s" % path)
+    nodes[6].image = img
+
+    nodes[5].inputs[0].default_value = 1
+
+
+    #Keyframes for background transition
+    """
+    planets_start = 0
+    planets_end = 1000
+    nodes[5].inputs[0].default_value = 0
+
+    nodes[4].outputs[0].keyframe_insert(data_path = 'default_value', frame = planets_start)
+    nodes[4].outputs[0].default_value = (0, 0, 0, 1)
+    nodes[4].outputs[0].keyframe_insert(data_path = 'default_value', frame = planets_start + 60)
+
+    nodes[5].inputs[0].keyframe_insert(data_path = 'default_value', frame = planets_start + 60)
+    nodes[5].inputs[0].default_value = 1
+    nodes[5].inputs[0].keyframe_insert(data_path = 'default_value', frame = planets_start + 120)
+    nodes[5].inputs[0].keyframe_insert(data_path = 'default_value', frame = planets_end - 90)
+    nodes[5].inputs[0].default_value = 0
+    nodes[5].inputs[0].keyframe_insert(data_path = 'default_value', frame = planets_end - 30)
+
+    nodes[4].outputs[0].keyframe_insert(data_path = 'default_value', frame = planets_end - 30)
+    nodes[4].outputs[0].default_value = COLORS_SCALED[0]
+    nodes[4].outputs[0].keyframe_insert(data_path = 'default_value', frame = planets_end + 30)"""
+
 def join_by_material(obj_list):
     #Usful when morphing meshes.
     #It reduces the number of particle systems needed.

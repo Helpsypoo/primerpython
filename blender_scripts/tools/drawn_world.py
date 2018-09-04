@@ -38,6 +38,7 @@ class DrawnWorld(TwoDWorld, Bobject):
         frames_per_time_step = 5,
         load = None,
         save = False,
+        spin_creatures = False,
         pauses = [[0, 0]], #[pause_at, pause_duration]
         overlap_okay = False,
         initial_creatures = 10,
@@ -115,6 +116,8 @@ class DrawnWorld(TwoDWorld, Bobject):
         #characters after adding to blender
         self.counter_alignment = counter_alignment
         self.creature_model = creature_model
+
+        self.spin_creatures = spin_creatures
 
     def get_saved_world(self, world_file):
         result = os.path.join(
@@ -197,6 +200,8 @@ class DrawnWorld(TwoDWorld, Bobject):
     def add_creature_to_blender(self, cre):
         size = float(cre.alleles['size']) #* self.scale[0]
         type_req = None #For applying material to only objects of certain type
+        old_mats = [x for x in bpy.data.materials] #copy doesn't work on this object
+
         if RENDER_QUALITY != 'high':
             if cre.alleles['shape'] == "shape1":
                 bobj = import_object('icosphere', 'primitives')
@@ -236,6 +241,11 @@ class DrawnWorld(TwoDWorld, Bobject):
             recursive = False
 
         apply_material(obj.children[0], col, recursive = recursive, type_req = type_req)
+        #Remove creature's previous materials since this can take up a lot of
+        #memory if we duplicate complex materials many times
+        new_mats = [x for x in bpy.data.materials if x not in old_mats]
+        for mat in new_mats:
+            bpy.data.materials.remove(mat)
 
         #obj.parent = self.ref_obj
         self.add_subbobject(cre.bobject)
@@ -298,7 +308,7 @@ class DrawnWorld(TwoDWorld, Bobject):
                     key_time = t + delay
 
                     obj.keyframe_insert(
-                        data_path="location",
+                        data_path = "location",
                         frame = key_time + self.start_frame
                     )
 
@@ -312,6 +322,22 @@ class DrawnWorld(TwoDWorld, Bobject):
                                     data_path="rotation_quaternion",
                                     frame = key_time + self.start_frame
                                 )
+                if self.spin_creatures and \
+                   cre.rotation and cre.rotation[t] != None:
+                    obj.rotation_euler = [0, 0, cre.rotation[t]]
+
+                    delay = 0
+                    for pause in self.pauses:
+                        if t > pause[0]:
+                            delay += pause[1]
+
+                    key_time = t + delay
+
+                    obj.keyframe_insert(
+                        data_path = "rotation_euler",
+                        frame = key_time + self.start_frame
+                    )
+
 
     def add_counter(
         self,

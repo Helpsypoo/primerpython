@@ -178,9 +178,6 @@ class TwoDWorld(Population):
 
             #Relevant if bounds are not rectangular
             if self.is_point_in_bounds(creature.locations[t]) == False:
-                print()
-                print("Creature wasn't in bounds. Trying again!")
-                print()
                 #raise Warning("asdpfkawe;rljasdfljkahsdflkjh")
                 self.place_new_creature(creature, t, repetitions = repetitions)
 
@@ -480,12 +477,16 @@ class TwoDWorld(Population):
                     pass
                 elif t == creature.birthframe:
                     creature.rotation[t] = uniform(-60, 60)
-                    creature.rotation_vel[t] = uniform(-0.1, 0.1)
+                    creature.rotation_vel[t] = uniform(-0.001, 0.001)
 
                 elif t < creature.deathframe:
                     #update position
                     creature.rotation[t] = creature.rotation[t-1] + creature.rotation_vel[t-1]
-                    creature.rotation_vel[t] = creature.rotation_vel[t-1] + uniform(-0.005, 0.005)
+
+                    creature.rotation_vel[t] = creature.rotation_vel[t-1] + uniform(-0.0001, 0.0001)
+                    if abs(creature.rotation_vel[t]) > 0.1:
+                        creature.rotation_vel[t] = creature.rotation_vel[t] / \
+                                    abs(creature.rotation_vel[t]) * 0.01
 
     def blob_stuff(self):
         creatures = self.creatures

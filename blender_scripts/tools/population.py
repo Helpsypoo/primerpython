@@ -179,6 +179,7 @@ class Population(object):
 
             #If birth chance is greater than one, interpret whole number part
             #as an additional sure birth
+            #print("Birth chance: " + str(birth_chance))
             while birth_chance > 1:
                 sibling = deepcopy(candidate)
                 self.birth(sibling, t + 1)
@@ -274,6 +275,7 @@ class Population(object):
                     cre.deathday == None and cre.birthday <= t]
 
         pop_size = self.count_creatures_at_t(t)
+        #Old
         #Simple function that ramps death chance up around the population cap
         #Default cap is 3000, so it mostly functions to stop crashes/freezes
         #when I put in the wrong parameters.
@@ -292,6 +294,7 @@ class Population(object):
                     self.genes[gene][creature.alleles[gene]]['replication_modifier']
             crowding_death_mod = (replication_chance - death_chance) / self.pop_cap / 2
             death_roll = random()
+            #print('Death chance: ' + str(death_chance))
             if death_roll < death_chance + crowding_death_mod * pop_size:
                 creature.deathday = t + 1
 
