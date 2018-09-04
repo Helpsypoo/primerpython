@@ -58,6 +58,10 @@ import logistic_growth
 imp.reload(logistic_growth)
 from logistic_growth import *
 
+import fecal_transplant
+imp.reload(fecal_transplant)
+from fecal_transplant import *
+
 import population
 imp.reload(population)
 from population import *
@@ -69,6 +73,8 @@ from gesture import *
 import tex_complex
 imp.reload(tex_complex)
 from tex_complex import TexComplex
+
+from helpers import *
 
 def initialize_blender(total_duration = DEFAULT_SCENE_DURATION):
     #clear objects and materials
@@ -504,13 +510,14 @@ def nat_sim_test():
     initialize_blender()
 
     sim = natural_sim.DrawnNaturalSim(
-        scale = 1.5
+        scale = 1.5,
+        food_count = 4
     )
     sim.sim.sim_next_day()
-    print(sim.sim.date_records[0]['date'])
-    print(sim.sim.date_records[0]['creatures'])
-    for cre in sim.sim.date_records[0]['creatures']:
-        print(cre.days)
+    #print(sim.sim.date_records[0]['date'])
+    #print(sim.sim.date_records[0]['creatures'])
+    #for cre in sim.sim.date_records[0]['creatures']:
+    #    print(cre.days)
 
     sim.add_to_blender(appear_time = 1)
 
@@ -519,13 +526,13 @@ def main():
     #tex_test()
     """"""
 
-    nat_sim_test()
+    #nat_sim_test()
     #test_molecule()
     #test_object()
     #marketing()
     #graph_test()
 
-    #draw_scenes_from_file(logistic_growth)
+    draw_scenes_from_file(fecal_transplant)
 
     #print_time_report()
     finish_noise()

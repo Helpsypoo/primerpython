@@ -31,10 +31,18 @@ class TwoDWorld(Population):
         self,
         overlap_okay = True,
         frames_per_time_step = 1,
+        world_bound_points = [],
+        bound_mode = 'rect',
         **kwargs
     ):
         super().__init__(**kwargs)
-        self.radius = WORLD_RADIUS #Could make this a kwarg
+        #bound points must be listed in clockwise order for bound
+        #detection to work
+        self.world_bound_points = world_bound_points
+        self.radius = WORLD_RADIUS
+        self.bound_mode = bound_mode
+        self.set_bounding_rect() #For generating creature placements
+
         self.overlap_okay = overlap_okay
         self.frames_per_time_step = frames_per_time_step
         self.animated_duration = self.duration * self.frames_per_time_step
@@ -44,6 +52,32 @@ class TwoDWorld(Population):
         self.spin_creatures()
         self.blob_stuff()
         print("TwoDWorld initialized")
+
+    def set_bounding_rect(self):
+        if self.bound_mode == 'points':
+            points = self.world_bound_points
+            xmin = math.inf
+            xmax = -math.inf
+            ymin = math.inf
+            ymax = -math.inf
+
+            for point in points:
+                if point[0] < xmin: xmin = point[0]
+                if point[0] > xmax: xmax = point[0]
+                if point[1] < ymin: ymin = point[1]
+                if point[1] > ymax: ymax = point[1]
+
+            self.bounding_rect = [
+                [xmin, xmax],
+                [ymin, ymax]
+            ]
+
+        if self.bound_mode == 'rect' or self.bound_mode == 'circle':
+            self.bounding_rect = [
+                [-self.radius, self.radius],
+                [-self.radius, self.radius]
+            ]
+            self.radius = WORLD_RADIUS #Could make this a kwarg
 
     def save_sim_result(self):
         now = datetime.datetime.now()
@@ -137,16 +171,18 @@ class TwoDWorld(Population):
             creature.locations[t] = creature.parent.locations[t]
         else:
             creature.locations[t] = [
-                uniform(
-                    -self.radius + float(creature.alleles['size']),
-                    self.radius - float(creature.alleles['size'])
-                ),
-                uniform(
-                    -self.radius + float(creature.alleles['size']),
-                    self.radius - float(creature.alleles['size'])
-                ),
+                uniform(self.bounding_rect[0][0], self.bounding_rect[0][1]),
+                uniform(self.bounding_rect[1][0], self.bounding_rect[1][1]),
                 0
             ]
+
+            #Relevant if bounds are not rectangular
+            if self.is_point_in_bounds(creature.locations[t]) == False:
+                print()
+                print("Creature wasn't in bounds. Trying again!")
+                print()
+                #raise Warning("asdpfkawe;rljasdfljkahsdflkjh")
+                self.place_new_creature(creature, t, repetitions = repetitions)
 
             if overlap_okay == False:
                 #check for collisions
@@ -201,19 +237,186 @@ class TwoDWorld(Population):
                             self.place_new_creature(creature, t, repetitions = repetitions)
                             break
 
+    def is_point_in_bounds(self, point):
+        inside = True
+        if self.bound_mode == 'rect':
+            if point[0] < -self.radius or \
+               point[0] > self.radius or \
+               point[1] < -self.radius or \
+               point[1] > self.radius:
+               inside = False
+
+        if self.bound_mode == 'circle':
+            dist = vec_len(point)
+            if dist > self.radius:
+                inside = False
+
+        if self.bound_mode == 'points':
+            total_angle = 0
+            bound_points = self.world_bound_points #Shorter!
+            for i in range(len(bound_points)):
+                a = add_lists_by_element(bound_points[i - 1], point, subtract = True)
+                b = add_lists_by_element(bound_points[i], point, subtract = True)
+
+                #left-handed since the decisions was made to list points in
+                #clockwise order
+                cross = cross_product(b, a)
+                #Only works when figure is in xy-plane
+                angle = math.atan2(cross[2], dot_product(b, a))
+                #print(" " + str(angle))
+                total_angle += angle
+
+            #print(point)
+            #print("Total angle: " + str(total_angle))
+
+            if total_angle < 6.28: #some slight tolerance on 2 pi.
+                inside = False
+
+        return inside
+
     def prevent_escape(self, cre, t):
         #if creature goes out of bounds, reverse relevent component
         #of previous velocity and recalculate position
-        if abs(cre.locations[t][0]) + float(cre.alleles['size']) > self.radius:
-            cre.velocities[t-1][0] *= -BOUNCE_DAMP_FACTOR
-            a = cre.locations[t-1]
-            b = cre.velocities[t-1]
-            cre.locations[t] = list(map(sum, zip(a, b)))
-        if abs(cre.locations[t][1]) + float(cre.alleles['size']) > self.radius:
-            cre.velocities[t-1][1] *= -BOUNCE_DAMP_FACTOR
-            a = cre.locations[t-1]
-            b = cre.velocities[t-1]
-            cre.locations[t] = list(map(sum, zip(a, b)))
+        if self.bound_mode == 'rect':
+            #Could probably ditch this in favor of the more general thing below
+            #Would need to set world bounding points somewhere first, though
+            if abs(cre.locations[t][0]) + float(cre.alleles['size']) > self.radius:
+                cre.velocities[t-1][0] *= -BOUNCE_DAMP_FACTOR
+                a = cre.locations[t-1]
+                b = cre.velocities[t-1]
+                cre.locations[t] = list(map(sum, zip(a, b)))
+            if abs(cre.locations[t][1]) + float(cre.alleles['size']) > self.radius:
+                cre.velocities[t-1][1] *= -BOUNCE_DAMP_FACTOR
+                a = cre.locations[t-1]
+                b = cre.velocities[t-1]
+                cre.locations[t] = list(map(sum, zip(a, b)))
+        if self.bound_mode == 'circle':
+            raise Warning('Not implemented')
+        if self.bound_mode == 'points':
+            if self.is_point_in_bounds(cre.locations[t]) == False:
+                self.correct_velocity(cre, t)
+
+
+    def correct_velocity(self, cre, t):
+        #check which wall(s) were bumped
+        #could also add point bouncing if things sneak through convex
+        #corners, but seems rare
+        pos = cre.locations[t]
+        prev = cre.locations[t - 1] #prev must be inside if this works
+        if self.is_point_in_bounds(prev) == False:
+            pass
+            #print("Previous: " + str(prev))
+            #print("Current: " + str(pos))
+            raise Warning('Even the previous point is not in bounds')
+
+        bound_points = self.world_bound_points #Shorter!
+        correction_vecs = []
+        for i in range(len(bound_points)):
+            #print()
+            #print("Bound point")
+            a = add_lists_by_element(prev, bound_points[i - 1], subtract = True)
+            b = add_lists_by_element(prev, bound_points[i], subtract = True)
+            c = add_lists_by_element(bound_points[i], bound_points[i - 1], subtract = True)
+            #print(a, b, c)
+
+            intersect = do_segments_intersect(
+                [pos, prev],
+                [bound_points[i], bound_points[i-1]]
+            )
+            if not intersect:
+                continue #If no intersection, check next wall segment
+
+            """
+            Older code finding segment crosses in a weirder way
+            Keeping because it could potentially be useful for sensing
+            close segments and avoiding 'corrected' velocities that
+            carry a creature across a different segment. That would only
+            happen with very weird shapes that will probably never come
+            up, though. ¯\_(ツ)_/¯
+            """
+            """#find perpendicular distance (height of triangle)
+            area = vec_len(cross_product(b, a)) / 2
+            base = vec_len(c)
+            height = 2 * area / base
+            #print(str(height))
+            if height > 0.2: #Could generalize, but works for now.
+                #print('Far')
+                continue #Not this segment, NEXT
+            #print("Close")
+
+
+            #if angles adjacent to wall are obtuse, it's not that wall
+            lengths = [vec_len(a), vec_len(b), vec_len(c)]
+            for length in lengths:
+                pass
+                #print(str(length))
+            if lengths[0] > math.sqrt(pow(lengths[1], 2) + pow(lengths[2], 2)) or \
+               lengths[1] > math.sqrt(pow(lengths[0], 2) + pow(lengths[2], 2)):
+               #print('Beyond segment')
+               continue
+            #print('In shadow of segment')"""
+
+
+
+            #I guess we're bouncing.
+            #A single bounce would reverse and damp the perpendicular
+            #component, but since there could be multiple bounces,
+            #just store the corrections and add after looping
+            vel = cre.velocities[t - 1]
+            c_norm = get_unit_vec(c)
+            #print()
+            #print('vel: ' + str(vel))
+            #print('c_norm: ' + str(c_norm))
+            para_vel = scalar_mult_vec(
+                c_norm,
+                dot_product(vel, c_norm)
+            )
+            #print('para_vel: ' + str(para_vel))
+            perp_vel = add_lists_by_element(vel, para_vel, subtract = True)
+            #print('perp_vel: ' + str(perp_vel))
+            correction_vecs.append(
+                scalar_mult_vec(
+                    perp_vel,
+                    - (1 + BOUNCE_DAMP_FACTOR)
+                )
+            )
+            #print('correction_vec: ' + str(correction_vecs[-1]))
+            #print()
+            """print("Added a correction")
+            print(correction_vecs)
+            print()"""
+
+        #
+        uncorrected_vel = deepcopy(cre.velocities[t-1])
+        for vec in correction_vecs:
+            cre.velocities[t-1] = add_lists_by_element(
+                deepcopy(cre.velocities[t-1]),
+                vec
+            )
+
+        a = cre.locations[t - 1]
+        b = cre.velocities[t - 1]
+        if self.is_point_in_bounds(list(map(sum, zip(a, b)))) == False:
+            pass
+            print()
+            print("Previous position: " + str(prev))
+            print("Uncorrected position: " + str(cre.locations[t]))
+            print("Corrected position: " + str(list(map(sum, zip(a, b)))))
+            print(correction_vecs)
+            print()
+            print("Uncorrected vel: " + str(uncorrected_vel))
+            print("Corrected vel: " + str(cre.velocities[t-1]))
+            print()
+            #raise Warning("Correction didn't work")
+
+        cre.locations[t] = list(map(sum, zip(a, b)))
+
+        #recursive in case the new velocity causes the creature to cross a
+        #different wall. Relevant in (literal) corner cases.
+        #Since velocity is damped, this shouldn't get infinite.
+        if self.is_point_in_bounds(cre.locations[t]) == False:
+            print("Adding another bounce")
+            self.correct_velocity(cre, t)
 
     def repulsion(self, creature, t):
         #if creatures are too close, add a small repulsion to

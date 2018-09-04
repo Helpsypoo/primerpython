@@ -228,6 +228,13 @@ def dot_product(vec1, vec2):
 
     return product
 
+def cross_product(a, b):
+    result = []
+    for i in range(3):
+        result.append(a[(i+1)%3]*b[(i+2)%3] - a[(i+2)%3]*b[(i+1)%3])
+
+    return result
+
 def vec_len(vec):
     length = 0
     for x in vec:
@@ -241,6 +248,36 @@ def get_unit_vec(vec):
     for i in range(len(vec)):
         v.append(vec[i] / length)
     return v
+
+'''
+Geometry
+'''
+
+def triangle_orientation(point1, point2, point3):
+    a = add_lists_by_element(point2, point1, subtract = True)
+    b = add_lists_by_element(point3, point1, subtract = True)
+    c = cross_product(a, b)
+
+    if c[2] == 0:
+        return 0 #colinear assuming points are in xy-plane
+    elif c[2] > 0:
+        return 1 #counter-clockwise
+    elif c[2] < 0:
+        return -1 #clockwise
+
+def do_segments_intersect(seg1, seg2):
+    #(Point p1, Point q1, Point p2, Point q2)
+
+    o1 = triangle_orientation(seg1[0], seg1[1], seg2[0]);
+    o2 = triangle_orientation(seg1[0], seg1[1], seg2[1]);
+    o3 = triangle_orientation(seg2[0], seg2[1], seg1[0]);
+    o4 = triangle_orientation(seg2[0], seg2[1], seg1[1]);
+
+    if o1 != o2 and o3 != o4:
+        return True;
+
+    #Doesn't handle the collinear case
+
 
 '''
 Mesh intersections

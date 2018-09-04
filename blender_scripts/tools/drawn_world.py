@@ -44,7 +44,10 @@ class DrawnWorld(TwoDWorld, Bobject):
         gene_updates = [],
         #motion_vars = None,
         counter_alignment = 'right_top',
-        creature_model = ['boerd_blob', 'creatures', 'boerd_blob_squat', 'creatures']
+        creature_model = ['boerd_blob', 'creatures', 'boerd_blob_squat', 'creatures'],
+        world_bound_points = [],
+        bound_mode = 'rect',
+        show_world = True
     ):
         if sim_duration_seconds != None:
             if sim_duration != None:
@@ -70,11 +73,14 @@ class DrawnWorld(TwoDWorld, Bobject):
                 overlap_okay = overlap_okay,
                 initial_creatures = initial_creatures,
                 gene_updates = gene_updates,
-                frames_per_time_step = frames_per_time_step
+                frames_per_time_step = frames_per_time_step,
+                world_bound_points = world_bound_points,
+                bound_mode = bound_mode,
             )
             self.__dict__ = world.__dict__
             if save == True:
                 world.save_sim_result()
+        self.show_world = show_world
 
         #It is a world. It is a Bobject.
         Bobject.__init__(self,
@@ -123,15 +129,16 @@ class DrawnWorld(TwoDWorld, Bobject):
 
     def add_to_blender(self, **kwargs):
         #Create floor
-        plane = import_object(
-            'xyplane', 'primitives',
-            scale = self.radius,
-            location = (0, 0, -0.7),
-            name = 'sim_plane'
-        )
-        #print(plane.ref_obj.scale)
-        apply_material(plane.ref_obj.children[0], 'color2')
-        self.add_subbobject(plane)
+        if self.show_world == True:
+            plane = import_object(
+                'xyplane', 'primitives',
+                scale = self.radius * 1.1,
+                location = (0, 0, -0.7),
+                name = 'sim_plane'
+            )
+            #print(plane.ref_obj.scale)
+            apply_material(plane.ref_obj.children[0], 'color2')
+            self.add_subbobject(plane)
 
         super().add_to_blender(**kwargs)
         #self.appear_frame = kwargs['appear_frame']
