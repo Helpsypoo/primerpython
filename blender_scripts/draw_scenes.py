@@ -511,8 +511,12 @@ def nat_sim_test():
 
     sim = natural_sim.DrawnNaturalSim(
         scale = 1.5,
-        food_count = 4
+        food_count = 8
     )
+    sim.sim.sim_next_day()
+    sim.sim.sim_next_day()
+    sim.sim.sim_next_day()
+    sim.sim.sim_next_day()
     sim.sim.sim_next_day()
     #print(sim.sim.date_records[0]['date'])
     #print(sim.sim.date_records[0]['creatures'])
@@ -526,13 +530,13 @@ def main():
     #tex_test()
     """"""
 
-    #nat_sim_test()
+    nat_sim_test()
     #test_molecule()
     #test_object()
     #marketing()
     #graph_test()
 
-    draw_scenes_from_file(fecal_transplant)
+    #draw_scenes_from_file(natural_sim)
 
     #print_time_report()
     finish_noise()

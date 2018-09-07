@@ -1,7 +1,5 @@
 class Creature(object):
     def __init__(self, size = '1', color = 'creature_color_1', shape = 'shape1'):
-        #TODO Consider making the default allele dict empty, since the
-        #population object assigns alleles anyway.
         self.alleles = {
             "size" : size,
             "color" : color,

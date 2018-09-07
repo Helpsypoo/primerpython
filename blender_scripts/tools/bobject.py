@@ -544,6 +544,88 @@ class Bobject(object):
             frame = start_frame + duration_frames + end_pause_frames
         )
 
+    def blob_scoop(
+        self,
+        start_time = 0,
+        duration = 0,
+    ):
+        #This function only works for blob creatures. Maybe they deserve their
+        #own subclass of bobject.
+        start_frame = start_time * FRAME_RATE
+        duration_frames = duration * FRAME_RATE
+
+        l_arm_up_z = 1
+        l_arm_down_z = -1
+        l_arm_out_y = 3
+        l_arm_forward_x = 2
+
+
+        r_arm_up_z = -1
+        r_arm_down_z = 1
+        r_arm_out_y = -5
+        r_arm_forward_x = 2
+
+        #These labels are from the point of view of the blob, which is opposite
+        #from how they're labeled in the template .blend file. Huzzah.
+        l_arm = self.ref_obj.children[0].pose.bones[1]
+        r_arm = self.ref_obj.children[0].pose.bones[2]
+
+        #Left arm out
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        initial_angle = deepcopy(l_arm.rotation_quaternion)
+        l_arm.rotation_quaternion[1] = l_arm_forward_x
+        l_arm.rotation_quaternion[2] = l_arm_out_y
+        l_arm.rotation_quaternion[3] = l_arm_down_z
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + duration_frames / 3
+        )
+
+        #scoop
+        l_arm.rotation_quaternion[3] = l_arm_up_z
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + 2 * duration_frames / 3
+        )
+
+        #And back
+        l_arm.rotation_quaternion = initial_angle
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + duration_frames
+        )
+
+        #Right arm
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        initial_angle = deepcopy(r_arm.rotation_quaternion)
+        r_arm.rotation_quaternion[1] = r_arm_forward_x
+        r_arm.rotation_quaternion[2] = r_arm_out_y
+        r_arm.rotation_quaternion[3] = r_arm_down_z
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + duration_frames / 3
+        )
+
+        #waves
+        r_arm.rotation_quaternion[3] = r_arm_up_z
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + 2 * duration_frames / 3
+        )
+
+        #And back
+        r_arm.rotation_quaternion = initial_angle
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + duration_frames
+        )
+
     def de_explode(
         self,
         start_time = 0,

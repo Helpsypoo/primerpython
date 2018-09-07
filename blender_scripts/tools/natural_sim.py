@@ -1,6 +1,6 @@
 #import bpy
 import imp
-from random import uniform
+from random import random, uniform
 from copy import copy
 
 import bobject
@@ -12,6 +12,7 @@ imp.reload(helpers)
 from helpers import *
 
 DEFAULT_DAY_LENGTH = 400
+DEFAULT_DAY_ANIM_DURATION = 5 #seconds
 BLENDER_UNITS_PER_WORLD_UNIT = 1 / 20
 WORLD_DIMENSIONS = [100, 100]
 CREATURE_HEIGHT = 13
@@ -23,17 +24,13 @@ TURN_ACCELERATION = 0.005
 BASE_SENSE_DISTANCE = 50
 EAT_DISTANCE = 25
 
+STARTING_ENERGY = 2000
+
 """
 TODOs
-- Make creature only eat twice.
-- Make second eat stack
-- Make walls turn creature
-- Test with two creatures
-- Make creatures act as food
--- world_location for creatures
-- Break eating ties
-- Make edge of world for creatures (excluding visual for now)
-- Two days
+- Break eating ties (Not sure if necessary)
+- Figure out why food is sometimes underneath
+- Make creatures immune to being eaten if they are home
 """
 
 class CreatureDay(object):
@@ -60,7 +57,9 @@ class CreatureDay(object):
         self.has_eaten = []
         self.energies = []
 
+        self.dead = False
         self.death_time = None
+        self.home_time = None
 
 class Food(object):
     """docstring for Food."""
@@ -82,7 +81,8 @@ class Food(object):
 
         self.bobject = import_object(
             'goodicosphere', 'primitives',
-            world_location = [0, 0, 0],
+            #world_location = [0, 0, 0],
+            location = [0, 0, 0],
             scale = 0.15
         )
         apply_material(self.bobject.ref_obj.children[0], 'color7')
@@ -133,23 +133,27 @@ class Food(object):
         loc_in_new_ref_frame = eater.bobject.ref_obj.matrix_local.inverted() * \
                                     self.bobject.ref_obj.location
 
+        #Need to correct scale because the child_of constraint doesn't use scale
+        for i in range(len(loc_in_new_ref_frame)):
+            loc_in_new_ref_frame[i] *= eater.bobject.ref_obj.scale[i]
+
         #Change location to be the same in new reference frame
         self.bobject.move_to(
             start_time = start_time,
             end_time = start_time + 1 / FRAME_RATE,
             new_location = loc_in_new_ref_frame
         )
-        #Move to top of creature
+        #Move in front of creature
         self.bobject.move_to(
             start_time = start_time + 1 / FRAME_RATE,
             end_time = start_time + duration / 2,
             new_location = [
-                eater.bobject.ref_obj.scale[2] / 2,
+                eater.bobject.ref_obj.scale[2],
                 0,
                 eater.bobject.ref_obj.scale[2] / 5
             ]
         )
-
+        #Move into creature and shrink
         self.bobject.move_to(
             start_time = start_time + duration / 2,
             end_time = end_time,
@@ -160,6 +164,11 @@ class Food(object):
             ],
             new_scale = 0
         )
+
+        eater.eat_animation(start_time = start_time, time_step = time_step)
+        eater.bobject.blob_scoop(start_time = start_time, duration = time_step * 50)
+        #I don't remember why I'm multiplying things by 50, tbh, but it works.
+        #I'm good at coding.
 
     def make_child_of_constraint(self, parent = None):
         if self.bobject == None:
@@ -195,40 +204,77 @@ class Creature(Food):
         self.bobject = None
         self.world = world
 
-        self.dead = False
-
     def new_day(self, date = 0):
         new_day = CreatureDay(creature = self, date = date)
         if len(self.days) == 0:
-            new_day.locations.append([
-                uniform(-self.world.dimensions[0], self.world.dimensions[0]),
-                uniform(-self.world.dimensions[1], self.world.dimensions[1]),
-                CREATURE_HEIGHT * self.size
-            ])
-            new_day.heading_targets.append(0)
+            wall_roll = random()
+            if wall_roll < 0.25:
+                loc = [
+                    uniform(-self.world.dimensions[0], self.world.dimensions[0]),
+                    self.world.dimensions[1],
+                    CREATURE_HEIGHT * self.size
+                ]
+                heading_target = - math.pi / 2
+                heading = - math.pi / 2
+            if wall_roll < 0.5:
+                loc = [
+                    self.world.dimensions[0],
+                    uniform(-self.world.dimensions[1], self.world.dimensions[1]),
+                    CREATURE_HEIGHT * self.size
+                ]
+                heading_target = math.pi
+                heading = math.pi
+            if wall_roll < 0.75:
+                loc = [
+                    uniform(-self.world.dimensions[0], self.world.dimensions[0]),
+                    -self.world.dimensions[1],
+                    CREATURE_HEIGHT * self.size
+                ]
+                heading_target = math.pi / 2
+                heading = math.pi / 2
+            else:
+                loc = [
+                    -self.world.dimensions[0],
+                    uniform(-self.world.dimensions[1], self.world.dimensions[1]),
+                    CREATURE_HEIGHT * self.size
+                ]
+                heading_target = 0
+                heading = 0
+
+            new_day.locations.append(loc)
+            new_day.heading_targets.append(heading_target)
             new_day.d_headings.append(0)
-            new_day.headings.append(0)
+            new_day.headings.append(heading)
         else:
             new_day.locations.append(
                 self.days[-1].locations[-1]
             )
-            #TODO: Make this depend on first location. Creatures should start
-            #heading toward the center... ish
-            new_day.heading_targets.append(0)
+            new_day.heading_targets.append(
+                self.days[-1].heading_targets[-1] + math.pi
+            )
             new_day.d_headings.append(0)
-            new_day.headings.append(0)
+            new_day.headings.append(
+                self.days[-1].headings[-1] + math.pi
+            )
 
         new_day.has_eaten.append([])
-        new_day.energies.append(100)
+        new_day.energies.append(STARTING_ENERGY)
 
         self.days.append(new_day)
 
-
     def take_step(self):
-        ##Update heading
         day = self.days[-1]
+        has_energy = True
+        if day.energies[-1] == None:
+            has_energy = False
+        else:
+            distance_left = day.energies[-1] / (self.size + self.speed + self.sense)
+            if distance_left < 1:
+                has_energy = False
+        if has_energy == False and day.death_time == None and day.home_time == None:
+            day.death_time = len(day.locations)
 
-        if self.dead == True:
+        if self.days[-1].dead == True:
             day.heading_targets.append(None)
             day.d_headings.append(None)
             day.headings.append(None)
@@ -246,34 +292,94 @@ class Creature(Food):
             creatures = self.world.date_records[day.date]['creatures']
             uneaten = [x for x in food_objects if x.is_eaten == False] + \
                       [x for x in creatures if x.is_eaten == False and x.size < self.size]
-            for food in uneaten:
-                dist = vec_len(add_lists_by_element(
-                    food.world_location,
-                    day.locations[-1],
-                    subtract = True
-                ))
-                if dist < EAT_DISTANCE:
-                    day.has_eaten[-1].append(food)
-                    food.is_eaten = True
-                    if isinstance(food, Creature):
-                        food.dead = True
-                        for nom in food.days[-1].has_eaten[-1]:
-                            day.has_eaten[-1].append(nom)
-                    #TODO: Remove later to deal with ties.
-                elif dist < BASE_SENSE_DISTANCE * self.sense and dist < closest_food:
-                    closest_food = dist
-                    target_food = food
 
-            if target_food != None:
-                vec_to_food = add_lists_by_element(
-                    food.world_location,
-                    day.locations[-1],
-                    subtract = True
-                )
-                day.heading_targets.append(math.atan2(vec_to_food[1], vec_to_food[0]))
+            state = None
+            distance_out = max(
+                self.world.dimensions[0] - abs(day.locations[-1][0]),
+                self.world.dimensions[1] - abs(day.locations[-1][1]),
+            )
+            if len(day.has_eaten[-1]) == 0:
+                state = 'foraging'
+            elif len(day.has_eaten[-1]) == 1:
+                if distance_left > distance_out:
+                    state = 'foraging'
+                else:
+                    state = 'homebound'
+            elif len(day.has_eaten[-1]) > 1:
+                state = 'homebound'
             else:
-                day.heading_targets.append(day.heading_targets[-1] + \
-                        uniform(-HEADING_TARGET_VARIATION, HEADING_TARGET_VARIATION))
+                raise Warning('Somehow, the creature has eaten negative food')
+
+            if state == 'foraging':
+                for food in uneaten:
+                    dist = vec_len(add_lists_by_element(
+                        food.world_location,
+                        day.locations[-1],
+                        subtract = True
+                    ))
+                    if dist < EAT_DISTANCE:
+                        day.has_eaten[-1].append(food)
+                        food.is_eaten = True
+                        if isinstance(food, Creature):
+                            food.days[-1].dead = True
+                            food.days[-1].death_time = len(food.days[-1].locations)
+                            for nom in food.days[-1].has_eaten[-1]:
+                                day.has_eaten[-1].append(nom)
+                        #TODO: Remove later to deal with ties.
+                    elif dist < BASE_SENSE_DISTANCE * self.sense and dist < closest_food:
+                        closest_food = dist
+                        target_food = food
+
+                if target_food != None:
+                    vec_to_food = add_lists_by_element(
+                        food.world_location,
+                        day.locations[-1],
+                        subtract = True
+                    )
+                    day.heading_targets.append(math.atan2(vec_to_food[1], vec_to_food[0]))
+                else:
+                    #Random change to heading target
+                    rand = uniform(-HEADING_TARGET_VARIATION, HEADING_TARGET_VARIATION)
+                    #Change away from straight out
+                    out = get_unit_vec(day.locations[-1])
+                    heading_target_vec = [
+                        math.cos(day.heading_targets[-1]),
+                        math.sin(day.heading_targets[-1]),
+                        0
+                    ]
+                    ht_norm = get_unit_vec(heading_target_vec)
+                    dot = dot_product(out, ht_norm)
+                    cross = cross_product(out, ht_norm)
+                    closeness = vec_len(day.locations[-1]) / \
+                                            dot_product(out, self.world.dimensions + [0])
+                    inward = 0
+                    if dot > 0: #Overall heading out
+                        if vec_len(cross) > 0:
+                            #Positive angle change
+                            #Full size at the barrier and when heading straight out
+                            inward = 1.2 * HEADING_TARGET_VARIATION * dot * closeness ** 2
+                        else:
+                            inward = - 1.2 * HEADING_TARGET_VARIATION * dot * closeness ** 2
+                            #The 1.2 is a strengthening tweak
+
+
+                    day.heading_targets.append(day.heading_targets[-1] + rand + inward)
+
+            elif state == 'homebound': #Creature is full
+                if self.world.dimensions[0] - abs(day.locations[-1][0]) < \
+                   self.world.dimensions[1] - abs(day.locations[-1][1]):
+                    #Go in x-direction
+                    if day.locations[-1][0] > 0:
+                        target = 0
+                    else:
+                        target = math.pi
+                else:
+                    if day.locations[-1][1] > 0:
+                        target = math.pi / 2
+                    else:
+                        target = - math.pi / 2
+                day.heading_targets.append(target)
+
 
             #Calculate heading
             #Note that lists are of different lengths in the line below
@@ -286,12 +392,25 @@ class Creature(Food):
                 day.heading_targets[-1] += 2 * math.pi
                 heading_discrepancy = day.heading_targets[-1] - day.headings[-1]
 
-            d_d_heading = heading_discrepancy / abs(heading_discrepancy) * TURN_ACCELERATION
+            if heading_discrepancy == 0:
+                d_d_heading = 0
+            else:
+                d_d_heading = heading_discrepancy / abs(heading_discrepancy) * TURN_ACCELERATION
             day.d_headings.append(day.d_headings[-1] + d_d_heading)
+            #Speed limit
             if day.d_headings[-1] > MAX_TURN_SPEED:
                 day.d_headings[-1] = MAX_TURN_SPEED
             elif day.d_headings[-1] < -MAX_TURN_SPEED:
                 day.d_headings[-1] = -MAX_TURN_SPEED
+            #Prevent overshooting
+            if heading_discrepancy == 0:
+                day.d_headings[-1] = 0
+            elif day.d_headings[-1] / heading_discrepancy > 1:
+                day.d_headings[-1] = heading_discrepancy
+
+            #No turning if you're out of energy
+            if has_energy == False:
+                day.d_headings[-1] = 0
 
             day.headings.append(day.headings[-1] + day.d_headings[-1])
 
@@ -299,7 +418,17 @@ class Creature(Food):
             #Go slower when turning, making it look more natural
             effective_speed = self.speed * \
                 (1 - pow(abs(day.d_headings[-1]) / MAX_TURN_SPEED, 2) / 2)
-
+            #If outside world, just stop
+            heading_vec = [math.cos(day.headings[-1]), math.sin(day.headings[-1]), 0]
+            if (abs(day.locations[-1][0]) > self.world.dimensions[0] or \
+               abs(day.locations[-1][1]) > self.world.dimensions[1]) and \
+               dot_product(heading_vec, day.locations[-1]) > 0:
+               effective_speed = 0
+               if day.home_time == None:
+                   day.home_time = len(day.locations)
+            #No moving if you're out of energy
+            if has_energy == False:
+                effective_speed = 0
             day.locations.append([
                 day.locations[-1][0] + math.cos(day.headings[-1]) * effective_speed,
                 day.locations[-1][1] + math.sin(day.headings[-1]) * effective_speed,
@@ -308,6 +437,55 @@ class Creature(Food):
             self.world_location = day.locations[-1]
             day.energies.append(day.energies[-1] - self.size - self.speed - self.sense)
 
+    def eat_animation(self, start_time = None, end_time = None, time_step = 0.3):
+        if start_time == None:
+            raise Warning('Need to define start time and end time for eat animation')
+        if end_time == None:
+            end_time = start_time + 0.3 #Should make this a constant
+
+        start_time = round(start_time * 60) / 60
+        duration = 50 * time_step
+        duration = max(round(duration * 60) / 60, 1/30)
+        end_time = start_time + duration
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = end_time * FRAME_RATE
+        #I parented the mouth in a pretty ridicukous way, but it works.
+        for child in self.bobject.ref_obj.children[0].children:
+            if 'Mouth' in child.name:
+                mouth = child
+
+        o_loc = copy(mouth.location)
+        o_rot = copy(mouth.rotation_euler)
+        o_scale = copy(mouth.scale)
+
+        mouth.keyframe_insert(data_path = 'location', frame = start_frame)
+        mouth.keyframe_insert(data_path = 'rotation_euler', frame = start_frame)
+        mouth.keyframe_insert(data_path = 'scale', frame = start_frame)
+
+        mouth.location = [-0.04, 0.36, 0.3760]
+        mouth.rotation_euler = [
+            -8.91 * math.pi / 180,
+            -0.003 * math.pi / 180,
+            -3.41 * math.pi / 180,
+        ]
+        mouth.scale = [
+            0.853,
+            2.34,
+            0.889
+        ]
+
+        mouth.keyframe_insert(data_path = 'location', frame = (start_frame + end_frame) / 2)
+        mouth.keyframe_insert(data_path = 'rotation_euler', frame = (start_frame + end_frame) / 2)
+        mouth.keyframe_insert(data_path = 'scale', frame = (start_frame + end_frame) / 2)
+
+        mouth.location = o_loc
+        mouth.rotation_euler = o_rot
+        mouth.scale = o_scale
+
+        mouth.keyframe_insert(data_path = 'location', frame = end_frame)
+        mouth.keyframe_insert(data_path = 'rotation_euler', frame = end_frame)
+        mouth.keyframe_insert(data_path = 'scale', frame = end_frame)
 
     def add_to_blender(self, appear_time = None, world = None):
         #Note that this is not a subclass of bobject
@@ -355,7 +533,10 @@ class NaturalSim(object):
         if self.initial_creatures == None:
             self.initial_creatures = [
                 Creature(),
-                Creature(size = 0.5)
+                Creature(size = 0.5),
+                Creature(size = 1.5),
+                Creature(size = 0.25),
+                Creature(size = 2),
             ]
         for creature in self.initial_creatures:
             creature.world = self
@@ -384,17 +565,26 @@ class NaturalSim(object):
         if date == 0:
             creatures = self.initial_creatures
         else:
-            #Find creatures that survived or were born yesterday
-            pass
+            creatures = [x for x in self.date_records[-1]['creatures'] if x.days[-1].dead == False]
+            #TODO: add new creatures from reproduction
+
+        #Set day length based on how long the longest creature can go
+        day_length = 0
+        for cre in creatures:
+            stamina = STARTING_ENERGY / (cre.size + cre.speed + cre.sense)
+            if stamina > day_length:
+                day_length = math.ceil(stamina)
+        #day_length += 10 #Padding
 
         date_dict = {
             'date' : date,
             'food_objects' : self.gen_food(),
             'creatures' : creatures,
+            'day_length' : day_length, #number of steps in day to show all creatures
             'anim_durations' : {
                 'dawn' : 1, #Put out food
                 'morning' : 1, #pause after setup
-                'day' : 5, #creatures go at it
+                'day' : DEFAULT_DAY_ANIM_DURATION, #creatures go at it
                 'evening' : 1, #pause before reset
                 'night' : 1 #reset
             }
@@ -405,13 +595,53 @@ class NaturalSim(object):
         for cre in creatures:
             cre.new_day(date = date)
 
-        for t in range(self.day_length):
+        for t in range(date_dict['day_length']):
             for cre in creatures:
                 #take step
                 cre.take_step()
-            #check for eating
 
+        #At end of day, see which creatures die
+        #Also shorten day if all creatures are home or dead before the end
+        latest_action = 0
+        for cre in date_dict['creatures']:
+            day = None
+            bobj = cre.bobject
+            for candidate_day in cre.days:
+                if candidate_day.date == date:
+                    day = candidate_day
+                    break
+            if day.dead == False:
+                #Not enough food
+                if len(day.has_eaten[-1]) == 0:
+                   print(str(cre) + " didn't eat enough")
+                   day.dead = True
 
+                #Didn't make it home
+                if (abs(day.locations[-1][0]) < self.dimensions[0] and \
+                   abs(day.locations[-1][1]) < self.dimensions[1]):
+                   print(str(cre) + " didn't make it home")
+                   day.dead = True
+
+            #Shorten for animation
+            if day.death_time != None and day.death_time > latest_action:
+                latest_action = day.death_time
+                print('New day length: ' + str(latest_action))
+            if day.home_time != None and day.home_time > latest_action:
+                latest_action = day.home_time
+                print('New day length: ' + str(latest_action))
+            print(date_dict['date'], latest_action)
+            date_dict['day_length'] = latest_action
+
+        for cre in self.date_records[-1]['creatures']:
+            for day in cre.days:
+                if day.date == date:
+                    print('Date: ' + str(date))
+                    print('Dead time: ' + str(day.death_time))
+                    print('Home time: ' + str(day.home_time))
+                    """print('Locations: ')
+                    for loc in day.locations:
+                        print(loc)"""
+                    print()
 
 class DrawnNaturalSim(Bobject):
     def __init__(
@@ -419,10 +649,12 @@ class DrawnNaturalSim(Bobject):
         *subbobjects,
         sim = None,
         blender_units_per_world_unit = BLENDER_UNITS_PER_WORLD_UNIT,
+        day_length_style = 'fixed_speed', #Can also be 'fixed_length'
         **kwargs
     ):
         super().__init__(*subbobjects, **kwargs)
         self.sim = sim
+        self.day_length_style = day_length_style
         if self.sim == None:
             sim_kwargs = {}
             for param in ['food_count', 'dimensions', 'day_length']:
@@ -435,13 +667,13 @@ class DrawnNaturalSim(Bobject):
     def animate_days(self):
         for i, date_record in enumerate(self.sim.date_records):
             """Place food"""
-            for i, food in enumerate(date_record['food_objects']):
+            for j, food in enumerate(date_record['food_objects']):
                 food.bobject.ref_obj.location = scalar_mult_vec(
                     food.world_location,
                     self.blender_units_per_world_unit
                 )
                 food.bobject.ref_obj.parent = self.ref_obj
-                delay = i * date_record['anim_durations']['dawn'] / len(date_record['food_objects'])
+                delay = j * date_record['anim_durations']['dawn'] / len(date_record['food_objects'])
                 food.bobject.add_to_blender(
                     appear_time = self.start_time + self.elapsed_time + delay
                 )
@@ -457,7 +689,7 @@ class DrawnNaturalSim(Bobject):
                     cre.bobject.ref_obj.parent = self.ref_obj
             else:
                 for cre in date_record['creatures']:
-                    if cre not in self.sim.date_records[i - 1]:
+                    if cre not in self.sim.date_records[i - 1]['creatures']:
                         cre.add_to_blender(
                             appear_time = self.start_time + self.elapsed_time,
                             world = self
@@ -468,8 +700,12 @@ class DrawnNaturalSim(Bobject):
                                             date_record['anim_durations']['morning']
 
             """Step through time for current day"""
-            for t in range(DEFAULT_DAY_LENGTH):
-                time_step = 1 / DEFAULT_DAY_LENGTH * date_record['anim_durations']['day']
+            #print(date_record['day_length'])
+            if self.day_length_style == 'fixed_speed':
+                time_step = 1 / DEFAULT_DAY_LENGTH * DEFAULT_DAY_ANIM_DURATION
+            elif self.day_length_style == 'fixed_length':
+                time_step = 1 / date_record['day_length'] * date_record['anim_durations']['day']
+            for t in range(date_record['day_length']):
                 time_of_day = t * time_step
                 anim_time = self.start_time + self.elapsed_time + time_of_day
                 frame = anim_time * FRAME_RATE
@@ -502,6 +738,33 @@ class DrawnNaturalSim(Bobject):
                                     drawn_world = self,
                                     time_step = time_step
                                 )
+
+            if self.day_length_style == 'fixed_length':
+                self.elapsed_time += date_record['anim_durations']['day']
+            elif self.day_length_style == 'fixed_speed':
+                self.elapsed_time += date_record['day_length'] * time_step
+            self.elapsed_time += date_record['anim_durations']['evening']
+
+            """Creatures that die should disappear."""
+            """Along with food"""
+            for cre in date_record['creatures']:
+                day = None
+                for candidate_day in cre.days:
+                    if candidate_day.date == date_record['date']:
+                        day = candidate_day
+                        break
+                if day.dead == True:
+                    cre.bobject.disappear(
+                        disappear_time = self.start_time + self.elapsed_time,
+                        is_creature = True
+                    )
+
+            for food in date_record['food_objects']:
+                food.bobject.disappear(
+                    disappear_time = self.start_time + self.elapsed_time
+                )
+
+            self.elapsed_time += date_record['anim_durations']['night']
 
 
 
