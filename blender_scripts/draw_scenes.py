@@ -168,7 +168,7 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION):
 def color_test():
     initialize_blender()
 
-    swatch1 = import_object('xyplane', 'primitives', name = 'swatch1', location = (-6, 0, 0), scale = 1.5)
+    """swatch1 = import_object('xyplane', 'primitives', name = 'swatch1', location = (-6, 0, 0), scale = 1.5)
     apply_material(swatch1.ref_obj.children[0], 'color1')
     swatch1.add_to_blender()
 
@@ -186,7 +186,42 @@ def color_test():
 
     swatch5 = import_object('xyplane', 'primitives', name = 'swatch5', location = (6, 0, 0), scale = 1.5)
     apply_material(swatch5.ref_obj.children[0], 'color5')
-    swatch5.add_to_blender()
+    swatch5.add_to_blender()"""
+
+    b = import_object(
+        'boerd_blob', 'creatures',
+    )
+    apply_material(b.ref_obj.children[0].children[0], 'creature_color3')
+
+    b.add_to_blender(appear_time = 0)
+    b.color_shift(
+        color = COLORS_SCALED[6],
+        start_time = 4,
+        duration_time = None,
+        shift_time = 240,
+        obj = b.ref_obj.children[0].children[0]
+    )
+    b.color_shift(
+        color = COLORS_SCALED[4],
+        start_time = 8,
+        duration_time = None,
+        shift_time = 240,
+        obj = b.ref_obj.children[0].children[0]
+    )
+    b.color_shift(
+        color = COLORS_SCALED[3],
+        start_time = 12,
+        duration_time = None,
+        shift_time = 240,
+        obj = b.ref_obj.children[0].children[0]
+    )
+    b.color_shift(
+        color = COLORS_SCALED[5],
+        start_time = 16,
+        duration_time = None,
+        shift_time = 240,
+        obj = b.ref_obj.children[0].children[0]
+    )
 
 def is_scene(obj):
    if not inspect.isclass(obj):
@@ -422,48 +457,16 @@ def test_molecule():
 def graph_test():
     initialize_blender(total_duration = 120)
 
-    '''def func(x):
-        return 10 * math.sin(3*x) * math.cos(x / 6) #+ math.sin(5*x)
-        #return 3 + 5 * x - 1.5 * x * x + (x ** 3) / 9.2
-        #return 10 - (9 * (10 ** (10 - x)) / (10 ** 10))
-    '''
-
-    def func(x):
-        return 2 * math.sin(x) + 3
-        #return 3 + 5 * x - 1.5 * x * x + (x ** 3) / 9.2
-        #return 10 - (9 * (10 ** (10 - x)) / (10 ** 10))
-        #return - x * x / 10 + 10
-
-    graph = graph_bobject.GraphBobject(
-        func,
-        x_range = [0, 10],
-        y_range = [0, 10],
-        tick_step = [5, 5],
-        width = 15,
-        height = 15,
-        x_label = '\\text{Time}',
-        x_label_pos = 'along',
-        y_label = 'N',
-        y_label_pos = 'along',
-        location = (0, 0, 0),
-        centered = True,
-        arrows = True
-    )
-    graph.add_to_blender(curve_colors = 'fade_secondary')
-
-    graph.change_window(
-        start_time = 5,
-        new_x_range = [0, 6],
-        new_y_range = [0, 6],
-        new_tick_step = [2, 2]
+    g = graph_bobject.GraphBobject3D(
+        centered = True
     )
 
-    '''graph.animate_function_curve(
-        start_frame = 60,
-        end_frame = 180,
-        uniform_along_x = True,
-        index = 0
-    )'''
+    g.add_to_blender(appear_time = 0)
+
+    g.add_point_at_coord(
+        appear_time = 1,
+        coord = [5, 5, 5]
+    )
 
 def marketing():
     scene_end = 12
@@ -511,19 +514,95 @@ def nat_sim_test():
 
     sim = natural_sim.DrawnNaturalSim(
         scale = 1.5,
-        food_count = 8
+        food_count = 10,
+        #sim = 'NAT20180908T142822'
+        location = [-6.5, 0, 0]
     )
-    sim.sim.sim_next_day()
-    sim.sim.sim_next_day()
-    sim.sim.sim_next_day()
-    sim.sim.sim_next_day()
-    sim.sim.sim_next_day()
-    #print(sim.sim.date_records[0]['date'])
-    #print(sim.sim.date_records[0]['creatures'])
-    #for cre in sim.sim.date_records[0]['creatures']:
-    #    print(cre.days)
 
-    sim.add_to_blender(appear_time = 1)
+    sim_length = 10
+    for i in range(sim_length):
+        save = False
+        if i == sim_length - 1:
+            save = False
+        sim.sim.sim_next_day(save = save)
+
+    sim.add_to_blender(
+        appear_time = 1,
+        start_delay = 1
+    )
+
+    g = graph_bobject.GraphBobject3D(
+        x_range = [0, 2],
+        y_range = [0, 2],
+        z_range = [0, 2],
+        x_label = '\\text{Size}',
+        y_label = '\\text{Speed}',
+        z_label = '\\text{Sense}',
+        width = 10,
+        height = 10,
+        depth = 10,
+        location = [8, 0, 0],
+        centered = True,
+        tick_step = 0.5
+    )
+    g.add_to_blender(appear_time = 1)
+
+    cres_with_points = []
+    records = sim.sim.date_records
+    time = 2
+    print(len(records))
+    for date in range(len(records)):
+        print()
+        print("The date is " + str(date))
+        print(" There are " + str(len(records[date]['creatures'])) + " creatures today")
+        print(" " + str(len(cres_with_points)) + " creatures have points now")
+
+
+        #Delete points for creatures the died
+        to_delete = []
+        for cre in cres_with_points:
+            print(' A creature has a point')
+            if cre not in records[date]['creatures']:
+                print(' taking point from creature')
+                cre.point.disappear(
+                    disappear_time = time,
+                    #Will need duration in actual scene
+                )
+                to_delete.append(cre)
+                print(' Now ' + str(len(cres_with_points)) + " cres have points")
+        for cre in to_delete:
+            cres_with_points.remove(cre)
+
+        #Add points for new creatures
+        for cre in records[date]['creatures']:
+            print(" There's a cre")
+            if cre not in cres_with_points:
+                print(' Giving a point')
+                point = g.add_point_at_coord(
+                    coord = [
+                        cre.size,
+                        cre.speed,
+                        cre.sense
+                    ],
+                    appear_time = time,
+                    #Will need duration in actual scene
+                )
+                apply_material(
+                    point.ref_obj.children[0],
+                    cre.bobject.ref_obj.children[0].children[0].active_material
+                )
+                cre.point = point
+                cres_with_points.append(cre)
+                print(' Now ' + str(len(cres_with_points)) + " cres have points")
+
+        #Add time after day
+        time += records[date]['anim_durations']['dawn'] + \
+                records[date]['anim_durations']['morning'] + \
+                records[date]['anim_durations']['day'] + \
+                records[date]['anim_durations']['evening'] + \
+                records[date]['anim_durations']['night']
+
+
 
 def main():
     """Use this as a test scene"""
@@ -531,14 +610,11 @@ def main():
     """"""
 
     nat_sim_test()
-    #test_molecule()
-    #test_object()
-    #marketing()
     #graph_test()
 
     #draw_scenes_from_file(natural_sim)
 
-    #print_time_report()
+    print_time_report()
     finish_noise()
 
 

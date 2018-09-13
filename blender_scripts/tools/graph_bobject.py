@@ -63,6 +63,7 @@ class GraphBobject(Bobject):
         #Calculate factor for converting from function space to draw space
         self.domain_scale_factor = self.width / (self.x_range[1] - self.x_range[0])
         self.range_scale_factor = self.height / (self.y_range[1] - self.y_range[0])
+        self.z_scale_factor = 1 #Overridden in the 3D class
 
         self.arrows = arrows
 
@@ -241,6 +242,8 @@ class GraphBobject(Bobject):
         self.add_subbobject(label)
         self.tick_labels_x.append(label)
 
+        #Only used when changing window, since in that case, the new bobjects
+        #aren't added when add_to_blender() is called on the
         return cyl_bobj, label
 
     def add_tick_y(self, value):
@@ -897,7 +900,7 @@ class GraphBobject(Bobject):
         draw_space_coord = [
             coord[0] * self.domain_scale_factor,
             coord[1] * self.range_scale_factor,
-            coord[2]
+            coord[2] * self.z_scale_factor
         ]
         point = import_object(
             'goodicosphere', 'primitives',
@@ -907,8 +910,8 @@ class GraphBobject(Bobject):
 
         point.coord = coord
         point.track_curve = track_curve
-        #This used to be boolean, so adding a check to remind myself to change
-        #old scenes.
+        #This used to be boolean, so adding a check to remind myself of the
+        #change when old scenes break
         if isinstance(point.track_curve, bool):
             raise Warning("point.track_curve must be an int or None")
         if point.track_curve != None:
@@ -1346,3 +1349,235 @@ class GraphBobject(Bobject):
                         self.range_scale_factor * scale[1] / 2
 
         super().move_to(**kwargs)
+
+class GraphBobject3D(GraphBobject):
+    """docstring for GraphBobject3D."""
+    def __init__(self,
+        x_label_pos = 'end',
+        y_label_pos = 'end',
+        z_label_pos = 'end',
+        z_range = 10,
+        z_label = 'z',
+        depth = 10,
+        **kwargs
+    ):
+        super().__init__(
+            x_label_pos = x_label_pos,
+            y_label_pos = y_label_pos,
+            **kwargs
+        )
+
+        if isinstance(z_range, int) or isinstance(z_range, float):
+            z_range = [0, z_range]
+        self.z_range = z_range
+        self.z_label = z_label
+        self.z_label_pos = z_label_pos
+
+        self.depth = depth - 2 * GRAPH_PADDING
+        self.tick_labels_z = []
+        self.tick_bobjs_z = []
+
+        #Calculate factor for converting from function space to draw space
+        self.z_scale_factor = self.depth / (self.z_range[1] - self.z_range[0])
+
+        if self.centered == True:
+            self.ref_obj.location[2] -= \
+                (self.z_range[1] + self.z_range[0]) * self.z_scale_factor / 2 * self.scale[2]
+
+    def add_axes(self):
+        super().add_axes()
+        #z axis
+        cyl_bobj = import_object('one_side_cylinder', 'primitives')
+        apply_material(cyl_bobj.objects[0], 'color2')
+        self.add_subbobject(cyl_bobj)
+        ref = cyl_bobj.ref_obj
+        ref.location = (0, 0, self.z_range[0] * self.z_scale_factor - GRAPH_PADDING)
+        ref.children[0].rotation_euler = (0, 0, 0)
+        ref.children[0].scale = (AXIS_DEPTH, AXIS_WIDTH, self.width / 2 + GRAPH_PADDING)
+
+        if self.arrows == 'positive' or self.arrows == True:
+            con_bobj = import_object('arrow_head', name = 'arrow_ref')
+            apply_material(con_bobj.objects[0], 'color2')
+            self.add_subbobject(con_bobj)
+            ref = con_bobj.ref_obj
+            #con.parent = self.ref_obj
+            ref.location = (0, 0, self.z_range[1] * self.z_scale_factor + GRAPH_PADDING)
+            ref.children[0].rotation_euler = (0, 0, 0)
+            ref.children[0].scale = ARROW_SCALE
+
+            if self.arrows == True:
+                con_bobj = import_object('arrow_head', name = 'arrow_ref')
+                apply_material(con_bobj.objects[0], 'color2')
+                self.add_subbobject(con_bobj)
+                ref = con_bobj.ref_obj
+                ref.location = (0, 0, self.z_range[0] * self.z_scale_factor - GRAPH_PADDING)
+                ref.children[0].rotation_euler = (math.pi, 0, 0)
+                ref.children[0].scale = ARROW_SCALE
+
+        #z axis label
+        z_lab = tex_bobject.TexBobject(self.z_label, name = 'z_lab', centered = True)
+        if self.z_label_pos == 'along':
+            z_lab.ref_obj.location = (0, -2, (self.z_range[1] + self.z_range[0]) * self.z_scale_factor / 2)
+        elif self.z_label_pos == 'end':
+            z_lab.ref_obj.location = (0, 0, self.z_range[1] * self.z_scale_factor + GRAPH_PADDING + 1.5)
+            z_lab.centered = False
+        self.add_subbobject(z_lab)
+        self.z_label_bobject = z_lab
+
+        tick_step = self.tick_step
+        if tick_step == 'auto':
+            num_steps_z = self.width / AUTO_TICK_SPACING_TARGET
+            z_tick_step = math.floor((self.z_range[1] - self.z_range[0]) / num_steps_z)
+
+        else:
+            if isinstance(tick_step, list):
+                z_tick_step = tick_step[2]
+            elif isinstance(tick_step, int) or isinstance(tick_step, float):
+                z_tick_step = tick_step
+            else:
+                raise Warning('Idk wtf to do with that tick step.')
+
+        if z_tick_step != None:
+            current_tick = z_tick_step
+            #Positive z ticks
+            while current_tick <= self.z_range[1]:
+                self.add_tick_z(current_tick)
+                current_tick += z_tick_step
+
+            #Negative z ticks
+            current_tick = -z_tick_step
+            while current_tick >= self.z_range[0]:
+                self.add_tick_z(current_tick)
+                current_tick -= z_tick_step
+
+    def add_tick_x(self, value):
+        tick_scale = min(self.width, self.height, self.depth) / 20
+        #y-tick
+        cyl_bobj = import_object('cylinder', 'primitives', name = 'xy_tick')
+        apply_material(cyl_bobj.objects[0], 'color2')
+        self.add_subbobject(cyl_bobj)
+        self.tick_bobjs_x.append(cyl_bobj)
+
+        ref = cyl_bobj.ref_obj
+        ref.location = (value * self.domain_scale_factor, 0, 0)
+        ref.children[0].rotation_euler = (math.pi / 2, 0, 0)
+        ref.children[0].scale = (AXIS_WIDTH / 2, AXIS_DEPTH / 2, tick_scale)
+
+        #z-tick
+        cyl_bobj2 = import_object('cylinder', 'primitives', name = 'xz_tick')
+        apply_material(cyl_bobj2.objects[0], 'color2')
+        self.add_subbobject(cyl_bobj2)
+        self.tick_bobjs_x.append(cyl_bobj2)
+
+        ref = cyl_bobj2.ref_obj
+        ref.location = (value * self.domain_scale_factor, 0, 0)
+        ref.children[0].rotation_euler = (0, 0, 0)
+        ref.children[0].scale = (AXIS_WIDTH / 2, AXIS_DEPTH / 2, tick_scale)
+
+        label_scale = 0.5
+        label = tex_bobject.TexBobject(
+            str(value),
+            #Scale label position based on tick length, but stay far enough
+            #away to avoid overlap
+            location = (
+                value * self.domain_scale_factor,
+                min(-label_scale, -2 * tick_scale),
+                0
+            ),
+            centered = True,
+            scale = label_scale
+        )
+        self.add_subbobject(label)
+        self.tick_labels_x.append(label)
+
+        #Only used when changing window, since in that case, the new bobjects
+        #aren't added when add_to_blender() is called on the
+        return cyl_bobj, cyl_bobj2, label
+
+    def add_tick_y(self, value):
+        tick_scale = min(self.width, self.height, self.depth) / 20
+        #z-tick
+        cyl_bobj = import_object('cylinder', 'primitives', name = 'yz_tick')
+        apply_material(cyl_bobj.objects[0], 'color2')
+        self.add_subbobject(cyl_bobj)
+        self.tick_bobjs_y.append(cyl_bobj)
+
+        ref = cyl_bobj.ref_obj
+        ref.location = (0, value * self.range_scale_factor, 0)
+        ref.children[0].rotation_euler = (0, 0, 0)
+        ref.children[0].scale = (AXIS_WIDTH / 2, AXIS_DEPTH / 2, tick_scale)
+
+        #x-tick
+        cyl_bobj2 = import_object('cylinder', 'primitives', name = 'yx_tick')
+        apply_material(cyl_bobj2.objects[0], 'color2')
+        self.add_subbobject(cyl_bobj2)
+        self.tick_bobjs_y.append(cyl_bobj2)
+
+        ref = cyl_bobj2.ref_obj
+        ref.location = (0, value * self.range_scale_factor, 0)
+        ref.children[0].rotation_euler = (0, math.pi / 2, 0)
+        ref.children[0].scale = (AXIS_WIDTH / 2, AXIS_DEPTH / 2, tick_scale)
+
+        label_scale = 0.5
+        label = tex_bobject.TexBobject(
+            str(value),
+            #Scale label position based on tick length, but stay far enough
+            #away to avoid overlap
+            location = (
+                min(-label_scale, -2 * tick_scale),
+                value * self.range_scale_factor,
+                0
+            ),
+            centered = True,
+            scale = label_scale
+        )
+        self.add_subbobject(label)
+        self.tick_labels_y.append(label)
+
+        #Only used when changing window, since in that case, the new bobjects
+        #aren't added when add_to_blender() is called on the
+        return cyl_bobj, cyl_bobj2, label
+
+    def add_tick_z(self, value):
+        tick_scale = min(self.width, self.height, self.depth) / 20
+        #x-tick
+        cyl_bobj = import_object('cylinder', 'primitives', name = 'zx_tick')
+        apply_material(cyl_bobj.objects[0], 'color2')
+        self.add_subbobject(cyl_bobj)
+        self.tick_bobjs_z.append(cyl_bobj)
+
+        ref = cyl_bobj.ref_obj
+        ref.location = (0, 0, value * self.z_scale_factor)
+        ref.children[0].rotation_euler = (0, math.pi / 2, 0)
+        ref.children[0].scale = (AXIS_WIDTH / 2, AXIS_DEPTH / 2, tick_scale)
+
+        #y-tick
+        cyl_bobj2 = import_object('cylinder', 'primitives', name = 'zy_tick')
+        apply_material(cyl_bobj2.objects[0], 'color2')
+        self.add_subbobject(cyl_bobj2)
+        self.tick_bobjs_z.append(cyl_bobj2)
+
+        ref = cyl_bobj2.ref_obj
+        ref.location = (0, 0, value * self.z_scale_factor)
+        ref.children[0].rotation_euler = (math.pi / 2, 0, 0)
+        ref.children[0].scale = (AXIS_WIDTH / 2, AXIS_DEPTH / 2, tick_scale)
+
+        label_scale = 0.5
+        label = tex_bobject.TexBobject(
+            str(value),
+            #Scale label position based on tick length, but stay far enough
+            #away to avoid overlap
+            location = (
+                0,
+                min(-label_scale, -2 * tick_scale),
+                value * self.z_scale_factor,
+            ),
+            centered = True,
+            scale = label_scale
+        )
+        self.add_subbobject(label)
+        self.tick_labels_z.append(label)
+
+        #Only used when changing window, since in that case, the new bobjects
+        #aren't added when add_to_blender() is called on the
+        return cyl_bobj, cyl_bobj2, label

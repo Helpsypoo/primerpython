@@ -1,7 +1,8 @@
 #import bpy
 import imp
-from random import random, uniform
+from random import random, uniform, randrange
 from copy import copy
+import pickle
 
 import bobject
 imp.reload(bobject)
@@ -11,26 +12,35 @@ import helpers
 imp.reload(helpers)
 from helpers import *
 
+#Sim constants
+WORLD_DIMENSIONS = [200, 200]
 DEFAULT_DAY_LENGTH = 400
-DEFAULT_DAY_ANIM_DURATION = 5 #seconds
-BLENDER_UNITS_PER_WORLD_UNIT = 1 / 20
-WORLD_DIMENSIONS = [100, 100]
-CREATURE_HEIGHT = 13
-
+PREDATOR_SIZE_RATIO = 1.2
 HEADING_TARGET_VARIATION = 0.4 #Range for random heading target changes, radians
 MAX_TURN_SPEED = 0.07
 TURN_ACCELERATION = 0.005
-
-BASE_SENSE_DISTANCE = 50
-EAT_DISTANCE = 25
-
+BASE_SENSE_DISTANCE = 30
+EAT_DISTANCE = 15
+MUTATION_VARIATION = 0.1
 STARTING_ENERGY = 2000
+HOMEBOUND_RATIO = 1.5
+
+#Visual constants
+DEFAULT_DAY_ANIM_DURATION = 5 #seconds
+BLENDER_UNITS_PER_WORLD_UNIT = 1 / 40
+FOOD_SCALE = 2 * BLENDER_UNITS_PER_WORLD_UNIT
+BASE_CREATURE_SCALE = 0.25
+CREATURE_HEIGHT = 0.65 * BASE_CREATURE_SCALE / BLENDER_UNITS_PER_WORLD_UNIT
+SPEED_PER_COLOR = 0.4 #Speed change for one color unit change
 
 """
 TODOs
+- Make creatures run from larger ones. (If can't balance)
 - Break eating ties (Not sure if necessary)
-- Figure out why food is sometimes underneath
-- Make creatures immune to being eaten if they are home
+- Reuse dead creature objects (maybe even resize/recolor for extra smoothness)
+- Fix teleportation bugs
+- Rebalance, possibly using non-animated sims to get a sense for things more quickly
+
 """
 
 class CreatureDay(object):
@@ -79,23 +89,7 @@ class Food(object):
         else:
             self.parents = [parents]
 
-        self.bobject = import_object(
-            'goodicosphere', 'primitives',
-            #world_location = [0, 0, 0],
-            location = [0, 0, 0],
-            scale = 0.15
-        )
-        apply_material(self.bobject.ref_obj.children[0], 'color7')
-
-        for parent in self.parents:
-            self.make_child_of_constraint(parent = parent.ref_obj)
-        if len(self.parents) > 0:
-            cons = self.bobject.ref_obj.constraints[0]
-            cons.influence = 1
-            """if has_world_as_parent == True:
-                cons.use_scale_x = True
-                cons.use_scale_y = True
-                cons.use_scale_z = True"""
+        #self.parents.append(self.world)
 
     def git_ate(
         self,
@@ -120,6 +114,8 @@ class Food(object):
         if eater not in self.parents:
             self.make_child_of_constraint(parent = eater.bobject.ref_obj)
 
+        #Really, this is more complex than needed since it tries to take care
+        #of cases where there's more than one constraint
         for cons in self.bobject.ref_obj.constraints:
             cons.keyframe_insert(data_path = 'influence', frame = start_time * FRAME_RATE)
             if cons.target == eater.bobject.ref_obj:
@@ -128,12 +124,16 @@ class Food(object):
                 cons.influence = 0
             cons.keyframe_insert(data_path = 'influence', frame = start_time * FRAME_RATE + 1)
 
-        bpy.context.scene.update() #needed for matrix_world to be accurate
+        bpy.context.scene.update() #needed for blender matrices to be accurate
 
-        loc_in_new_ref_frame = eater.bobject.ref_obj.matrix_local.inverted() * \
+        loc_in_new_ref_frame = eater.bobject.ref_obj.matrix_world.inverted() * \
+                               eater.bobject.ref_obj.parent.matrix_local.inverted() * \
                                     self.bobject.ref_obj.location
 
         #Need to correct scale because the child_of constraint doesn't use scale
+        #The intent is to not affect the scale of the object itself, but the
+        #scale of the eater should be used to determine the position. So that's
+        #here.
         for i in range(len(loc_in_new_ref_frame)):
             loc_in_new_ref_frame[i] *= eater.bobject.ref_obj.scale[i]
 
@@ -143,9 +143,9 @@ class Food(object):
             end_time = start_time + 1 / FRAME_RATE,
             new_location = loc_in_new_ref_frame
         )
-        #Move in front of creature
+        '''#Move in front of creature
         self.bobject.move_to(
-            start_time = start_time + 1 / FRAME_RATE,
+            start_time = start_time + 2 / FRAME_RATE,
             end_time = start_time + duration / 2,
             new_location = [
                 eater.bobject.ref_obj.scale[2],
@@ -163,7 +163,7 @@ class Food(object):
                 eater.bobject.ref_obj.scale[2] / 5
             ],
             new_scale = 0
-        )
+        )'''
 
         eater.eat_animation(start_time = start_time, time_step = time_step)
         eater.bobject.blob_scoop(start_time = start_time, duration = time_step * 50)
@@ -183,6 +183,25 @@ class Food(object):
         if parent == None:
             raise Warning('Need parent for child_of constraint')
         cons.target = parent
+
+    def add_to_blender(self):
+        self.bobject = import_object(
+            'goodicosphere', 'primitives',
+            #world_location = [0, 0, 0],
+            location = [0, 0, 0],
+            scale = FOOD_SCALE
+        )
+        apply_material(self.bobject.ref_obj.children[0], 'color7')
+
+        for parent in self.parents:
+            self.make_child_of_constraint(parent = parent.ref_obj)
+        if len(self.parents) > 0:
+            cons = self.bobject.ref_obj.constraints[0]
+            cons.influence = 1
+        """if has_world_as_parent == True:
+            cons.use_scale_x = True
+            cons.use_scale_y = True
+            cons.use_scale_z = True"""
 
 class Creature(Food):
     def __init__(
@@ -204,47 +223,31 @@ class Creature(Food):
         self.bobject = None
         self.world = world
 
-    def new_day(self, date = 0):
+    def new_day(self, date = 0, parent = None):
         new_day = CreatureDay(creature = self, date = date)
-        if len(self.days) == 0:
-            wall_roll = random()
-            if wall_roll < 0.25:
-                loc = [
-                    uniform(-self.world.dimensions[0], self.world.dimensions[0]),
-                    self.world.dimensions[1],
-                    CREATURE_HEIGHT * self.size
-                ]
-                heading_target = - math.pi / 2
-                heading = - math.pi / 2
-            if wall_roll < 0.5:
-                loc = [
-                    self.world.dimensions[0],
-                    uniform(-self.world.dimensions[1], self.world.dimensions[1]),
-                    CREATURE_HEIGHT * self.size
-                ]
-                heading_target = math.pi
-                heading = math.pi
-            if wall_roll < 0.75:
-                loc = [
-                    uniform(-self.world.dimensions[0], self.world.dimensions[0]),
-                    -self.world.dimensions[1],
-                    CREATURE_HEIGHT * self.size
-                ]
-                heading_target = math.pi / 2
-                heading = math.pi / 2
-            else:
-                loc = [
-                    -self.world.dimensions[0],
-                    uniform(-self.world.dimensions[1], self.world.dimensions[1]),
-                    CREATURE_HEIGHT * self.size
-                ]
-                heading_target = 0
-                heading = 0
+        if len(self.days) == 0: #First day of life, ahhhh.
+            if parent == None: #For initial creatures
 
-            new_day.locations.append(loc)
-            new_day.heading_targets.append(heading_target)
-            new_day.d_headings.append(0)
-            new_day.headings.append(heading)
+                loc, heading_target, heading = self.random_wall_placement()
+
+                new_day.locations.append(loc)
+                new_day.heading_targets.append(heading_target)
+                new_day.d_headings.append(0)
+                new_day.headings.append(heading)
+
+            elif parent != None:
+                #Perhaps not the most robust way to do it, but using days[-2]
+                #here because the parents make their new days before the
+                #children, since the children are added to the end of the
+                #creature list on their first day
+                new_day.locations.append(parent.days[-2].locations[-1])
+                new_day.heading_targets.append(
+                    parent.days[-2].heading_targets[-1] + math.pi
+                )
+                new_day.d_headings.append(0)
+                new_day.headings.append(
+                    parent.days[-2].headings[-1] + math.pi
+                )
         else:
             new_day.locations.append(
                 self.days[-1].locations[-1]
@@ -262,14 +265,67 @@ class Creature(Food):
 
         self.days.append(new_day)
 
+    def random_wall_placement(self):
+        wall_roll = random()
+        #print()
+        #print(wall_roll)
+        if wall_roll < 0.25:
+            #print('Top')
+            loc = [
+                uniform(-self.world.dimensions[0], self.world.dimensions[0]),
+                self.world.dimensions[1],
+                CREATURE_HEIGHT * self.size
+            ]
+            heading_target = - math.pi / 2
+            heading = - math.pi / 2
+        elif wall_roll < 0.5:
+            #print('Right')
+            loc = [
+                self.world.dimensions[0],
+                uniform(-self.world.dimensions[1], self.world.dimensions[1]),
+                CREATURE_HEIGHT * self.size
+            ]
+            heading_target = math.pi
+            heading = math.pi
+        elif wall_roll < 0.75:
+            #print('Bottom')
+            loc = [
+                uniform(-self.world.dimensions[0], self.world.dimensions[0]),
+                -self.world.dimensions[1],
+                CREATURE_HEIGHT * self.size
+            ]
+            heading_target = math.pi / 2
+            heading = math.pi / 2
+        else:
+            #print('Left')
+            loc = [
+                -self.world.dimensions[0],
+                uniform(-self.world.dimensions[1], self.world.dimensions[1]),
+                CREATURE_HEIGHT * self.size
+            ]
+            heading_target = 0
+            heading = 0
+
+        other_cres = [x for x in self.world.date_records[-1]['creatures'] if \
+                                                                len(x.days) > 0]
+        for cre in other_cres:
+            cre_loc = cre.days[-1].locations[-1]
+            dist = vec_len(add_lists_by_element(cre_loc, loc, subtract = True))
+            if dist < EAT_DISTANCE:
+                self.random_wall_placement()
+
+        return loc, heading_target, heading
+
+
     def take_step(self):
         day = self.days[-1]
         has_energy = True
         if day.energies[-1] == None:
             has_energy = False
         else:
-            distance_left = day.energies[-1] / (self.size + self.speed + self.sense)
-            if distance_left < 1:
+            steps_left = math.floor(day.energies[-1] / (self.size + self.speed + self.sense))
+            distance_left = steps_left * self.speed
+            if steps_left < 1:
                 has_energy = False
         if has_energy == False and day.death_time == None and day.home_time == None:
             day.death_time = len(day.locations)
@@ -284,24 +340,16 @@ class Creature(Food):
         else:
             day.has_eaten.append(copy(day.has_eaten[-1])) #Append new eaten state to fill with food and
 
-            """Update heading"""
-            #Sense food
-            closest_food = math.inf
-            target_food = None
-            food_objects = self.world.date_records[day.date]['food_objects']
-            creatures = self.world.date_records[day.date]['creatures']
-            uneaten = [x for x in food_objects if x.is_eaten == False] + \
-                      [x for x in creatures if x.is_eaten == False and x.size < self.size]
-
+            """Update heading based on state"""
             state = None
-            distance_out = max(
+            distance_out = min(
                 self.world.dimensions[0] - abs(day.locations[-1][0]),
                 self.world.dimensions[1] - abs(day.locations[-1][1]),
             )
             if len(day.has_eaten[-1]) == 0:
                 state = 'foraging'
             elif len(day.has_eaten[-1]) == 1:
-                if distance_left > distance_out:
+                if distance_left > distance_out * HOMEBOUND_RATIO:
                     state = 'foraging'
                 else:
                     state = 'homebound'
@@ -311,6 +359,15 @@ class Creature(Food):
                 raise Warning('Somehow, the creature has eaten negative food')
 
             if state == 'foraging':
+                #Sense food
+                closest_food = math.inf
+                target_food = None
+                food_objects = self.world.date_records[day.date]['food_objects']
+                creatures = self.world.date_records[day.date]['creatures']
+                uneaten = [x for x in food_objects if x.is_eaten == False] + \
+                          [x for x in creatures if x.is_eaten == False and \
+                           x.size * PREDATOR_SIZE_RATIO <= self.size and \
+                           x.days[-1].home_time == None] #You're safe when you're home
                 for food in uneaten:
                     dist = vec_len(add_lists_by_element(
                         food.world_location,
@@ -365,7 +422,7 @@ class Creature(Food):
 
                     day.heading_targets.append(day.heading_targets[-1] + rand + inward)
 
-            elif state == 'homebound': #Creature is full
+            elif state == 'homebound': #Creature is full or has eaten and is tired
                 if self.world.dimensions[0] - abs(day.locations[-1][0]) < \
                    self.world.dimensions[1] - abs(day.locations[-1][1]):
                     #Go in x-direction
@@ -408,8 +465,8 @@ class Creature(Food):
             elif day.d_headings[-1] / heading_discrepancy > 1:
                 day.d_headings[-1] = heading_discrepancy
 
-            #No turning if you're out of energy
-            if has_energy == False:
+            #No turning if you're out of energy or have gone home
+            if has_energy == False or day.home_time != None:
                 day.d_headings[-1] = 0
 
             day.headings.append(day.headings[-1] + day.d_headings[-1])
@@ -424,7 +481,7 @@ class Creature(Food):
                abs(day.locations[-1][1]) > self.world.dimensions[1]) and \
                dot_product(heading_vec, day.locations[-1]) > 0:
                effective_speed = 0
-               if day.home_time == None:
+               if day.home_time == None and len(day.has_eaten[-1]) > 0:
                    day.home_time = len(day.locations)
             #No moving if you're out of energy
             if has_energy == False:
@@ -500,20 +557,68 @@ class Creature(Food):
                 self.days[0].locations[0],
                 world.blender_units_per_world_unit
             ),
-            scale = self.size,
+            scale = self.size * BASE_CREATURE_SCALE,
             rotation_euler = [0, 0, self.days[0].headings[0]]
         )
         #Rotate creature so a ref_obj rotation_euler of [0, 0, 0] results in
         #an x-facing blob standing in the z direction
         cre_bobj.ref_obj.children[0].rotation_euler = [math.pi / 2, 0, math.pi / 2]
 
-        #TODO: Make color depend on speed
-        apply_material(cre_bobj.ref_obj.children[0].children[0], 'color3')
-
         #TODO: Make eye size depend on sense
+        eyes = []
+        for obj in cre_bobj.ref_obj.children[0].children:
+            if 'Eye' in obj.name:
+                eyes.append(obj)
+        for eye in eyes:
+            eye.scale = [
+                eye.scale[0] * self.sense,
+                eye.scale[1] * self.sense,
+                eye.scale[2] * self.sense,
+            ]
+
 
         self.bobject = cre_bobj
+        #apply_material_by_speed(cre_bobj.ref_obj.children[0].children[0], 'creature_color3')
+        self.apply_material_by_speed()
         cre_bobj.add_to_blender(appear_time = appear_time)
+
+    def apply_material_by_speed(self):
+        #2 -> Blue
+        #6 -> Green
+        #4 -> Yellow
+        #3 -> Orange
+        #5 -> Red
+        spd = self.speed
+        if spd < 1 - 2 * SPEED_PER_COLOR:
+            color = COLORS_SCALED[2]
+        elif spd < 1 - SPEED_PER_COLOR:
+            range_floor = 1 - 2 * SPEED_PER_COLOR
+            mix = (spd - range_floor) / SPEED_PER_COLOR
+            color = mix_colors(COLORS_SCALED[2], COLORS_SCALED[6], mix)
+        elif spd < 1:
+            range_floor = 1 - SPEED_PER_COLOR
+            mix = (spd - range_floor) / SPEED_PER_COLOR
+            color = mix_colors(COLORS_SCALED[6], COLORS_SCALED[4], mix)
+        elif spd < 1 + SPEED_PER_COLOR:
+            range_floor = 1
+            mix = (spd - range_floor) / SPEED_PER_COLOR
+            color = mix_colors(COLORS_SCALED[4], COLORS_SCALED[3], mix)
+        elif spd < 1 + 2 * SPEED_PER_COLOR:
+            range_floor = 1 + SPEED_PER_COLOR
+            mix = (spd - range_floor) / SPEED_PER_COLOR
+            color = mix_colors(COLORS_SCALED[3], COLORS_SCALED[5], mix)
+        else:
+            color = COLORS_SCALED[5]
+
+        obj = self.bobject.ref_obj.children[0].children[0]
+        apply_material(obj, 'creature_color1')
+        self.bobject.color_shift(
+            duration_time = None,
+            color = color,
+            start_time = 0,
+            shift_time = 0,
+            obj = obj
+        )
 
 class NaturalSim(object):
     """docstring for NaturalSim."""
@@ -531,16 +636,19 @@ class NaturalSim(object):
 
         self.initial_creatures = initial_creatures
         if self.initial_creatures == None:
-            self.initial_creatures = [
-                Creature(),
-                Creature(size = 0.5),
-                Creature(size = 1.5),
-                Creature(size = 0.25),
-                Creature(size = 2),
-            ]
+            self.initial_creatures = []
+            for i in range(-1, 1):
+                for j in range(-1, 1):
+                    for k in range(-1, 0):
+                        self.initial_creatures.append(
+                            Creature(
+                                size = 1 + SPEED_PER_COLOR * i,
+                                speed = 1 + SPEED_PER_COLOR * j,
+                                sense = 1 + SPEED_PER_COLOR * k,
+                            )
+                        )
         for creature in self.initial_creatures:
             creature.world = self
-
 
     def gen_food(self):
         food = []
@@ -555,10 +663,26 @@ class NaturalSim(object):
                     world = self
                 )
             )
-
         return food
 
-    def sim_next_day(self):
+    def get_newborn_creatures(self, parents = None):
+        if parents == None:
+            raise Warning('Must define parents and date for get_newborn_creatures')
+        babiiieeesss = []
+        for par in parents:
+            if len(par.days[-1].has_eaten[-1]) > 1:
+                baby = Creature(
+                    parent = par,
+                    world = par.world,
+                    speed = par.speed + randrange(-1, 2, 2) * MUTATION_VARIATION,
+                    size = par.size + randrange(-1, 2, 2) * MUTATION_VARIATION,
+                    sense = par.sense + randrange(-1, 2, 2) * MUTATION_VARIATION,
+                )
+                babiiieeesss.append(baby)
+
+        return babiiieeesss
+
+    def sim_next_day(self, save = False):
         """Initialize date record"""
         date = len(self.date_records)
 
@@ -566,7 +690,7 @@ class NaturalSim(object):
             creatures = self.initial_creatures
         else:
             creatures = [x for x in self.date_records[-1]['creatures'] if x.days[-1].dead == False]
-            #TODO: add new creatures from reproduction
+            creatures += self.get_newborn_creatures(parents = creatures)
 
         #Set day length based on how long the longest creature can go
         day_length = 0
@@ -574,7 +698,6 @@ class NaturalSim(object):
             stamina = STARTING_ENERGY / (cre.size + cre.speed + cre.sense)
             if stamina > day_length:
                 day_length = math.ceil(stamina)
-        #day_length += 10 #Padding
 
         date_dict = {
             'date' : date,
@@ -582,18 +705,22 @@ class NaturalSim(object):
             'creatures' : creatures,
             'day_length' : day_length, #number of steps in day to show all creatures
             'anim_durations' : {
-                'dawn' : 1, #Put out food
-                'morning' : 1, #pause after setup
+                'dawn' : 1, #Put out food and creatures
+                'morning' : 0.5, #pause after setup
                 'day' : DEFAULT_DAY_ANIM_DURATION, #creatures go at it
-                'evening' : 1, #pause before reset
+                'evening' : 0.5, #pause before reset
                 'night' : 1 #reset
             }
         }
         self.date_records.append(date_dict)
+        """print()
+        for food in date_dict['food_objects']:
+            print(food.world_location)
+        print()"""
 
         """Conduct sim"""
         for cre in creatures:
-            cre.new_day(date = date)
+            cre.new_day(date = date, parent = cre.parent)
 
         for t in range(date_dict['day_length']):
             for cre in creatures:
@@ -613,49 +740,83 @@ class NaturalSim(object):
             if day.dead == False:
                 #Not enough food
                 if len(day.has_eaten[-1]) == 0:
-                   print(str(cre) + " didn't eat enough")
+                   #print(str(cre) + " didn't eat enough")
                    day.dead = True
 
                 #Didn't make it home
                 if (abs(day.locations[-1][0]) < self.dimensions[0] and \
                    abs(day.locations[-1][1]) < self.dimensions[1]):
-                   print(str(cre) + " didn't make it home")
+                   #print(str(cre) + " didn't make it home")
                    day.dead = True
 
             #Shorten for animation
             if day.death_time != None and day.death_time > latest_action:
                 latest_action = day.death_time
-                print('New day length: ' + str(latest_action))
+                #print('New day length: ' + str(latest_action))
             if day.home_time != None and day.home_time > latest_action:
                 latest_action = day.home_time
-                print('New day length: ' + str(latest_action))
-            print(date_dict['date'], latest_action)
+                #print('New day length: ' + str(latest_action))
+            #print(date_dict['date'], latest_action)
             date_dict['day_length'] = latest_action
 
         for cre in self.date_records[-1]['creatures']:
             for day in cre.days:
                 if day.date == date:
-                    print('Date: ' + str(date))
-                    print('Dead time: ' + str(day.death_time))
-                    print('Home time: ' + str(day.home_time))
+                    pass
+                    #print('Date: ' + str(date))
+                    #print('Dead time: ' + str(day.death_time))
+                    #print('Home time: ' + str(day.home_time))
                     """print('Locations: ')
                     for loc in day.locations:
                         print(loc)"""
-                    print()
+                    #print()
+
+        print("Sim finished for day " + str(date))
+
+        if save == True:
+            self.save_sim_result()
+
+    def save_sim_result(self):
+        now = datetime.datetime.now()
+        name = "NAT" + now.strftime('%Y%m%dT%H%M%S')
+        #name = 'test'
+        result = os.path.join(
+            SIM_DIR,
+            name
+        ) + ".pkl"
+        if not os.path.exists(result):
+            print("Writing simulation to %s" % (result))
+            with open(result, "wb") as outfile:
+                pickle.dump(self, outfile, pickle.HIGHEST_PROTOCOL)
+        else:
+            raise Warning(str(result) + " already exists")
 
 class DrawnNaturalSim(Bobject):
     def __init__(
         self,
         *subbobjects,
         sim = None,
+        save = False,
         blender_units_per_world_unit = BLENDER_UNITS_PER_WORLD_UNIT,
         day_length_style = 'fixed_speed', #Can also be 'fixed_length'
         **kwargs
     ):
         super().__init__(*subbobjects, **kwargs)
-        self.sim = sim
         self.day_length_style = day_length_style
-        if self.sim == None:
+
+        if isinstance(sim, NaturalSim):
+            self.sim = sim
+        elif isinstance(sim, str):
+            result = os.path.join(
+                SIM_DIR,
+                sim
+            ) + ".pkl"
+            print(result)
+            with open(result, 'rb') as input:
+                print(input)
+                self.sim = pickle.load(input)
+            print("Loaded the world")
+        elif sim == None:
             sim_kwargs = {}
             for param in ['food_count', 'dimensions', 'day_length']:
                 if param in kwargs:
@@ -663,11 +824,16 @@ class DrawnNaturalSim(Bobject):
             self.sim = NaturalSim(**sim_kwargs)
 
         self.blender_units_per_world_unit = blender_units_per_world_unit
+        #As written, changing this will change some proportions, since some
+        #other constants depend on the default value
 
     def animate_days(self):
         for i, date_record in enumerate(self.sim.date_records):
+            print("Animating day " + str(i))
             """Place food"""
+            print(" Placing food")
             for j, food in enumerate(date_record['food_objects']):
+                food.add_to_blender()
                 food.bobject.ref_obj.location = scalar_mult_vec(
                     food.world_location,
                     self.blender_units_per_world_unit
@@ -679,7 +845,7 @@ class DrawnNaturalSim(Bobject):
                 )
 
             """Place new creatures"""
-
+            print(" Placing creatures")
             if date_record['date'] == 0:
                 for cre in date_record['creatures']:
                     cre.add_to_blender(
@@ -700,6 +866,7 @@ class DrawnNaturalSim(Bobject):
                                             date_record['anim_durations']['morning']
 
             """Step through time for current day"""
+            print(" Animating movements")
             #print(date_record['day_length'])
             if self.day_length_style == 'fixed_speed':
                 time_step = 1 / DEFAULT_DAY_LENGTH * DEFAULT_DAY_ANIM_DURATION
@@ -739,14 +906,20 @@ class DrawnNaturalSim(Bobject):
                                     time_step = time_step
                                 )
 
+            ''' Older version that didn't update date record if speed is fixed
             if self.day_length_style == 'fixed_length':
                 self.elapsed_time += date_record['anim_durations']['day']
             elif self.day_length_style == 'fixed_speed':
-                self.elapsed_time += date_record['day_length'] * time_step
+                self.elapsed_time += date_record['day_length'] * time_step'''
+            if self.day_length_style == 'fixed_speed':
+                date_record['anim_durations']['day'] = date_record['day_length'] * time_step
+            self.elapsed_time += date_record['anim_durations']['day']
+
             self.elapsed_time += date_record['anim_durations']['evening']
 
             """Creatures that die should disappear."""
             """Along with food"""
+            print(" Cleaning up")
             for cre in date_record['creatures']:
                 day = None
                 for candidate_day in cre.days:
@@ -765,9 +938,6 @@ class DrawnNaturalSim(Bobject):
                 )
 
             self.elapsed_time += date_record['anim_durations']['night']
-
-
-
 
     def add_to_blender(
         self,
@@ -795,4 +965,7 @@ class DrawnNaturalSim(Bobject):
         self.add_subbobject(plane)
 
         super().add_to_blender(**kwargs)
-        self.animate_days()
+        execute_and_time(
+            'Animated day',
+            self.animate_days(),
+        )
