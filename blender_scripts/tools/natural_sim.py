@@ -126,9 +126,21 @@ class Food(object):
 
         bpy.context.scene.update() #needed for blender matrices to be accurate
 
-        loc_in_new_ref_frame = eater.bobject.ref_obj.matrix_world.inverted() * \
-                               eater.bobject.ref_obj.parent.matrix_local.inverted() * \
-                                    self.bobject.ref_obj.location
+        #There is almost certainly a more elegant way to do this, but there are
+        #several transformation matrices which don't seem to relaiably update,
+        #and there's an extra complication because the 'parent' in the childof
+        #constraint has the same parent as the food object, making the real parent
+        #affect the transform twice.
+        #I gave up and did a more manual calculation of the location, which is
+        #fine for spheres. (rotation doesn't matter)
+        rel = (self.bobject.ref_obj.location - eater.bobject.ref_obj.location)
+        ang = eater.bobject.ref_obj.rotation_euler[2]
+        sca = eater.bobject.ref_obj.scale
+        loc_in_new_ref_frame = [
+            (rel[0] * math.cos(-ang) - rel[1] * math.sin(-ang)) / sca[0],
+            (rel[0] * math.sin(-ang) + rel[1] * math.cos(-ang)) / sca[1],
+            (rel[2]) / sca[2]
+        ]
 
         #Need to correct scale because the child_of constraint doesn't use scale
         #The intent is to not affect the scale of the object itself, but the
@@ -137,19 +149,25 @@ class Food(object):
         for i in range(len(loc_in_new_ref_frame)):
             loc_in_new_ref_frame[i] *= eater.bobject.ref_obj.scale[i]
 
+        corrected_loc = [
+            loc_in_new_ref_frame[0] - eater.bobject.ref_obj.parent.location[0] / eater.bobject.ref_obj.parent.scale[0],
+            loc_in_new_ref_frame[1] - eater.bobject.ref_obj.parent.location[1] / eater.bobject.ref_obj.parent.scale[1],
+            loc_in_new_ref_frame[2] - eater.bobject.ref_obj.parent.location[2] / eater.bobject.ref_obj.parent.scale[2],
+        ]
+
         #Change location to be the same in new reference frame
         self.bobject.move_to(
             start_time = start_time,
             end_time = start_time + 1 / FRAME_RATE,
-            new_location = loc_in_new_ref_frame
+            new_location = corrected_loc
         )
-        '''#Move in front of creature
+        #Move in front of creature
         self.bobject.move_to(
             start_time = start_time + 2 / FRAME_RATE,
             end_time = start_time + duration / 2,
             new_location = [
-                eater.bobject.ref_obj.scale[2],
-                0,
+                - eater.bobject.ref_obj.parent.location[0] / eater.bobject.ref_obj.parent.scale[0] + eater.bobject.ref_obj.scale[2],
+                - eater.bobject.ref_obj.parent.location[1] / eater.bobject.ref_obj.parent.scale[1],
                 eater.bobject.ref_obj.scale[2] / 5
             ]
         )
@@ -158,12 +176,12 @@ class Food(object):
             start_time = start_time + duration / 2,
             end_time = end_time,
             new_location = [
-                0,
-                0,
+                - eater.bobject.ref_obj.parent.location[0] / eater.bobject.ref_obj.parent.scale[0],
+                - eater.bobject.ref_obj.parent.location[1] / eater.bobject.ref_obj.parent.scale[1],
                 eater.bobject.ref_obj.scale[2] / 5
             ],
             new_scale = 0
-        )'''
+        )
 
         eater.eat_animation(start_time = start_time, time_step = time_step)
         eater.bobject.blob_scoop(start_time = start_time, duration = time_step * 50)
@@ -637,9 +655,9 @@ class NaturalSim(object):
         self.initial_creatures = initial_creatures
         if self.initial_creatures == None:
             self.initial_creatures = []
-            for i in range(-1, 1):
-                for j in range(-1, 1):
-                    for k in range(-1, 0):
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    for k in range(-1, 2):
                         self.initial_creatures.append(
                             Creature(
                                 size = 1 + SPEED_PER_COLOR * i,

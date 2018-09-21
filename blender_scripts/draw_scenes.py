@@ -62,6 +62,10 @@ import fecal_transplant
 imp.reload(fecal_transplant)
 from fecal_transplant import *
 
+import bppv
+imp.reload(bppv)
+from bppv import *
+
 import population
 imp.reload(population)
 from population import *
@@ -76,14 +80,14 @@ from tex_complex import TexComplex
 
 from helpers import *
 
-def initialize_blender(total_duration = DEFAULT_SCENE_DURATION):
+def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = True):
     #clear objects and materials
     #Reading the homefile would likely by faster, but it
     #sets the context to None, which breaks a bunch of
     #other stuff down the line. I don't know how to make the context not None.
     #bpy.ops.wm.read_homefile()
-
-    clear.clear_blender()
+    if clear_blender == True:
+        clear.clear_blender()
 
     scn = bpy.context.scene
     scn.render.engine = 'CYCLES'
@@ -414,15 +418,15 @@ def gesture_test():
     bracket.morph_figure(1, start_frame = 50)
     bracket.morph_figure(2, start_frame = 100)
 
-def draw_scenes_from_file(script_file):
+def draw_scenes_from_file(script_file, clear = True):
     #This function is meant to process many scenes at once.
     #Most scenes end up being large enough where it doesn't make sense to have
     #more than one in blender at once, so this is obsolete and will
     #break if you try to process more than one scene at a time.
     scenes = get_scene_object_list(script_file)
-    #print(scenes)
+    print(scenes)
     duration = get_total_duration(scenes)
-    initialize_blender(total_duration = duration)
+    initialize_blender(total_duration = duration, clear_blender = clear)
 
     frame = 0
     for scene in scenes:
@@ -514,16 +518,16 @@ def nat_sim_test():
 
     sim = natural_sim.DrawnNaturalSim(
         scale = 1.5,
-        food_count = 10,
+        food_count = 35,
         #sim = 'NAT20180908T142822'
         location = [-6.5, 0, 0]
     )
 
-    sim_length = 10
+    sim_length = 20
     for i in range(sim_length):
         save = False
         if i == sim_length - 1:
-            save = False
+            save = True
         sim.sim.sim_next_day(save = save)
 
     sim.add_to_blender(
@@ -602,17 +606,18 @@ def nat_sim_test():
                 records[date]['anim_durations']['evening'] + \
                 records[date]['anim_durations']['night']
 
-
-
 def main():
     """Use this as a test scene"""
     #tex_test()
     """"""
 
-    nat_sim_test()
+    #nat_sim_test()
     #graph_test()
 
     #draw_scenes_from_file(natural_sim)
+    #bpy.ops.wm.revert_mainfile()
+    #bpy.ops.wm.open_mainfile(filepath="C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\files\\blend\\UCSF\\inner_ear_rigid_body.blend")
+    draw_scenes_from_file(bppv, clear = True)
 
     print_time_report()
     finish_noise()

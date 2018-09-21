@@ -6,12 +6,12 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'final'
+RENDER_QUALITY = 'medium'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
     RESOLUTION_PERCENTAGE = 100
-    LIGHT_SAMPLING_THRESHOLD = 0.0
+    LIGHT_SAMPLING_THRESHOLD = 0.01
     SAMPLE_COUNT = 64
     RENDER_QUALITY = 'high'
     RENDER_TILE_SIZE = 256
@@ -78,6 +78,7 @@ elif color_scheme == 2:
         [105, 143, 63, 1],
         [145, 146.5, 147, 1] #Grat from averaging 1 and 2
     ]
+
 elif color_scheme == 3:
     #Coolors Exported Palette - coolors.co/191308-bbd8b3-f3b61f-48a0c9-72120d
     COLORS = [
@@ -87,6 +88,18 @@ elif color_scheme == 3:
         [255, 51, 102, 1],
         [234, 196, 53, 1],
         [215, 38, 61, 1]
+    ]
+
+elif color_scheme == 4: #UCSF
+    #https://identity.ucsf.edu/print-digital/digital-colors
+    COLORS = [
+        [5, 32, 73, 1], #Dark blue
+        [255, 255, 255, 1], #White
+        [113, 111, 178, 1], #Light purple
+        [255, 221, 0, 1], #Yellow
+        [0, 0, 0, 1], #Black
+        [209, 211, 211, 1] #Light gray
+        [180, 185, 191, 1] #Dark gray
     ]
 
 COLORS_SCALED = []
