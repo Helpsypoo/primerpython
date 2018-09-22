@@ -14,32 +14,63 @@ from constants import *
 #imp.reload(scene)
 from scene import Scene
 import bobject
+import svg_bobject
+import tex_bobject
 
 #bpy.ops.wm.open_mainfile(filepath="C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\files\\blend\\UCSF\\inner_ear_rigid_body")
 
 def fade(
     object = None,
     start_time = 0,
-    duration_time = 1
+    duration_time = 1,
+    fade_out = True
 ):
     start_frame = start_time * FRAME_RATE
     end_frame = start_frame + duration_time * FRAME_RATE
     if object == None:
         raise Warning('Need object to fade')
 
+    print(object.name)
+
     for slot in object.material_slots:
         mat = slot.material
         mat_copy = mat.copy()
         slot.material = mat = mat_copy
         #print(mat)
-        mix = mat.node_tree.nodes['Mix Shader'] #Assumes there is only one
+        tree = mat.node_tree
 
+        try: #Grab mix shader. This assumes it's
+            mix = tree.nodes['Mix Shader'] #Assumes there is only one
+        except:
+            mat_out = tree.nodes['Material Output'].inputs[0]
+            for link in tree.links:
+                if link.to_socket == mat_out:
+                    old_link = link
+                    old_out = link.from_socket
+                    break
+            tree.links.remove(old_link)
+
+            mix = tree.nodes.new(type = 'ShaderNodeMixShader')
+            trans = tree.nodes.new(type = 'ShaderNodeBsdfTransparent')
+            tree.links.new(old_out, mix.inputs[1])
+            tree.links.new(trans.outputs[0], mix.inputs[2])
+            tree.links.new(mix.outputs[0], mat_out)
+
+        #Kind of non-intuitive to people used to 'alpha', but transparency 1 is
+        #completely clear, while transparency 0 is opaque. I did it this way
+        #because some materials I got from UCSF were set up this way.
         transparency = mix.inputs[0]
-        transparency.keyframe_insert(data_path = 'default_value', frame = start_frame)
-        transparency.default_value = 1
-        if RENDER_QUALITY == 'high':
-            transparency.default_value = 0.99 #Actually show ghosts of objects
-        transparency.keyframe_insert(data_path = 'default_value', frame = end_frame)
+        if fade_out == True:
+            transparency.keyframe_insert(data_path = 'default_value', frame = start_frame)
+            transparency.default_value = 1
+            if RENDER_QUALITY == 'high':
+                transparency.default_value = 0.99 #Actually show ghosts of objects
+            transparency.keyframe_insert(data_path = 'default_value', frame = end_frame)
+        else:
+            transparency.default_value = 1
+            transparency.keyframe_insert(data_path = 'default_value', frame = start_frame)
+            transparency.default_value = 0
+            transparency.keyframe_insert(data_path = 'default_value', frame = end_frame)
 
 def highlight_object(
     object = None,
@@ -117,12 +148,68 @@ class TextScene(Scene):
         #bpy.ops.wm.revert_mainfile()
 
         #These don't really need to be object methods ¯\_(ツ)_/¯
-        #self.zoom()
+        self.intro_card()
         #self.fade_contextual_objects()
         #self.highlight_sections()
         #self.otoconia_wiggle()
         #self.dislodged_otoconia()
         pass
+
+    def intro_card(self):
+        logo = svg_bobject.SVGBobject(
+            "UCSF_logo_signature",
+            #location = (-5, 3.75, 0), #Centered position
+            #scale = 0.26, #Centered scale
+            location = [-13.4, -3.47, 0],
+            scale = 0.128,
+            color = 'color2'
+        )
+        baf = svg_bobject.SVGBobject(
+            'BaFC_Arial',
+            location = [-4.83, -4.61, 0],
+            scale = 1.85,
+            color = 'color2'
+        )
+        intro = svg_bobject.SVGBobject(
+            'IntroToBPPV_Garamond',
+            location = [-12, 3.37, 0],
+            scale = 3.14,
+            color = 'color2'
+        )
+        vert = tex_bobject.TexBobject(
+            '|',
+            location = [-6.35, -4.74, 0],
+            scale = [2, 5.32, 4],
+            centered = True,
+            color = 'color2',
+        )
+
+        logo.add_to_blender(appear_time = -1, animate = False)
+        baf.add_to_blender(appear_time = -1, animate = False)
+        intro.add_to_blender(appear_time = -1, animate = False)
+        vert.add_to_blender(appear_time = -1, animate = False)
+
+        for bobj in [logo, baf, intro, vert]:
+            print(bobj)
+            print(bobj.ref_obj.name)
+            print(len(bobj.ref_obj.children))
+            for handle in bobj.ref_obj.children:
+                print(handle.name)
+                print(handle.children[0].name)
+                #For some reason, some handles have extra children
+                try:
+                    fade(
+                        object = handle.children[0],
+                        start_time = 0,
+                        duration_time = 1,
+                        fade_out = False
+                    )
+                except:
+                    pass
+
+
+
+
 
 """
 class AnatomyScene(Scene):

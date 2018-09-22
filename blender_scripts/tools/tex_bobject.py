@@ -225,7 +225,8 @@ def tex_title(expression, template_tex_file):
         '?' : 'questionmark',
         '.' : 'point',
         ':' : 'colon',
-        '%' : 'percent'
+        '%' : 'percent',
+        '|' : 'vbar'
     }
     for char in name:
         if char in to_delete:

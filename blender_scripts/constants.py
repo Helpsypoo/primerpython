@@ -47,7 +47,7 @@ else:
 '''
 Colorssssss
 '''
-color_scheme = 2
+color_scheme = 4
 if color_scheme == 1:
     #Coolors Exported Palette - https://coolors.co/393e41-f3f2f0-3e7ea0-ff9400-e7e247
     COLORS = [
@@ -62,7 +62,7 @@ if color_scheme == 1:
         [215, 38, 61, 1]
         #[255, 0, 0, 1]
     ]
-elif color_scheme == 2:
+elif color_scheme == 2: #Main. Why isn't #1 main? Because your face.
     COLORS = [
         #[42, 46, 48, 1], #Three darker than first video
         [47, 51, 54, 1], #Two darker than first video
@@ -93,12 +93,12 @@ elif color_scheme == 3:
 elif color_scheme == 4: #UCSF
     #https://identity.ucsf.edu/print-digital/digital-colors
     COLORS = [
-        [5, 32, 73, 1], #Dark blue
         [255, 255, 255, 1], #White
+        [5, 32, 73, 1], #Dark blue
         [113, 111, 178, 1], #Light purple
         [255, 221, 0, 1], #Yellow
         [0, 0, 0, 1], #Black
-        [209, 211, 211, 1] #Light gray
+        [209, 211, 211, 1], #Light gray
         [180, 185, 191, 1] #Dark gray
     ]
 
