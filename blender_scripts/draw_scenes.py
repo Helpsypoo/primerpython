@@ -617,7 +617,7 @@ def main():
     #draw_scenes_from_file(natural_sim)
     #bpy.ops.wm.revert_mainfile()
     #bpy.ops.wm.open_mainfile(filepath="C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\files\\blend\\UCSF\\inner_ear_rigid_body.blend")
-    draw_scenes_from_file(bppv, clear = True)
+    draw_scenes_from_file(bppv, clear = False)
 
     print_time_report()
     finish_noise()

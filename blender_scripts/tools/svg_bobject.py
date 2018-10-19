@@ -28,6 +28,11 @@ class SVGBobject(Bobject):
         else:
             self.vert_align_centers = False
 
+        if 'centered' in kwargs:
+            self.centered = kwargs['centered']
+        else:
+            self.centered = False
+
         if 'color' in kwargs:
             self.default_color = kwargs['color']
         else:
@@ -45,7 +50,7 @@ class SVGBobject(Bobject):
 
         self.get_file_paths(filenames)
         self.import_svg_data()
-        self.align()
+        self.align_figures()
         if self.transition_type == 'morph':
             print("Making morph chains")
             self.make_morph_chains()
@@ -74,7 +79,9 @@ class SVGBobject(Bobject):
 
         print("SVG Bobject initialized")
 
-        self.copyable_null = None
+        self.copyable_null = None #I think this might be unnecessary
+
+        self.active_path = self.paths[0]
 
     def add_to_blender(self, **kwargs):
         if 'appear_mode' in kwargs:
@@ -292,10 +299,6 @@ class SVGBobject(Bobject):
 
         #print(self.imported_svg_data)
         bpy.context.scene.update()
-
-    def align(self):
-        pass
-        #Implemented by subclass
 
     def get_file_paths(self, filenames):
         self.paths = []
@@ -706,6 +709,8 @@ class SVGBobject(Bobject):
 
         print('Morphing ' + str(self.ref_obj.name) + ' to shape ' + str(final_index + 1) + \
                 ' of ' + str(len(self.paths)))
+
+        self.active_path = self.paths[final_index]
         #duration = 60
         end_frame = start_frame + duration
         morph_pairs = []
@@ -872,6 +877,105 @@ class SVGBobject(Bobject):
             #add_points_to_curve_splines(char, CONTROL_POINTS_PER_SPLINE)
         self.add_morph_shape_keys(initial, final)
 
+    def calc_lengths(self):
+        for expr in self.imported_svg_data:
+            curves = self.get_figure_curves(expr)
+            right_most_x = -math.inf
+            for char in curves:
+                #char is a bobject, so reassign to the contained curve
+                char = char.objects[0]
+                for spline in char.data.splines:
+                    for point in spline.bezier_points:
+                        candidate = char.matrix_local.translation[0] + \
+                            char.parent.matrix_local.translation[0] + \
+                            point.co[0] * char.scale[0]
+                        if right_most_x < candidate:
+                            right_most_x = candidate
+
+            left_most_x = math.inf
+            for char in curves:
+                char = char.objects[0]
+                for spline in char.data.splines:
+                    for point in spline.bezier_points:
+                        candidate = char.matrix_local.translation[0] + \
+                            char.parent.matrix_local.translation[0] + \
+                            point.co[0] * char.scale[0]
+                        if left_most_x > candidate:
+                            left_most_x = candidate
+
+            length = right_most_x - left_most_x
+            center = left_most_x + length / 2
+
+            self.imported_svg_data[expr]['length'] = length * self.scale[0]
+            #Tbh, I don't remember why only the length is scaled
+            self.imported_svg_data[expr]['centerx'] = center
+            self.imported_svg_data[expr]['beginning'] = left_most_x #Untested
+            self.imported_svg_data[expr]['end'] = right_most_x
+
+            #Vertical stuff
+            top_most_y = -math.inf
+            for char in curves:
+                #char is a bobject, so reassign to the contained curve
+                char = char.objects[0]
+                for spline in char.data.splines:
+                    for point in spline.bezier_points:
+                        candidate = char.matrix_local.translation[0] + \
+                            char.parent.matrix_local.translation[0] + \
+                            point.co[0] * char.scale[0]
+                        if top_most_y < candidate:
+                            top_most_y = candidate
+
+            bottom_most_y = math.inf
+            for char in curves:
+                char = char.objects[0]
+                for spline in char.data.splines:
+                    for point in spline.bezier_points:
+                        candidate = char.matrix_local.translation[0] + \
+                            char.parent.matrix_local.translation[0] + \
+                            point.co[0] * char.scale[0]
+                        if bottom_most_y > candidate:
+                            bottom_most_y = candidate
+
+            height = top_most_y - bottom_most_y
+            center = bottom_most_y + height / 2
+
+            self.imported_svg_data[expr]['top'] = top_most_y
+            self.imported_svg_data[expr]['bottom'] = bottom_most_y
+            self.imported_svg_data[expr]['height'] = height * self.scale[1]
+
+    def get_figure_curves(self, fig):
+        #Really just here to be overridden by tex_bobject
+        return self.imported_svg_data[fig]['curves']
+
+    def align_figures(self):
+        self.calc_lengths()
+        for fig in self.imported_svg_data:
+            self.align_figure(fig)
+
+    def align_figure(self, fig):
+        data = self.imported_svg_data
+        curve_list = data[fig]['curves']
+        offset = list(curve_list[0].ref_obj.location)
+
+        if self.centered == True:
+            cen = data[fig]['centerx']
+            offset[0] = cen
+        elif self.centered == 'right':
+            offset[0] = data[fig]['end']
+        else:
+            offset[0] = data[fig]['beginning']
+
+        for i in range(len(curve_list)):
+            #For some reason, just subtracting the vector-valued locations
+            #doesn't work here. I'm baffled. Anyway, it works to convert to
+            #lists and subtract by element.
+            loc = list(curve_list[i].ref_obj.location)
+            new_loc = add_lists_by_element(loc, offset, subtract = True)
+            curve_list[i].ref_obj.location = new_loc
+            curve_list[i].ref_obj.parent = self.ref_obj
+
+        return curve_list #Used in subclass
+
 class SVGFromBlend(SVGBobject):
     def __init__(self, *filenames, **kwargs):
         super().__init__(*filenames, **kwargs)
@@ -956,7 +1060,6 @@ class SVGFromBlend(SVGBobject):
         #new_curve_bobj.add_to_blender(appear_frame = 0)
 
         return new_curve_bobj
-
 
 def reindex_to_top_point(spline):
     #Make it so the highest control point is at index 0

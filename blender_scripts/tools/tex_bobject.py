@@ -38,7 +38,7 @@ class TexBobject(SVGBobject):
 
         #paths = get_svg_file_paths(expressions)
         super().__init__(*expressions, **kwargs)
-        self.active_expression_path = self.paths[0]
+        #self.active_expression_path = self.paths[0]
         self.annotations = []
         #self.align()
 
@@ -48,72 +48,19 @@ class TexBobject(SVGBobject):
         #self.size = self.get_from_kwargs('size', 1)
         #Text size in blender units used when adding svgs
 
-    def align(self):
-        self.calc_lengths()
-        data = self.imported_svg_data
-        for j, expr in enumerate(data):
-            curve_list = data[expr]['curves']
-            offset = list(curve_list[0].ref_obj.location)
+    def get_figure_curves(self, fig):
+        if fig == None:
+            return self.imported_svg_data[fig]['curves']
+        else:
+            return self.imported_svg_data[fig]['curves'][1:]
 
-            if self.centered == True:
-                cen = data[expr]['center']
-                offset[0] = cen
-            elif self.centered == 'right':
-                offset[0] = data[expr]['end']
-
-            for i in range(len(curve_list)):
-                #For some reason, just subtracting the vector-valued locations
-                #doesn't work here. I'm baffled. Anyway, it works to convert to
-                #lists and subtract by element.
-                loc = list(curve_list[i].ref_obj.location)
-                new_loc = add_lists_by_element(loc, offset, subtract = True)
-                curve_list[i].ref_obj.location = new_loc
-                curve_list[i].ref_obj.parent = self.ref_obj
-
-            if expr == None:
-                self.imported_svg_data[expr]['curves'] = curve_list
-            else:
-                self.imported_svg_data[expr]['curves'] = curve_list[1:]
-
-        #bpy.context.scene.update()
-
-    def calc_lengths(self):
-        for expr in self.imported_svg_data:
-            right_most_x = -math.inf
-            #ref_H = expr['curves'][0]
-            if expr == None:
-                curves = self.imported_svg_data[expr]['curves']
-            else:
-                curves = self.imported_svg_data[expr]['curves'][1:]
-            for char in curves:
-                #char is a bobject, so reassign to the contained curve
-                char = char.objects[0]
-                for spline in char.data.splines:
-                    for point in spline.bezier_points:
-                        candidate = char.matrix_local.translation[0] + \
-                            char.parent.matrix_local.translation[0] + \
-                            point.co[0] * char.scale[0]
-                        if right_most_x < candidate:
-                            right_most_x = candidate
-
-            left_most_x = math.inf
-            for char in curves:
-                char = char.objects[0]
-                for spline in char.data.splines:
-                    for point in spline.bezier_points:
-                        candidate = char.matrix_local.translation[0] + \
-                            char.parent.matrix_local.translation[0] + \
-                            point.co[0] * char.scale[0]
-                        if left_most_x > candidate:
-                            left_most_x = candidate
-
-            length = right_most_x - left_most_x
-            center = left_most_x + length / 2
-            end = left_most_x + length
-
-            self.imported_svg_data[expr]['length'] = length * self.scale[0]
-            self.imported_svg_data[expr]['center'] = center
-            self.imported_svg_data[expr]['end'] = end
+    def align_figure(self, fig):
+        curve_list = super().align_figure(fig)
+        #Get rid of reference H after alignment is done
+        if fig == None:
+            self.imported_svg_data[fig]['curves'] = curve_list
+        else:
+            self.imported_svg_data[fig]['curves'] = curve_list[1:]
 
     def morph_figure(
         self,
@@ -131,8 +78,8 @@ class TexBobject(SVGBobject):
             start_frame = int(start_time * FRAME_RATE)
 
         if final_index == 'next':
-            final_index = self.paths.index(self.active_expression_path) + 1
-        self.active_expression_path = self.paths[final_index]
+            final_index = self.paths.index(self.active_path) + 1
+        #self.active_expression_path = self.paths[final_index]
 
         super().morph_figure(
             final_index,
@@ -153,6 +100,7 @@ class TexBobject(SVGBobject):
                 start_frame = start_frame,
                 end_frame = start_frame + duration
             )
+
         for i, annotation in enumerate(self.annotations):
             gesture = annotation[0].subbobjects[0]
             label = gesture.subbobjects[0].subbobjects[0]

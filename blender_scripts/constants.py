@@ -6,7 +6,7 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'medium'
+RENDER_QUALITY = 'final'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
@@ -93,13 +93,15 @@ elif color_scheme == 3:
 elif color_scheme == 4: #UCSF
     #https://identity.ucsf.edu/print-digital/digital-colors
     COLORS = [
+        [47, 51, 54, 1], #Two darker than first video
+        [80, 99, 128, 1], #Light Navy
         [255, 255, 255, 1], #White
         [5, 32, 73, 1], #Dark blue
-        [113, 111, 178, 1], #Light purple
         [255, 221, 0, 1], #Yellow
         [0, 0, 0, 1], #Black
+        [113, 111, 178, 1], #Light purple
+        [180, 185, 191, 1], #Dark gray
         [209, 211, 211, 1], #Light gray
-        [180, 185, 191, 1] #Dark gray
     ]
 
 COLORS_SCALED = []
@@ -174,7 +176,7 @@ CAMERA_ANGLE = (0, 0, 0)
 '''
 Text constants
 '''
-SPACE_BETWEEN_EXPRESSIONS = 0.45
+SPACE_BETWEEN_EXPRESSIONS = 0.1 #For text svgs  #0.45 For actual tex_bobjects
 TEX_LOCAL_SCALE_UP = 260 #Value that makes line height about 1 Blender Unit
 
 '''

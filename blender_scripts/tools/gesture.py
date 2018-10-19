@@ -40,6 +40,9 @@ class Gesture(SVGFromBlend):
         self.curve = self.ref_obj
         #print(self.ref_obj.name)
 
+    def align_figures(self):
+        pass #Avoid using the method from svg_bobject
+
     def process_points(self, gesture):
         if gesture['type'] == 'bracket':
             #Vectors and lengths from points

@@ -304,7 +304,8 @@ class Bobject(object):
         start_time = None,
         end_time = None,
         start_frame = None,
-        end_frame = None
+        end_frame = None,
+        constant_rate = True
     ):
         if start_time != None:
             if start_frame != None:
@@ -332,6 +333,15 @@ class Bobject(object):
             data_path="rotation_euler",
             frame = end_frame
         )
+
+        if constant_rate == True:
+            for fc in self.ref_obj.animation_data.action.fcurves:
+                if fc.data_path == 'rotation_euler':
+                    fc.extrapolation = 'LINEAR' # Set extrapolation type
+                    # Iterate over this fcurve's keyframes and set handles to vector
+                    for kp in fc.keyframe_points:
+                        kp.handle_left_type  = 'VECTOR'
+                        kp.handle_right_type = 'VECTOR'
 
     def pulse(
         self,

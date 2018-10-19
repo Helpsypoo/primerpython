@@ -33,12 +33,14 @@ class TexComplex(Bobject):
         *subbobjects,
         centered = False,
         multiline = False,
+        align_y = 'top',
         line_height = 1.2,
         **kwargs
     ):
         super().__init__(*subbobjects, **kwargs)
         self.centered = centered
         self.multiline = multiline
+        self.align_y = align_y
         self.line_height = line_height
         self.tex_bobjects = list(subbobjects)
         self.annotations = []
@@ -83,9 +85,12 @@ class TexComplex(Bobject):
         next_align = 0
         if self.multiline == False:
             for i, t_bobj in enumerate(t_bobjs):
-                #Align expression
+                #Align y
+                t_bobj.ref_obj.location[1] = 0
+
+                #Align x
                 t_bobj_length = t_bobj.ref_obj.scale[0] * \
-                        t_bobj.imported_svg_data[t_bobj.active_expression_path]['length']
+                        t_bobj.imported_svg_data[t_bobj.active_path]['length']
                 if t_bobj.centered == True:
                     t_bobj.ref_obj.location[0] = next_align + t_bobj_length / 2
                 else:
@@ -95,19 +100,28 @@ class TexComplex(Bobject):
                              SPACE_BETWEEN_EXPRESSIONS * t_bobj.ref_obj.scale[0]
 
         else:
-            num_newlines = len(t_bobjs) - 1
-            vert_disp = num_newlines * self.line_height / 2
+            #Align y
+            if self.align_y == 'centered':
+                num_newlines = len(t_bobjs) - 1
+                vert_disp = num_newlines * self.line_height / 2
+            elif self.align_y == 'top': vert_disp = 0
+            elif self.align_y == 'bottom': raise Warning('Not implemented') #TODO
             for t_bobj in t_bobjs:
+                #Align x
+                t_bobj.ref_obj.location[0] = 0
+
                 t_bobj.ref_obj.location[1] = vert_disp
                 vert_disp -= self.line_height
-                if t_bobj.centered == True:
-                    t_bobj.ref_obj.location[0] = 0
+                #if t_bobj.centered == True:
+                #    t_bobj.ref_obj.location[0] = 0
 
+        #Overall alignment and justification is a bit janky.
         if centered == None: centered = self.centered
         if centered == True and self.multiline == False:
             next_align -= SPACE_BETWEEN_EXPRESSIONS
             for t_bobj in t_bobjs:
                 t_bobj.ref_obj.location[0] -= next_align / 2
+
 
         for i, t_bobj in enumerate(t_bobjs):
             #If any annotations are targeting the current t_bobj, move them too
