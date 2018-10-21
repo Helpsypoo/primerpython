@@ -526,7 +526,7 @@ class AnatomyScene(Scene):
 
         #These don't really need to be object methods ¯\_(ツ)_/¯
         self.zoom()
-        #self.fade_contextual_objects()
+        self.fade_contextual_objects()
         #self.highlight_sections()
         #self.otoconia_wiggle()
         self.dislodged_otoconia()
@@ -596,7 +596,7 @@ class AnatomyScene(Scene):
         cam_obj.location = [0, 0, 0]
         cam_obj.parent = cam_bobj.ref_obj
 
-        """#Look at brain and temporal bone
+        #Look at brain and temporal bone
         cam_swivel.move_to(
             new_angle = [0, 0, -55 * math.pi / 180],
             start_time = self.brain_zoom_time,
@@ -651,7 +651,7 @@ class AnatomyScene(Scene):
             new_angle = [0, 0, deg_angle * math.pi / 180],
             start_time = self.only_posterior_time,
             end_time = self.only_posterior_time + rot_duration
-        )"""
+        )
 
         #Epley position (stationary camera after initial positioning)
         cam_swivel.move_to(
