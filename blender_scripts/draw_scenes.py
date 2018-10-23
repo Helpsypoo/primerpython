@@ -461,8 +461,9 @@ def test_molecule():
 def graph_test():
     initialize_blender(total_duration = 120)
 
-    g = graph_bobject.GraphBobject3D(
-        centered = True
+    g = graph_bobject.GraphBobject(
+        centered = True,
+        include_y = False
     )
 
     g.add_to_blender(appear_time = 0)
@@ -523,7 +524,7 @@ def nat_sim_test():
         location = [-6.5, 0, 0]
     )
 
-    sim_length = 20
+    sim_length = 3
     for i in range(sim_length):
         save = False
         if i == sim_length - 1:
@@ -553,35 +554,35 @@ def nat_sim_test():
 
     cres_with_points = []
     records = sim.sim.date_records
-    time = 2
+    time = 2 #start time
     print(len(records))
     for date in range(len(records)):
-        print()
-        print("The date is " + str(date))
-        print(" There are " + str(len(records[date]['creatures'])) + " creatures today")
-        print(" " + str(len(cres_with_points)) + " creatures have points now")
+        #print()
+        #print("The date is " + str(date))
+        #print(" There are " + str(len(records[date]['creatures'])) + " creatures today")
+        #print(" " + str(len(cres_with_points)) + " creatures have points now")
 
 
         #Delete points for creatures the died
         to_delete = []
         for cre in cres_with_points:
-            print(' A creature has a point')
+            #print(' A creature has a point')
             if cre not in records[date]['creatures']:
-                print(' taking point from creature')
+                #print(' taking point from creature')
                 cre.point.disappear(
                     disappear_time = time,
                     #Will need duration in actual scene
                 )
                 to_delete.append(cre)
-                print(' Now ' + str(len(cres_with_points)) + " cres have points")
         for cre in to_delete:
             cres_with_points.remove(cre)
+        #print(' Now ' + str(len(cres_with_points)) + " cres have points")
 
         #Add points for new creatures
         for cre in records[date]['creatures']:
-            print(" There's a cre")
+            #print(" There's a cre")
             if cre not in cres_with_points:
-                print(' Giving a point')
+                #print(' Giving a point')
                 point = g.add_point_at_coord(
                     coord = [
                         cre.size,
@@ -597,7 +598,7 @@ def nat_sim_test():
                 )
                 cre.point = point
                 cres_with_points.append(cre)
-                print(' Now ' + str(len(cres_with_points)) + " cres have points")
+                #print(' Now ' + str(len(cres_with_points)) + " cres have points")
 
         #Add time after day
         time += records[date]['anim_durations']['dawn'] + \
@@ -611,13 +612,13 @@ def main():
     #tex_test()
     """"""
 
-    #nat_sim_test()
+    nat_sim_test()
     #graph_test()
 
-    #draw_scenes_from_file(natural_sim)
+
     #bpy.ops.wm.revert_mainfile()
     #bpy.ops.wm.open_mainfile(filepath="C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\files\\blend\\UCSF\\inner_ear_rigid_body.blend")
-    draw_scenes_from_file(bppv, clear = False)
+    #draw_scenes_from_file(bppv, clear = False)
 
     print_time_report()
     finish_noise()

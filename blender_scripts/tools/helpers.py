@@ -29,7 +29,7 @@ def apply_material(obj, mat, recursive = False, type_req = None):
         if type_req == None or obj.type == type_req:
             if isinstance(mat, str):
                 obj.active_material = bpy.data.materials[mat]
-            else: #Assumes mat is a material. 
+            else: #Assumes mat is a material.
                 obj.active_material = mat
 
     if recursive:
@@ -942,7 +942,8 @@ def execute_and_time(message, *funcs):
             outputs.append(output)
 
     now = datetime.datetime.now()
-    TIME_LIST.append(now)
+    TIME_LIST.append(now) #Actually just records end time, not start and end
+                          #So reported value includes previous, seemingly untimed code
     diff = TIME_LIST[-1] - TIME_LIST[-2]
     TIME_REPORT.append([diff.total_seconds(), message])
     if not outputs:

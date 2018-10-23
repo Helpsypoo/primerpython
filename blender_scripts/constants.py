@@ -47,7 +47,7 @@ else:
 '''
 Colorssssss
 '''
-color_scheme = 4
+color_scheme = 2
 if color_scheme == 1:
     #Coolors Exported Palette - https://coolors.co/393e41-f3f2f0-3e7ea0-ff9400-e7e247
     COLORS = [

@@ -31,6 +31,7 @@ class GraphBobject(Bobject):
         arrows = True,
         centered = False,
         high_res_curve_indices = [0], #by default, make the first curve high res
+        include_y = True,
         **kwargs
     ):
         if 'name' not in kwargs:
@@ -45,6 +46,7 @@ class GraphBobject(Bobject):
         self.x_label = x_label
         self.x_label_pos = x_label_pos
 
+        self.include_y = include_y
         if isinstance(y_range, int) or isinstance(y_range, float):
             y_range = [0, y_range]
         self.y_range = y_range
@@ -87,8 +89,9 @@ class GraphBobject(Bobject):
             self.centered = True
             self.ref_obj.location[0] -= \
                 (self.x_range[1] + self.x_range[0]) * self.domain_scale_factor / 2 * scale
-            self.ref_obj.location[1] -= \
-                (self.y_range[1] + self.y_range[0]) * self.range_scale_factor / 2 * scale
+            if self.include_y == True:
+                self.ref_obj.location[1] -= \
+                    (self.y_range[1] + self.y_range[0]) * self.range_scale_factor / 2 * scale
 
     def add_axes(self):
         #x axis
@@ -131,44 +134,45 @@ class GraphBobject(Bobject):
         self.x_label_bobject = x_lab
 
         #y axis
-        cyl_bobj = import_object('one_side_cylinder', 'primitives')
-        apply_material(cyl_bobj.objects[0], 'color2')
-        #cyl_bobj.ref_obj.parent = self.ref_obj
-        self.add_subbobject(cyl_bobj)
-        ref = cyl_bobj.ref_obj
-        ref.location = (0, self.y_range[0] * self.range_scale_factor - GRAPH_PADDING, 0)
-        ref.children[0].rotation_euler = (-math.pi / 2, 0, 0)
-        ref.children[0].scale = (AXIS_WIDTH, AXIS_DEPTH, self.height / 2 + GRAPH_PADDING)
-
-        if self.arrows == 'positive' or self.arrows == True:
-            con_bobj = import_object('arrow_head', name = 'arrow_ref')
-            apply_material(con_bobj.objects[0], 'color2')
-            self.add_subbobject(con_bobj)
-            ref = con_bobj.ref_obj
-            ref.location = (0, self.y_range[1] * self.range_scale_factor + GRAPH_PADDING, 0)
+        if self.include_y == True:
+            cyl_bobj = import_object('one_side_cylinder', 'primitives')
+            apply_material(cyl_bobj.objects[0], 'color2')
+            #cyl_bobj.ref_obj.parent = self.ref_obj
+            self.add_subbobject(cyl_bobj)
+            ref = cyl_bobj.ref_obj
+            ref.location = (0, self.y_range[0] * self.range_scale_factor - GRAPH_PADDING, 0)
             ref.children[0].rotation_euler = (-math.pi / 2, 0, 0)
-            ref.children[0].scale = ARROW_SCALE
+            ref.children[0].scale = (AXIS_WIDTH, AXIS_DEPTH, self.height / 2 + GRAPH_PADDING)
 
-            if self.arrows == True:
+            if self.arrows == 'positive' or self.arrows == True:
                 con_bobj = import_object('arrow_head', name = 'arrow_ref')
                 apply_material(con_bobj.objects[0], 'color2')
                 self.add_subbobject(con_bobj)
                 ref = con_bobj.ref_obj
-                ref.location = (0, self.y_range[0] * self.range_scale_factor - GRAPH_PADDING, 0)
-                ref.rotation_euler = (math.pi / 2, 0, 0)
+                ref.location = (0, self.y_range[1] * self.range_scale_factor + GRAPH_PADDING, 0)
+                ref.children[0].rotation_euler = (-math.pi / 2, 0, 0)
                 ref.children[0].scale = ARROW_SCALE
 
-        #y axis label
-        y_lab = tex_bobject.TexBobject(self.y_label, name = 'y_lab', centered = True)
-        #y_lab_container = tex_complex.TexComplex(y_lab, centered = True, name = 'y_lab_container')
-        if self.y_label_pos == 'along':
-            y_lab.ref_obj.location = ( -2, self.y_range[1] * self.range_scale_factor / 2, 0)
-        elif self.y_label_pos == 'end':
-            y_lab.ref_obj.location = (0, self.y_range[1] * self.range_scale_factor + GRAPH_PADDING + 1.5, 0)
-        if self.y_label_rot == True:
-            y_lab.ref_obj.rotation_euler = (0, 0, math.pi / 2)
-        self.add_subbobject(y_lab)
-        self.y_label_bobject = y_lab
+                if self.arrows == True:
+                    con_bobj = import_object('arrow_head', name = 'arrow_ref')
+                    apply_material(con_bobj.objects[0], 'color2')
+                    self.add_subbobject(con_bobj)
+                    ref = con_bobj.ref_obj
+                    ref.location = (0, self.y_range[0] * self.range_scale_factor - GRAPH_PADDING, 0)
+                    ref.rotation_euler = (math.pi / 2, 0, 0)
+                    ref.children[0].scale = ARROW_SCALE
+
+            #y axis label
+            y_lab = tex_bobject.TexBobject(self.y_label, name = 'y_lab', centered = True)
+            #y_lab_container = tex_complex.TexComplex(y_lab, centered = True, name = 'y_lab_container')
+            if self.y_label_pos == 'along':
+                y_lab.ref_obj.location = ( -2, self.y_range[1] * self.range_scale_factor / 2, 0)
+            elif self.y_label_pos == 'end':
+                y_lab.ref_obj.location = (0, self.y_range[1] * self.range_scale_factor + GRAPH_PADDING + 1.5, 0)
+            if self.y_label_rot == True:
+                y_lab.ref_obj.rotation_euler = (0, 0, math.pi / 2)
+            self.add_subbobject(y_lab)
+            self.y_label_bobject = y_lab
 
 
         tick_step = self.tick_step
@@ -190,6 +194,8 @@ class GraphBobject(Bobject):
 
         if x_tick_step != None:
             current_tick = x_tick_step
+            if self.include_y == False:
+                current_tick = 0
             #Positive x ticks
             while current_tick <= self.x_range[1]:
                 self.add_tick_x(current_tick)
@@ -201,7 +207,7 @@ class GraphBobject(Bobject):
                 self.add_tick_x(current_tick)
                 current_tick -= x_tick_step
 
-        if y_tick_step != None:
+        if y_tick_step != None and self.include_y == True:
             #Positive y ticks
             current_tick = y_tick_step
             while current_tick <= self.y_range[1]:

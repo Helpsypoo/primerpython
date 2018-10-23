@@ -37,8 +37,9 @@ SPEED_PER_COLOR = 0.4 #Speed change for one color unit change
 TODOs
 - Make creatures run from larger ones. (If can't balance)
 - Break eating ties (Not sure if necessary)
+- Improve speed
 - Reuse dead creature objects (maybe even resize/recolor for extra smoothness)
-- Fix teleportation bugs
+- Fix teleportation bugs (done? I forget whether I did this thoroughly, but seems okay)
 - Rebalance, possibly using non-animated sims to get a sense for things more quickly
 
 """
@@ -124,7 +125,7 @@ class Food(object):
                 cons.influence = 0
             cons.keyframe_insert(data_path = 'influence', frame = start_time * FRAME_RATE + 1)
 
-        bpy.context.scene.update() #needed for blender matrices to be accurate
+        #bpy.context.scene.update() #needed for blender matrices to be accurate
 
         #There is almost certainly a more elegant way to do this, but there are
         #several transformation matrices which don't seem to relaiably update,
@@ -333,7 +334,6 @@ class Creature(Food):
                 self.random_wall_placement()
 
         return loc, heading_target, heading
-
 
     def take_step(self):
         day = self.days[-1]
@@ -582,7 +582,6 @@ class Creature(Food):
         #an x-facing blob standing in the z direction
         cre_bobj.ref_obj.children[0].rotation_euler = [math.pi / 2, 0, math.pi / 2]
 
-        #TODO: Make eye size depend on sense
         eyes = []
         for obj in cre_bobj.ref_obj.children[0].children:
             if 'Eye' in obj.name:
@@ -850,112 +849,131 @@ class DrawnNaturalSim(Bobject):
             print("Animating day " + str(i))
             """Place food"""
             print(" Placing food")
-            for j, food in enumerate(date_record['food_objects']):
-                food.add_to_blender()
-                food.bobject.ref_obj.location = scalar_mult_vec(
-                    food.world_location,
-                    self.blender_units_per_world_unit
-                )
-                food.bobject.ref_obj.parent = self.ref_obj
-                delay = j * date_record['anim_durations']['dawn'] / len(date_record['food_objects'])
-                food.bobject.add_to_blender(
-                    appear_time = self.start_time + self.elapsed_time + delay
-                )
+            def place_food():
+                for j, food in enumerate(date_record['food_objects']):
+                    food.add_to_blender()
+                    food.bobject.ref_obj.location = scalar_mult_vec(
+                        food.world_location,
+                        self.blender_units_per_world_unit
+                    )
+                    food.bobject.ref_obj.parent = self.ref_obj
+                    delay = j * date_record['anim_durations']['dawn'] / len(date_record['food_objects'])
+                    food.bobject.add_to_blender(
+                        appear_time = self.start_time + self.elapsed_time + delay
+                    )
+
+            place_food()
 
             """Place new creatures"""
             print(" Placing creatures")
-            if date_record['date'] == 0:
-                for cre in date_record['creatures']:
-                    cre.add_to_blender(
-                        appear_time = self.start_time + self.elapsed_time,
-                        world = self
-                    )
-                    cre.bobject.ref_obj.parent = self.ref_obj
-            else:
-                for cre in date_record['creatures']:
-                    if cre not in self.sim.date_records[i - 1]['creatures']:
+            def place_creatures():
+                if date_record['date'] == 0:
+                    for cre in date_record['creatures']:
                         cre.add_to_blender(
                             appear_time = self.start_time + self.elapsed_time,
                             world = self
                         )
                         cre.bobject.ref_obj.parent = self.ref_obj
+                else:
+                    for cre in date_record['creatures']:
+                        if cre not in self.sim.date_records[i - 1]['creatures']:
+                            cre.add_to_blender(
+                                appear_time = self.start_time + self.elapsed_time,
+                                world = self
+                            )
+                            cre.bobject.ref_obj.parent = self.ref_obj
 
-            self.elapsed_time += date_record['anim_durations']['dawn'] + \
-                                            date_record['anim_durations']['morning']
+                self.elapsed_time += date_record['anim_durations']['dawn'] + \
+                                                date_record['anim_durations']['morning']
+
+
+            place_creatures()
 
             """Step through time for current day"""
             print(" Animating movements")
             #print(date_record['day_length'])
-            if self.day_length_style == 'fixed_speed':
-                time_step = 1 / DEFAULT_DAY_LENGTH * DEFAULT_DAY_ANIM_DURATION
-            elif self.day_length_style == 'fixed_length':
-                time_step = 1 / date_record['day_length'] * date_record['anim_durations']['day']
-            for t in range(date_record['day_length']):
-                time_of_day = t * time_step
-                anim_time = self.start_time + self.elapsed_time + time_of_day
-                frame = anim_time * FRAME_RATE
+            def step_through_day():
+                if self.day_length_style == 'fixed_speed':
+                    time_step = 1 / DEFAULT_DAY_LENGTH * DEFAULT_DAY_ANIM_DURATION
+                elif self.day_length_style == 'fixed_length':
+                    time_step = 1 / date_record['day_length'] * date_record['anim_durations']['day']
+                for t in range(date_record['day_length']):
+                    time_of_day = t * time_step
+                    anim_time = self.start_time + self.elapsed_time + time_of_day
+                    frame = anim_time * FRAME_RATE
 
-                #TODO: check for food eating ties
+                    #TODO: check for food eating ties. Eh, maybe not.
 
-                for cre in date_record['creatures']:
-                    day = None
-                    obj = cre.bobject.ref_obj
-                    for candidate_day in cre.days:
-                        if candidate_day.date == date_record['date']:
-                            day = candidate_day
-                            break
+                    for cre in date_record['creatures']:
+                        day = None
+                        obj = cre.bobject.ref_obj
 
-                    #If None, the creature was eaten by this point
-                    if day.locations[t] != None:
-                        obj.location = scalar_mult_vec(
-                            day.locations[t],
-                            self.blender_units_per_world_unit
-                        )
-                        obj.keyframe_insert(data_path = 'location', frame = frame)
-                        obj.rotation_euler = [0, 0, day.headings[t]]
-                        obj.keyframe_insert(data_path = 'rotation_euler', frame = frame)
+                        day = [x for x in cre.days if x.date == date_record['date']][0]
 
-                        for food in day.has_eaten[t]:
-                            if food not in day.has_eaten[t-1]:
-                                food.git_ate(
-                                    eater = cre,
-                                    start_time = anim_time,
-                                    drawn_world = self,
-                                    time_step = time_step
-                                )
+                        '''
+                        for candidate_day in cre.days:
+                            if candidate_day.date == date_record['date']:
+                                day = candidate_day
+                                break
+                        '''
 
-            ''' Older version that didn't update date record if speed is fixed
-            if self.day_length_style == 'fixed_length':
+                        #If None, the creature was eaten by this point
+                        if day.locations[t] != None:
+                            obj.location = scalar_mult_vec(
+                                day.locations[t],
+                                self.blender_units_per_world_unit
+                            )
+                            obj.keyframe_insert(data_path = 'location', frame = frame)
+                            obj.rotation_euler = [0, 0, day.headings[t]]
+                            obj.keyframe_insert(data_path = 'rotation_euler', frame = frame)
+
+                            for food in day.has_eaten[t]:
+                                if food not in day.has_eaten[t-1]:
+                                    food.git_ate(
+                                        eater = cre,
+                                        start_time = anim_time,
+                                        drawn_world = self,
+                                        time_step = time_step
+                                    )
+
+                ''' Older version that didn't update date record if speed is fixed
+                if self.day_length_style == 'fixed_length':
+                    self.elapsed_time += date_record['anim_durations']['day']
+                elif self.day_length_style == 'fixed_speed':
+                    self.elapsed_time += date_record['day_length'] * time_step'''
+                if self.day_length_style == 'fixed_speed':
+                    date_record['anim_durations']['day'] = date_record['day_length'] * time_step
                 self.elapsed_time += date_record['anim_durations']['day']
-            elif self.day_length_style == 'fixed_speed':
-                self.elapsed_time += date_record['day_length'] * time_step'''
-            if self.day_length_style == 'fixed_speed':
-                date_record['anim_durations']['day'] = date_record['day_length'] * time_step
-            self.elapsed_time += date_record['anim_durations']['day']
 
-            self.elapsed_time += date_record['anim_durations']['evening']
+                self.elapsed_time += date_record['anim_durations']['evening']
+
+
+            step_through_day()
 
             """Creatures that die should disappear."""
             """Along with food"""
             print(" Cleaning up")
-            for cre in date_record['creatures']:
-                day = None
-                for candidate_day in cre.days:
-                    if candidate_day.date == date_record['date']:
-                        day = candidate_day
-                        break
-                if day.dead == True:
-                    cre.bobject.disappear(
-                        disappear_time = self.start_time + self.elapsed_time,
-                        is_creature = True
+            def clean_up():
+                for cre in date_record['creatures']:
+                    day = None
+                    for candidate_day in cre.days:
+                        if candidate_day.date == date_record['date']:
+                            day = candidate_day
+                            break
+                    if day.dead == True:
+                        cre.bobject.disappear(
+                            disappear_time = self.start_time + self.elapsed_time,
+                            is_creature = True
+                        )
+
+                for food in date_record['food_objects']:
+                    food.bobject.disappear(
+                        disappear_time = self.start_time + self.elapsed_time
                     )
 
-            for food in date_record['food_objects']:
-                food.bobject.disappear(
-                    disappear_time = self.start_time + self.elapsed_time
-                )
+                self.elapsed_time += date_record['anim_durations']['night']
 
-            self.elapsed_time += date_record['anim_durations']['night']
+            clean_up()
 
     def add_to_blender(
         self,
@@ -983,7 +1001,7 @@ class DrawnNaturalSim(Bobject):
         self.add_subbobject(plane)
 
         super().add_to_blender(**kwargs)
-        execute_and_time(
-            'Animated day',
-            self.animate_days(),
-        )
+        #execute_and_time(
+        #    'Animated day',
+        self.animate_days(),
+        #
