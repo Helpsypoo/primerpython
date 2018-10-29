@@ -447,7 +447,6 @@ def draw_scenes_from_file(script_file, clear = True):
 
 def test_molecule():
     #initialize_blender()
-
     make_parent_tree()
 
     """rna = import_object(
@@ -519,22 +518,24 @@ def nat_sim_test():
 
     sim = natural_sim.DrawnNaturalSim(
         scale = 1.5,
-        food_count = 35,
-        #sim = 'NAT20180908T142822'
-        location = [-6.5, 0, 0]
+        food_count = 10,
+        #sim = 'f200_10base_30sp',
+        location = [-6.5, 0, 0],
+        day_length_style = 'fixed_speed',
+        #day_length_style = 'fixed_length'
+        #mutation_switches = [False, False, False]
     )
 
-    sim_length = 3
+    sim.sim.mutation_switches = [True, True, True]
+
+    sim_length = 10
     for i in range(sim_length):
         save = False
         if i == sim_length - 1:
             save = True
+        #if i == 10:
+        #    sim.sim.mutation_switches = [True, False, False]
         sim.sim.sim_next_day(save = save)
-
-    sim.add_to_blender(
-        appear_time = 1,
-        start_delay = 1
-    )
 
     g = graph_bobject.GraphBobject3D(
         x_range = [0, 2],
@@ -546,22 +547,43 @@ def nat_sim_test():
         width = 10,
         height = 10,
         depth = 10,
-        location = [8, 0, 0],
+        location = [8, 8, 4],
+        rotation_euler = [math.pi / 2, 0, 0],
         centered = True,
         tick_step = 0.5
     )
     g.add_to_blender(appear_time = 1)
+    #Graphs have many tex_bobjects, whose speed is sensitive to the number of object in
+    #Blender at the moment, so it's good to add the graph to blender before the sim.
+
+    sim.add_to_blender(
+        appear_time = 1,
+        start_delay = 1
+    )
 
     cres_with_points = []
+    cre_counts = []
     records = sim.sim.date_records
     time = 2 #start time
     print(len(records))
+    print()
+    for date in range(len(records)):
+        #Add count at date to list, for the counter tex_bobject
+        if date == 10:
+            print()
+        cre_counts.append(str(len(records[date]['creatures'])))
+        print(cre_counts[-1])
+
+
     for date in range(len(records)):
         #print()
         #print("The date is " + str(date))
         #print(" There are " + str(len(records[date]['creatures'])) + " creatures today")
         #print(" " + str(len(cres_with_points)) + " creatures have points now")
+        print("Updating graph for day " + str(date))
 
+        #Add count at date to list, for the counter tex_bobject
+        #cre_counts.append(str(len(records[date]['creatures'])))
 
         #Delete points for creatures the died
         to_delete = []
@@ -585,17 +607,17 @@ def nat_sim_test():
                 #print(' Giving a point')
                 point = g.add_point_at_coord(
                     coord = [
-                        cre.size,
-                        cre.speed,
-                        cre.sense
+                        cre.size + uniform(-0.03, 0.03),
+                        cre.speed + uniform(-0.03, 0.03),
+                        cre.sense + uniform(-0.03, 0.03)
                     ],
                     appear_time = time,
                     #Will need duration in actual scene
                 )
-                apply_material(
+                """apply_material(
                     point.ref_obj.children[0],
                     cre.bobject.ref_obj.children[0].children[0].active_material
-                )
+                )"""
                 cre.point = point
                 cres_with_points.append(cre)
                 #print(' Now ' + str(len(cres_with_points)) + " cres have points")
@@ -606,6 +628,38 @@ def nat_sim_test():
                 records[date]['anim_durations']['day'] + \
                 records[date]['anim_durations']['evening'] + \
                 records[date]['anim_durations']['night']
+
+
+    #print(cre_counts)
+    """
+    print('Here comes count_tex')
+    count_tex = tex_bobject.TexBobject(*cre_counts, transition_type = 'instant')
+    print('Okay, done with count_tex')
+    count_lab = tex_bobject.TexBobject('\\text{Number: }')
+    counter = tex_complex.TexComplex(
+        count_lab, count_tex,
+        location = [-5, 0, 10],
+        rotation_euler = [math.pi / 2, 0, 0]
+    )
+    counter.add_to_blender(appear_time = 1)
+
+    #Perhaps not the most efficient, but another loop through the dates to
+    #animate the creature counter
+    time = 2
+    print()
+    print(len(cre_counts))
+    for date in range(len(records)):
+        print(date)
+        if date > 0:
+            count_tex.morph_figure('next', start_time = time)
+
+        #Add time after day
+        time += records[date]['anim_durations']['dawn'] + \
+                records[date]['anim_durations']['morning'] + \
+                records[date]['anim_durations']['day'] + \
+                records[date]['anim_durations']['evening'] + \
+                records[date]['anim_durations']['night']
+    """
 
 def main():
     """Use this as a test scene"""
@@ -628,5 +682,6 @@ if __name__ == "__main__":
     try:
         main()
     except:
+        print_time_report()
         finish_noise(error = True)
         raise()

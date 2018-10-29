@@ -77,7 +77,7 @@ class SVGBobject(Bobject):
                 self.rendered_bobject_lists.append(rendered_bobject_list)
             self.make_lookup_table()
 
-        print("SVG Bobject initialized")
+        print("SVG Bobject initialized " + str(filenames[0]))
 
         self.copyable_null = None #I think this might be unnecessary
 
@@ -195,7 +195,7 @@ class SVGBobject(Bobject):
             self.rendered_curve_bobjects.append(rendered_curve)
 
     def make_lookup_table(self):
-        print('Making lookup table')
+        #print('Making lookup table')
         if self.transition_type == 'morph':
             #This function makes it easier to find the bobjects associated with
             #individual curves/characters when coding a scene. This would otherwise
@@ -330,7 +330,7 @@ class SVGBobject(Bobject):
 
         self.morph_chains = []
         for i, path in enumerate(self.paths):
-            print("Adding curves to morph chains for shape " + str(i + 1) + " of " + str(len(self.paths)))
+            #print("Adding curves to morph chains for shape " + str(i + 1) + " of " + str(len(self.paths)))
             #print()
             #print('######################################################')
             #print('### Morph chains round  ' + str(i) + ' ####################')
@@ -503,7 +503,7 @@ class SVGBobject(Bobject):
             print()'''
             #print("  Okay, done with that chain")
 
-        print("  Adding null curves to extend chains")
+        #print("  Adding null curves to extend chains")
         #Make sure all the chains are the same length. Relevant, e.g., if
         #a char in the first expression disappears in the second expression,
         #and a third expression exists. We need to extend the chain of
@@ -553,7 +553,7 @@ class SVGBobject(Bobject):
                 working_chain = chain
                 scavenged = True
                 chain_index = self.morph_chains.index(chain)
-                print("Scavenged chain")
+                #print("Scavenged chain")
                 break
         for i in range(len(working_chain), index):
             #-1 because we're actually adding two curves to the chain, so the
@@ -646,7 +646,7 @@ class SVGBobject(Bobject):
         count = 0
         for chain in self.morph_chains:
             count += 1
-            print('Processing morph chain ' + str(count) + ' of ' + str(len(self.morph_chains)))
+            #print('Processing morph chain ' + str(count) + ' of ' + str(len(self.morph_chains)))
             for link in chain:
                 already_processed = False
                 #cur = link.ref_obj.children[0]
@@ -707,8 +707,8 @@ class SVGBobject(Bobject):
                               "Just do one, ya dick.")
             start_frame = int(start_time * FRAME_RATE)
 
-        print('Morphing ' + str(self.ref_obj.name) + ' to shape ' + str(final_index + 1) + \
-                ' of ' + str(len(self.paths)))
+        #print('Morphing ' + str(self.ref_obj.name) + ' to shape ' + str(final_index + 1) + \
+        #        ' of ' + str(len(self.paths)))
 
         self.active_path = self.paths[final_index]
         #duration = 60

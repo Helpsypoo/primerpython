@@ -34,6 +34,7 @@ class GraphBobject(Bobject):
         include_y = True,
         **kwargs
     ):
+        print('Initializing graph bobject')
         if 'name' not in kwargs:
             kwargs['name'] = 'graph'
         #Discrete functions usually use few points, but if they are animated
@@ -243,7 +244,8 @@ class GraphBobject(Bobject):
                 0
             ),
             centered = True,
-            scale = label_scale
+            scale = label_scale,
+            name = 'x_tick_label ' + str(value)
         )
         self.add_subbobject(label)
         self.tick_labels_x.append(label)
@@ -272,7 +274,8 @@ class GraphBobject(Bobject):
                 0
             ),
             centered = 'right',
-            scale = label_scale
+            scale = label_scale,
+            name = 'y_tick_label ' + str(value)
         )
         self.add_subbobject(label)
         self.tick_labels_y.append(label)
@@ -1391,6 +1394,7 @@ class GraphBobject3D(GraphBobject):
                 (self.z_range[1] + self.z_range[0]) * self.z_scale_factor / 2 * self.scale[2]
 
     def add_axes(self):
+        print(" Adding axes and labels")
         super().add_axes()
         #z axis
         cyl_bobj = import_object('one_side_cylinder', 'primitives')
@@ -1491,7 +1495,8 @@ class GraphBobject3D(GraphBobject):
                 0
             ),
             centered = True,
-            scale = label_scale
+            scale = label_scale,
+            name = 'x_tick_label ' + str(value)
         )
         self.add_subbobject(label)
         self.tick_labels_x.append(label)
@@ -1535,7 +1540,8 @@ class GraphBobject3D(GraphBobject):
                 0
             ),
             centered = True,
-            scale = label_scale
+            scale = label_scale,
+            name = 'y_tick_label ' + str(value)
         )
         self.add_subbobject(label)
         self.tick_labels_y.append(label)
@@ -1579,7 +1585,8 @@ class GraphBobject3D(GraphBobject):
                 value * self.z_scale_factor,
             ),
             centered = True,
-            scale = label_scale
+            scale = label_scale,
+            name = 'z_tick_label ' + str(value)
         )
         self.add_subbobject(label)
         self.tick_labels_z.append(label)

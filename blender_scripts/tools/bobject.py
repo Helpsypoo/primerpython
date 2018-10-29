@@ -34,6 +34,8 @@ class Bobject(object):
         ref_obj = bpy.data.objects.new(name = self.name, object_data = None)
         ref_obj.location = self.get_from_kwargs('location', (0, 0, 0) )
         ref_obj.rotation_euler = self.get_from_kwargs('rotation_euler', (0, 0, 0) )
+        #TODO: Change self.scale to self.scale to differentiate it from
+        #the actual current scale of the object after manipulations.
         self.scale = self.get_from_kwargs('scale', 1)
         if isinstance(self.scale, int) or isinstance(self.scale, float):
             self.scale = [self.scale] * 3
@@ -274,7 +276,7 @@ class Bobject(object):
             if isinstance(new_scale, int) or isinstance(new_scale, float):
                 new_scale = [new_scale] * 3
             obj.scale = new_scale
-            self.scale = new_scale
+            #self.scale = new_scale
             obj.keyframe_insert(data_path="scale", frame = end_frame)
         if new_angle != None:
             obj.keyframe_insert(data_path="rotation_euler", frame = start_frame)
