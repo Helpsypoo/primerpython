@@ -66,6 +66,10 @@ import bppv
 imp.reload(bppv)
 from bppv import *
 
+import natural_selection
+imp.reload(natural_selection)
+from natural_selection import *
+
 import population
 imp.reload(population)
 from population import *
@@ -517,24 +521,34 @@ def nat_sim_test():
     initialize_blender()
 
     sim = natural_sim.DrawnNaturalSim(
-        scale = 1.5,
-        food_count = 10,
-        #sim = 'f200_10base_30sp',
+        scale = 3,
+        food_count = 100,
+        sim = 'decay_to_low_food',
+        #sim = 'f200_5base_30sp',
         location = [-6.5, 0, 0],
-        day_length_style = 'fixed_speed',
-        #day_length_style = 'fixed_length'
+        #day_length_style = 'fixed_speed',
+        day_length_style = 'fixed_length'
         #mutation_switches = [False, False, False]
     )
 
-    sim.sim.mutation_switches = [True, True, True]
+    sim.sim.mutation_switches = [False, False, False]
 
-    sim_length = 10
+    sim_length = 0
     for i in range(sim_length):
         save = False
         if i == sim_length - 1:
             save = True
-        #if i == 10:
-        #    sim.sim.mutation_switches = [True, False, False]
+        if i == 10:
+            sim.sim.mutation_switches = [True, False, False]
+            print()
+        if i == 30:
+            sim.sim.mutation_switches = [True, True, True]
+            print()
+        if i >= 50 and i % 2 == 0:
+            sim.sim.food_count -= 1
+        if i == 50:
+            print()
+
         sim.sim.sim_next_day(save = save)
 
     g = graph_bobject.GraphBobject3D(
@@ -573,6 +587,22 @@ def nat_sim_test():
             print()
         cre_counts.append(str(len(records[date]['creatures'])))
         print(cre_counts[-1])
+
+
+
+
+
+
+
+
+    graph_point_leftovers = []
+
+
+
+
+
+
+
 
 
     for date in range(len(records)):
@@ -666,17 +696,18 @@ def main():
     #tex_test()
     """"""
 
-    nat_sim_test()
+    #nat_sim_test()
     #graph_test()
+    draw_scenes_from_file(natural_selection)
 
 
     #bpy.ops.wm.revert_mainfile()
     #bpy.ops.wm.open_mainfile(filepath="C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\files\\blend\\UCSF\\inner_ear_rigid_body.blend")
     #draw_scenes_from_file(bppv, clear = False)
 
+
     print_time_report()
     finish_noise()
-
 
 if __name__ == "__main__":
     try:
