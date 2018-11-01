@@ -339,7 +339,8 @@ def tex_test():
         '\\text{the}',
         '\\text{best!}',
         centered = True,
-        scale = 8
+        scale = 8,
+        typeface = 'arial'
     )
     message.add_to_blender(appear_time = 0)
 
@@ -693,12 +694,12 @@ def nat_sim_test():
 
 def main():
     """Use this as a test scene"""
-    #tex_test()
+    tex_test()
     """"""
 
     #nat_sim_test()
     #graph_test()
-    draw_scenes_from_file(natural_selection)
+    #draw_scenes_from_file(natural_selection)
 
 
     #bpy.ops.wm.revert_mainfile()

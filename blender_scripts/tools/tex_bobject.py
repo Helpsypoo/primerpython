@@ -29,9 +29,11 @@ import draw_scenes
 import clear
 
 class TexBobject(SVGBobject):
-    def __init__(self, *expressions, **kwargs):
+    def __init__(self, *expressions, typeface = 'default', **kwargs):
         self.kwargs = kwargs
         self.centered = self.get_from_kwargs('centered', False)
+
+        self.typeface = typeface
 
         if 'vert_align_centers' not in kwargs:
             kwargs['vert_align_centers'] = True
@@ -41,12 +43,6 @@ class TexBobject(SVGBobject):
         #self.active_expression_path = self.paths[0]
         self.annotations = []
         #self.align()
-
-        #Process expressions to make find file paths for svg_bobject methods
-
-        #Scale to be manipulated during animations
-        #self.size = self.get_from_kwargs('size', 1)
-        #Text size in blender units used when adding svgs
 
     def get_figure_curves(self, fig):
         if fig == None:
@@ -144,25 +140,32 @@ class TexBobject(SVGBobject):
                     break
 
     def get_file_paths(self, expressions):
+        #Replaces an svg_bobject method
         self.paths = []
+        template = deepcopy(TEMPLATE_TEX_FILE)
+        if self.typeface != 'default':
+            template = template[:-4] #chop off the .tex
+            template += '_' + self.typeface + '.tex'
+            if not os.path.exists(template):
+                raise Warning('Can\'t find template tex file for that font.')
         for expr in expressions:
             if expr == None:
                 self.paths.append(expr)
-            else: self.paths.append(tex_to_svg_file(expr, TEMPLATE_TEX_FILE))
+            else: self.paths.append(tex_to_svg_file(expr, template, self.typeface))
 
-def tex_to_svg_file(expression, template_tex_file):
+def tex_to_svg_file(expression, template_tex_file, typeface):
     path = os.path.join(
         TEX_DIR,
-        tex_title(expression, template_tex_file)
+        tex_title(expression, typeface)
     ) + ".svg"
     if os.path.exists(path):
         return path
 
-    tex_file = generate_tex_file(expression, template_tex_file)
+    tex_file = generate_tex_file(expression, template_tex_file, typeface)
     dvi_file = tex_to_dvi(tex_file)
     return dvi_to_svg(dvi_file)
 
-def tex_title(expression, template_tex_file):
+def tex_title(expression, typeface):
     name = expression
     to_delete = ['/', '\\', '{', '}', ' ', '~', '\'', '\"', '^']
     #Replace these rather than deleting them. These are characters that I've
@@ -183,13 +186,15 @@ def tex_title(expression, template_tex_file):
         if char in to_replace.keys():
             name = name.replace(char, to_replace[char])
     #name = str(name) + '_'
+    if typeface != 'default':
+        name += '_' + typeface
 
     return str(name)
 
-def generate_tex_file(expression, template_tex_file):
+def generate_tex_file(expression, template_tex_file, typeface):
     result = os.path.join(
         TEX_DIR,
-        tex_title(expression, template_tex_file)
+        tex_title(expression, typeface)
     ) + ".tex"
     if not os.path.exists(result):
         print("Writing \"%s\" to %s"%(

@@ -1,5 +1,10 @@
 *.pyc
 __pycache__/
-files/
+files/animations
+files/blend
+files/raster
+files/sims
+files/svg
+files/tex
 test.py
 channel_assets/
