@@ -521,19 +521,19 @@ def nat_sim_test():
     initialize_blender()
 
     sim = natural_sim.DrawnNaturalSim(
-        scale = 3,
-        food_count = 100,
-        sim = 'decay_to_low_food',
+        scale = 1,
+        food_count = 10,
+        #sim = 'decay_to_low_food',
         #sim = 'f200_5base_30sp',
         location = [-6.5, 0, 0],
-        #day_length_style = 'fixed_speed',
-        day_length_style = 'fixed_length'
+        day_length_style = 'fixed_speed',
+        #day_length_style = 'fixed_length'
         #mutation_switches = [False, False, False]
     )
 
     sim.sim.mutation_switches = [False, False, False]
 
-    sim_length = 0
+    sim_length = 3
     for i in range(sim_length):
         save = False
         if i == sim_length - 1:
@@ -566,7 +566,7 @@ def nat_sim_test():
         centered = True,
         tick_step = 0.5
     )
-    g.add_to_blender(appear_time = 1)
+    #g.add_to_blender(appear_time = 1)
     #Graphs have many tex_bobjects, whose speed is sensitive to the number of object in
     #Blender at the moment, so it's good to add the graph to blender before the sim.
 

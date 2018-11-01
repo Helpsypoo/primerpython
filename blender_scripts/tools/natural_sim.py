@@ -35,7 +35,7 @@ BLENDER_UNITS_PER_WORLD_UNIT = 1 / 40
 FOOD_SCALE = 2 * BLENDER_UNITS_PER_WORLD_UNIT
 BASE_CREATURE_SCALE = 0.25
 CREATURE_HEIGHT = 0.65 * BASE_CREATURE_SCALE / BLENDER_UNITS_PER_WORLD_UNIT
-SPEED_PER_COLOR = 0.4 #Speed change for one color unit change
+SPEED_PER_COLOR = 0.2 #Speed change for one color unit change
 
 DEFAULT_ANIM_DURATIONS = {
     'dawn' : 0.5, #Put out food and creatures
@@ -44,6 +44,13 @@ DEFAULT_ANIM_DURATIONS = {
     'evening' : 0.25, #pause before reset
     'night' : 0.5 #reset
 }
+'''DEFAULT_ANIM_DURATIONS = {
+    'dawn' : 1, #Put out food and creatures
+    'morning' : 0.5, #pause after setup
+    'day' : DEFAULT_DAY_ANIM_DURATION, #creatures go at it
+    'evening' : 0.5, #pause before reset
+    'night' : 1 #reset
+}'''
 
 """
 TODOs
@@ -88,6 +95,17 @@ Parameter considerations
 - Starting energy vs world size.
     - Makes low stats better because of efficiency.
     - May actually make sense more valuable, though, since that adds efficiency.
+
+Learnings:
+- It seems like it was a bad call to use bobjects and bobject methods for the
+  sim. Bobjects and their methods are made to be easy to use for arranging
+  objects manually throughout a scene, but when embedded automated structures,
+  they cause two problems. First, methods like bobject.move_to() place a starting
+  keyframe and ending keyframe. This can cause durations to overlap, creating
+  confused motions. Second, the bobject methods generally use seconds as the
+  time unit. This is all well and good when thinking directly about a timeline,
+  but using them alongside the blender api creates a need to convert units often,
+  giving many chances for confusion, bugs, and ugliness.
 """
 
 class CreatureDay(object):
@@ -132,10 +150,10 @@ class Food(object):
         self.world = world
         self.is_eaten = False
 
-        if isinstance(parents, list):
+        '''if isinstance(parents, list):
             self.parents = parents
         else:
-            self.parents = [parents]
+            self.parents = [parents]'''
 
         #self.parents.append(self.world)
 
@@ -162,20 +180,22 @@ class Food(object):
 
         if eater == None:
             raise Warning("Need to define eater")
-        if eater not in self.parents:
-            self.make_child_of_constraint(parent = eater.bobject.ref_obj)
+        #if eater not in self.parents:
+        self.make_child_of_constraint(parent = eater.bobject.ref_obj)
 
-        #Really, this is more complex than needed since it tries to take care
-        #of cases where there's more than one constraint
-        for cons in self.bobject.ref_obj.constraints:
+        '''for cons in self.bobject.ref_obj.constraints:
             cons.keyframe_insert(data_path = 'influence', frame = start_frame)
             if cons.target == eater.bobject.ref_obj:
                 cons.influence = 1
             else:
                 cons.influence = 0
-            cons.keyframe_insert(data_path = 'influence', frame = start_frame + 1)
+            cons.keyframe_insert(data_path = 'influence', frame = start_frame + 1)'''
 
-        #bpy.context.scene.update() #needed for blender matrices to be accurate
+        for cons in self.bobject.ref_obj.constraints:
+            if cons.target == eater.bobject.ref_obj:
+                cons.keyframe_insert(data_path = 'influence', frame = start_frame)
+                cons.influence = 1
+                cons.keyframe_insert(data_path = 'influence', frame = start_frame + 1)
 
         #There is almost certainly a more elegant way to do this, but there are
         #several transformation matrices which don't seem to relaiably update,
@@ -301,16 +321,6 @@ class Food(object):
         )
         apply_material(self.bobject.ref_obj.children[0], 'color7')
 
-        #for parent in self.parents:
-        #    self.make_child_of_constraint(parent = parent.ref_obj)
-        #if len(self.parents) > 0:
-        #    cons = self.bobject.ref_obj.constraints[0]
-        #    cons.influence = 1
-        """if has_world_as_parent == True:
-            cons.use_scale_x = True
-            cons.use_scale_y = True
-            cons.use_scale_z = True"""
-
 class Creature(Food):
     def __init__(
         self,
@@ -432,26 +442,27 @@ class Creature(Food):
 
     def take_step(self):
         day = self.days[-1]
+
+        #This set of conditionals is a bit of a frankenstein monster. Could
+        #be streamlined.
         has_energy = True
-        if day.energies[-1] == None or day.energies[-1] <= 0:
+        if day.energies[-1] == None:
             has_energy = False
             #print('HAS ENERGY IS FALSE')
-
-        steps_left = math.floor(day.energies[-1] / self.energy_cost)
-        #print('Steps left = ' + str(steps_left))
-        distance_left = steps_left * self.speed * SPEED_ADJUST_FACTOR
-        if steps_left <= 1:
-            #For some reason, steps_left is never less than one, at least for
-            #integer energy costs. I can't figure out why. So, some creatures
-            #are going to take one fewer step than they could have. Meh.
-            #print(day.energies[-1])
-            #print(self.energy_cost)
-            has_energy = False
+        else:
+            steps_left = math.floor(day.energies[-1] / self.energy_cost)
+            #print('Steps left = ' + str(steps_left))
+            distance_left = steps_left * self.speed * SPEED_ADJUST_FACTOR
+            if steps_left <= 1:
+                #For some reason, steps_left is never less than one, at least for
+                #integer energy costs. I can't figure out why. So, some creatures
+                #are going to take one fewer step than they could have. Meh.
+                #print(day.energies[-1])
+                #print(self.energy_cost)
+                has_energy = False
         if has_energy == False and day.death_time == None and day.home_time == None:
             day.death_time = len(day.locations)
-            #print()
-            #print('TRYING TO SET DEATH TIME')
-            #print()
+            self.days[-1].dead = True
 
         if self.days[-1].dead == True:
             day.heading_targets.append(None)
@@ -520,7 +531,7 @@ class Creature(Food):
                     day.locations[-1],
                     subtract = True
                 ))
-                if dist < EAT_DISTANCE and state is not 'homebound':
+                if dist < EAT_DISTANCE and len(day.has_eaten[-1]) < 2:
                     if isinstance(food, Creature):
                         food.days[-1].dead = True
                         food.days[-1].death_time = len(food.days[-1].locations)
@@ -788,7 +799,7 @@ class Creature(Food):
         mouth.keyframe_insert(data_path = 'rotation_euler', frame = end_frame)
         mouth.keyframe_insert(data_path = 'scale', frame = end_frame)
 
-    def add_to_blender(self, appear_time = None, world = None):
+    def add_to_blender(self, appear_time = None, world = None, transition_time = None):
         #Note that this is not a subclass of bobject
         if appear_time == None:
             raise Warning("Must define appear_time to add creature to Blender")
@@ -824,7 +835,13 @@ class Creature(Food):
         self.bobject = cre_bobj
         #apply_material_by_speed(cre_bobj.ref_obj.children[0].children[0], 'creature_color3')
         self.apply_material_by_speed()
-        cre_bobj.add_to_blender(appear_time = appear_time)
+        if transition_time == None:
+            cre_bobj.add_to_blender(appear_time = appear_time)
+        else:
+            cre_bobj.add_to_blender(
+                appear_time = appear_time,
+                transition_time = transition_time
+            )
 
     def apply_material_by_speed(
         self,
@@ -836,7 +853,7 @@ class Creature(Food):
         #3 -> Orange
         #5 -> Red
         spd = self.speed
-        if spd < 1 - 2 * SPEED_PER_COLOR:
+        '''if spd < 1 - 2 * SPEED_PER_COLOR:
             color = COLORS_SCALED[2]
         elif spd < 1 - SPEED_PER_COLOR:
             range_floor = 1 - 2 * SPEED_PER_COLOR
@@ -855,6 +872,46 @@ class Creature(Food):
             mix = (spd - range_floor) / SPEED_PER_COLOR
             color = mix_colors(COLORS_SCALED[3], COLORS_SCALED[5], mix)
         else:
+            color = COLORS_SCALED[5]'''
+
+        if spd < 1 - 2 * SPEED_PER_COLOR:
+            color = COLORS_SCALED[0]
+        elif spd < 1 - SPEED_PER_COLOR:
+            #Purple to blue
+            range_floor = 1 - SPEED_PER_COLOR
+            mix = (spd - range_floor) / SPEED_PER_COLOR
+            #color = mix_colors(COLORS_SCALED[6], COLORS_SCALED[4], mix)
+            color = mix_colors(COLORS_SCALED[7], COLORS_SCALED[0], mix)
+        elif spd < 1:
+            #Purple to blue
+            range_floor = 1 - SPEED_PER_COLOR
+            mix = (spd - range_floor) / SPEED_PER_COLOR
+            #color = mix_colors(COLORS_SCALED[6], COLORS_SCALED[4], mix)
+            color = mix_colors(COLORS_SCALED[7], COLORS_SCALED[2], mix)
+        elif spd < 1 + SPEED_PER_COLOR:
+            #Blue to green
+            range_floor = 1
+            mix = (spd - range_floor) / SPEED_PER_COLOR
+            #color = mix_colors(COLORS_SCALED[4], COLORS_SCALED[3], mix)
+            color = mix_colors(COLORS_SCALED[2], COLORS_SCALED[6], mix)
+        elif spd < 1 + 2 * SPEED_PER_COLOR:
+            #Green to yellow
+            range_floor = 1 + SPEED_PER_COLOR
+            mix = (spd - range_floor) / SPEED_PER_COLOR
+            color = mix_colors(COLORS_SCALED[6], COLORS_SCALED[4], mix)
+            #color = mix_colors(COLORS_SCALED[3], COLORS_SCALED[5], mix)
+        elif spd < 1 + 3 * SPEED_PER_COLOR:
+            #Yellow to orange
+            range_floor = 1 + SPEED_PER_COLOR
+            mix = (spd - range_floor) / SPEED_PER_COLOR
+            color = mix_colors(COLORS_SCALED[4], COLORS_SCALED[3], mix)
+            #color = mix_colors(COLORS_SCALED[3], COLORS_SCALED[5], mix)
+        elif spd < 1 + 4 * SPEED_PER_COLOR:
+            #Orange to Red
+            range_floor = 1 + SPEED_PER_COLOR
+            mix = (spd - range_floor) / SPEED_PER_COLOR
+            color = mix_colors(COLORS_SCALED[3], COLORS_SCALED[5], mix)
+        else:
             color = COLORS_SCALED[5]
 
         obj = self.bobject.ref_obj.children[0].children[0]
@@ -869,10 +926,10 @@ class Creature(Food):
 
         #Add speed property to bobject for reference when reusing bobjects
         self.bobject.speed = spd
+        #Not actually used?
 
     def git_ate(self, **kwargs):
         diffs = super().git_ate(**kwargs)
-        #diffs[2] is not a position difference, but an object in Blender. Ehhh..
         #When a creature is eaten, it corrects the position of the things it has
         #already eaten that day to offset the effect the grandparent relationship
         start_time = kwargs['start_time']
@@ -976,7 +1033,7 @@ class NaturalSim(object):
                     world_location = [
                         uniform(-self.dimensions[0], self.dimensions[0]),
                         uniform(-self.dimensions[1], self.dimensions[1]),
-                        3
+                        2
                     ],
                     world = self
                 )
@@ -1041,7 +1098,7 @@ class NaturalSim(object):
             'food_objects' : self.gen_food(),
             'creatures' : creatures,
             'day_length' : day_length, #number of steps in day to show all creatures
-            'anim_durations' : anim_durations
+            'anim_durations' : deepcopy(anim_durations)
         }
         self.date_records.append(date_dict)
         """print()
@@ -1169,13 +1226,17 @@ class DrawnNaturalSim(Bobject):
             def place_food():
                 for j, food in enumerate(date_record['food_objects']):
                     delay = j * date_record['anim_durations']['dawn'] / len(date_record['food_objects'])
+                    duration_frames = min(
+                        OBJECT_APPEARANCE_TIME,
+                        date_record['anim_durations']['dawn'] * FRAME_RATE - delay * FRAME_RATE
+                    )
                     if len(self.reusable_food_bobjs) == 0:
                         food.add_to_blender()
                         food.bobject.ref_obj.parent = self.ref_obj
                     else:
                         bobj = self.reusable_food_bobjs.pop()
                         bobj.scale = [FOOD_SCALE, FOOD_SCALE, FOOD_SCALE]
-                        for cons in bobj.ref_obj.constraints:
+                        '''for cons in bobj.ref_obj.constraints:
                             cons.keyframe_insert(
                                 data_path = 'influence',
                                 frame = (self.start_time + self.elapsed_time + delay) * FRAME_RATE - 1
@@ -1184,7 +1245,7 @@ class DrawnNaturalSim(Bobject):
                             cons.keyframe_insert(
                                 data_path = 'influence',
                                 frame = (self.start_time + self.elapsed_time + delay) * FRAME_RATE
-                            )
+                            )'''
 
                         food.bobject = bobj
 
@@ -1198,12 +1259,13 @@ class DrawnNaturalSim(Bobject):
                         food.bobject.ref_obj.location = starting_loc
                     food.bobject.move_to(
                         new_location = starting_loc,
-                        start_time = self.start_time + self.elapsed_time + delay - 1,
+                        start_time = self.start_time + self.elapsed_time + delay - 1 / FRAME_RATE,
                         end_time = self.start_time + self.elapsed_time + delay
                     )
 
                     food.bobject.add_to_blender(
-                        appear_time = self.start_time + self.elapsed_time + delay
+                        appear_time = self.start_time + self.elapsed_time + delay,
+                        transition_time = duration_frames
                     )
 
             place_food()
@@ -1211,11 +1273,16 @@ class DrawnNaturalSim(Bobject):
             """Place new creatures"""
             print(" Placing creatures")
             def place_creatures():
+                duration_frames = min(
+                    OBJECT_APPEARANCE_TIME,
+                    date_record['anim_durations']['dawn'] * FRAME_RATE
+                )
                 if date_record['date'] == 0:
                     for cre in date_record['creatures']:
                         cre.add_to_blender(
                             appear_time = self.start_time + self.elapsed_time,
-                            world = self
+                            world = self,
+                            transition_time = duration_frames
                         )
                         cre.bobject.ref_obj.parent = self.ref_obj
                 else:
@@ -1231,7 +1298,13 @@ class DrawnNaturalSim(Bobject):
                             reusables = [x for x in self.reusable_cre_bobjs if x.speed == cre.speed]
                             if len(reusables) > 0:
                                 bobj = reusables[-1]
+                                #print()
+                                #print(bobj.name)
+                                #print([x.name for x in self.reusable_cre_bobjs])
                                 self.reusable_cre_bobjs.remove(bobj)
+                                #print([x.name for x in self.reusable_cre_bobjs])
+                                #print()
+
 
                                 location = scalar_mult_vec(
                                     cre.days[0].locations[0],
@@ -1241,16 +1314,17 @@ class DrawnNaturalSim(Bobject):
                                 bobj.move_to(
                                     new_location = location,
                                     new_angle = rotation_euler,
-                                    start_time = self.start_time + self.elapsed_time - 1,
+                                    start_time = self.start_time + self.elapsed_time - 1 / FRAME_RATE,
                                     end_time = self.start_time + self.elapsed_time
                                 )
 
                                 bobj.scale = [cre.size * BASE_CREATURE_SCALE] * 3
                                 bobj.add_to_blender(
-                                    appear_time = self.start_time + self.elapsed_time
+                                    appear_time = self.start_time + self.elapsed_time,
+                                    transition_time = duration_frames
                                 )
 
-                                #In case object was eaten in previous day
+                                '''#In case object was eaten in previous day
                                 for cons in bobj.ref_obj.constraints:
                                     cons.keyframe_insert(
                                         data_path = 'influence',
@@ -1260,7 +1334,7 @@ class DrawnNaturalSim(Bobject):
                                     cons.keyframe_insert(
                                         data_path = 'influence',
                                         frame = (self.start_time + self.elapsed_time) * FRAME_RATE
-                                    )
+                                    )'''
 
                                 eyes = []
                                 for obj in bobj.ref_obj.children[0].children:
@@ -1279,9 +1353,17 @@ class DrawnNaturalSim(Bobject):
                             else:
                                 cre.add_to_blender(
                                     appear_time = self.start_time + self.elapsed_time,
-                                    world = self
+                                    world = self,
+                                    transition_time = duration_frames
                                 )
                                 cre.bobject.ref_obj.parent = self.ref_obj
+
+                    cres = date_record['creatures']
+                    for k in range(len(cres)):
+                        for j in range(k):
+                            if cres[k].bobject == cres[j].bobject:
+                                print(cres[k].bobject.name)
+                                raise Warning('Two creatures are sharing a bobject')
 
                 self.elapsed_time += date_record['anim_durations']['dawn'] + \
                                                 date_record['anim_durations']['morning']
@@ -1296,6 +1378,10 @@ class DrawnNaturalSim(Bobject):
                 if self.day_length_style == 'fixed_speed':
                     time_step = 1 / DEFAULT_DAY_LENGTH * DEFAULT_DAY_ANIM_DURATION
                 elif self.day_length_style == 'fixed_length':
+                    if date_record['day_length'] == 0:
+                        self.elapsed_time += date_record['anim_durations']['day']
+                        self.elapsed_time += date_record['anim_durations']['evening']
+                        return
                     time_step = 1 / date_record['day_length'] * date_record['anim_durations']['day']
                 #print(str(date_record['date']) + ' ' + str(len(date_record['creatures'])))
                 for t in range(date_record['day_length']):
@@ -1349,7 +1435,10 @@ class DrawnNaturalSim(Bobject):
                                         time_step = time_step
                                     )
                                     if isinstance(last_eaten, Creature):
-                                        self.reusable_cre_bobjs.append(last_eaten.bobject)
+                                        pass
+                                        #There's another place where creatures are
+                                        #added to the reusable pile.
+                                        #self.reusable_cre_bobjs.append(last_eaten.bobject)
                                     else:
                                         self.reusable_food_bobjs.append(last_eaten.bobject)
 
@@ -1371,17 +1460,34 @@ class DrawnNaturalSim(Bobject):
             """Along with food"""
             print(" Cleaning up")
             def clean_up():
+                duration_frames = min(
+                    OBJECT_APPEARANCE_TIME,
+                    date_record['anim_durations']['night'] * FRAME_RATE - 1
+                )
                 for cre in date_record['creatures']:
                     day = None
+                    for cons in cre.bobject.ref_obj.constraints:
+                        if cons.influence == 1:
+                            cons.keyframe_insert(
+                                data_path = 'influence',
+                                frame = (self.start_time + self.elapsed_time + date_record['anim_durations']['night']) * FRAME_RATE - 1
+                            )
+                            cons.influence = 0
+                            cons.keyframe_insert(
+                                data_path = 'influence',
+                                frame = (self.start_time + self.elapsed_time + date_record['anim_durations']['night']) * FRAME_RATE
+                            )
                     for candidate_day in cre.days:
                         if candidate_day.date == date_record['date']:
                             day = candidate_day
                             break
                     if day.dead == True:
                         cre.bobject.disappear(
-                            disappear_time = self.start_time + self.elapsed_time,
-                            is_creature = True
+                            disappear_time = self.start_time + self.elapsed_time + date_record['anim_durations']['night'],
+                            #is_creature = True,
+                            duration_frames = duration_frames
                         )
+                        #if cre.is_eaten = False:
                         self.reusable_cre_bobjs.append(cre.bobject)
                     else:
                         try: #This is for putting surviving creatures away if the
@@ -1389,17 +1495,30 @@ class DrawnNaturalSim(Bobject):
                             next_day = self.sim.date_records[i + 1]
                             if cre not in next_day['creatures']:
                                 cre.bobject.disappear(
-                                    disappear_time = self.start_time + self.elapsed_time,
-                                    is_creature = True
+                                    disappear_time = self.start_time + self.elapsed_time + date_record['anim_durations']['night'],
+                                    #is_creature = True,
+                                    duration_frames = duration_frames
                                 )
                                 self.reusable_cre_bobjs.append(cre.bobject)
+
                         except:
                             pass
 
                 for food in date_record['food_objects']:
+                    for cons in food.bobject.ref_obj.constraints:
+                        cons.keyframe_insert(
+                            data_path = 'influence',
+                            frame = (self.start_time + self.elapsed_time + date_record['anim_durations']['night']) * FRAME_RATE - 1
+                        )
+                        cons.influence = 0
+                        cons.keyframe_insert(
+                            data_path = 'influence',
+                            frame = (self.start_time + self.elapsed_time + date_record['anim_durations']['night']) * FRAME_RATE
+                        )
                     if food.is_eaten == False:
                         food.bobject.disappear(
-                            disappear_time = self.start_time + self.elapsed_time
+                            disappear_time = self.start_time + self.elapsed_time + date_record['anim_durations']['night'],
+                            duration_frames = duration_frames
                         )
                         self.reusable_food_bobjs.append(food.bobject)
 

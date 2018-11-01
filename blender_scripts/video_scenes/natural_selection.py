@@ -27,17 +27,17 @@ class NaturalSelectionScene(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
             ('intro', {'duration': 14}),
-            ('env', {'duration': 100}), #31
+            ('env', {'duration': 31}),
+            ('spd', {'duration': 16}),
         ])
         super().__init__()
 
     def play(self):
         super().play()
-        #self.subscenes
-        #self.duration
 
         #self.intro()
-        self.environment()
+        #self.environment()
+        self.speed()
 
     def intro(self):
         cues = self.subscenes['intro']
@@ -196,14 +196,14 @@ class NaturalSelectionScene(Scene):
         #Show new sim
         sim = natural_sim.DrawnNaturalSim(
             scale = 2,
-            food_count = 40,
-            initial_creatures = 20,
+            food_count = 50,
+            initial_creatures = 10,
             #sim = 'decay_to_low_food',
-            #sim = 'f200_5base_30sp',
+            sim = 'NAT20181031T145550',
             location = [0, 0, 0],
             #day_length_style = 'fixed_speed',
             day_length_style = 'fixed_length',
-            mutation_switches = [False, False, False]
+            mutation_switches = [True, True, True]
         )
 
         sim_length = 20
@@ -216,8 +216,25 @@ class NaturalSelectionScene(Scene):
 
             sim.sim.sim_next_day(save = save)
 
-        for day in sim.sim.date_records:
-            day['anim_durations']['day'] = 3
+        print('Changing anim durations')
+        for i, day in enumerate(sim.sim.date_records):
+            fff = 2 ** i #fast-forward factor
+            if fff > 64:
+                fff = 64
+            durs = day['anim_durations']
+            print('Day ' + str(i))
+            for key in durs:
+                #durs[key] = max(durs[key] / fff, 1 / FRAME_RATE)
+                durs[key] = durs[key] / fff
+                print(key + ': ' + str(durs[key]))
+            print()
+
+        #TODO:
+        #Fix keyframing of constraints when creatures are reused
+        #Fix scaledown when creatures die. Maybe only for reused bobjects.
+        #Creatures can keep walking after being eaten. Fix that. Might be because
+            #the homebound state sticks
+
 
         sim.add_to_blender(appear_time = st + 33)
 
@@ -232,3 +249,258 @@ class NaturalSelectionScene(Scene):
                 print()
             cre_counts.append(str(len(records[date]['creatures'])))
             print(cre_counts[-1])
+
+    def speed(self):
+        cues = self.subscenes['spd']
+        st = cues['start']
+
+        text = tex_bobject.TexBobject(
+            '\\text{First trait: Speed}',
+            location = [0, 6, 0],
+            scale = 3,
+            color = 'color2',
+            centered = True
+        )
+
+        text.add_to_blender(appear_time = st + 1)
+
+        blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [0, -2, 0],
+            scale = 4,
+            wiggle = True
+        )
+        apply_material(blob.ref_obj.children[0].children[0], 'creature_color3')
+        blob.add_to_blender(appear_time = st + 2)
+
+        def f_blob():
+            f_blob = import_object(
+                'boerd_blob', 'creatures',
+                location = [0, -2, 0],
+                scale = 4,
+                wiggle = True
+            )
+            apply_material(f_blob.ref_obj.children[0].children[0], 'creature_color7')
+            mix = natural_sim.MUTATION_VARIATION / natural_sim.SPEED_PER_COLOR
+            color = mix_colors(COLORS_SCALED[2], COLORS_SCALED[6], mix)
+            obj = f_blob.ref_obj.children[0].children[0]
+            f_blob.color_shift(
+                duration_time = None,
+                color = color,
+                start_time = 0,
+                shift_time = 1 / FRAME_RATE,
+                obj = obj
+            )
+            f_blob.add_to_blender(appear_time = st + 3)
+            f_blob.move_to(
+                new_location = [8, -2, 0],
+                start_time = st + 3
+            )
+
+            return f_blob
+        f_blob = f_blob()
+
+        def s_blob():
+            s_blob = import_object(
+                'boerd_blob', 'creatures',
+                location = [0, -2, 0],
+                scale = 4,
+                wiggle = True
+            )
+            apply_material(s_blob.ref_obj.children[0].children[0], 'creature_color8')
+            mix = natural_sim.MUTATION_VARIATION / natural_sim.SPEED_PER_COLOR
+            color = mix_colors(COLORS_SCALED[2], COLORS_SCALED[7], mix)
+            obj = s_blob.ref_obj.children[0].children[0]
+            s_blob.color_shift(
+                duration_time = None,
+                color = color,
+                start_time = 0,
+                shift_time = 1 / FRAME_RATE,
+                obj = obj
+            )
+            s_blob.add_to_blender(appear_time = st + 4)
+            s_blob.move_to(
+                new_location = [-8, -2, 0],
+                start_time = st + 4
+            )
+
+            return s_blob
+        s_blob = s_blob()
+
+        to_disappear = [f_blob, s_blob]
+        for thing in to_disappear:
+            thing.disappear(disappear_time = st + 6 + 0.5)
+
+        blob.move_to(
+            new_location = [-10, 0.5, 0],
+            new_scale = 2,
+            start_time = st + 6
+        )
+
+        rf_blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [-10, 0.5, 0],
+            scale = 2,
+            wiggle = True
+        )
+        apply_material(rf_blob.ref_obj.children[0].children[0], 'creature_color3')
+        rf_blob.add_to_blender(appear_time = st + 7)
+        rf_blob.move_to(
+            new_location = [-10, -5, 0],
+            start_time = st + 7
+        )
+        obj = rf_blob.ref_obj.children[0].children[0]
+        shift_frames = 60
+        color_set = [COLORS_SCALED[6], COLORS_SCALED[4], COLORS_SCALED[3], COLORS_SCALED[5]]
+        for i in range(4):
+            rf_blob.color_shift(
+                duration_time = None,
+                color = color_set[i],
+                start_time = st + 8 + i * shift_frames / 4 / FRAME_RATE,
+                shift_time = shift_frames / 4,
+                obj = obj
+            )
+
+        def slow_move():
+            scale = 2
+            arrow = gesture.Gesture(
+                gesture_series = [
+                    {
+                        'type': 'arrow',
+                        'points': {
+                            'tail': (-11 / scale, 0.25, 0),
+                            'head': (2 / scale, 0.25, 0)
+                        }
+                    },
+                ],
+                scale = scale,
+                color = 'color2'
+            )
+
+            arrow.add_to_blender(appear_time = st + 10, transition_time = 2 * OBJECT_APPEARANCE_TIME)
+            blob.move_to(
+                new_angle = [0, math.pi / 2, 0],
+                start_time = st + 9.8
+            )
+            blob.move_to(
+                new_location = [4, 0.5, 0],
+                start_time = st + 10,
+                end_time = st + 11
+            )
+            blob.move_to(
+                new_angle = [0, 0, 0],
+                start_time = st + 10.7
+            )
+
+            time = list(range(0,11))
+            time = [x/10 for x in time]
+            time_exprs = [('\\text{Time}=' + str(x)) for x in time]
+            print(time_exprs)
+
+            slow_time = tex_bobject.TexBobject(
+                *time_exprs,
+                location = [6, 1, 0],
+                transition_type = 'instant'
+            )
+            slow_time.add_to_blender(appear_time = st + 9)
+            for i in range(1, len(time_exprs)):
+                start_time = st + 10 + i * (1/len(time_exprs)) #1 is the movement duration
+                slow_time.morph_figure(i, start_time = start_time)
+
+            energy_exprs = [('\\text{Energy}=' + str(x)) for x in time]
+            slow_energy = tex_bobject.TexBobject(
+                *energy_exprs,
+                location = [6, -0.5, 0],
+                transition_type = 'instant'
+            )
+            slow_energy.add_to_blender(appear_time = st + 9)
+            for i in range(1, len(energy_exprs)):
+                start_time = st + 10 + i * (1/len(energy_exprs)) #1 is the movement duration
+                slow_energy.morph_figure(i, start_time = start_time)
+
+            return slow_time, slow_energy, arrow
+
+        def fast_move():
+            scale = 2
+            arrow = gesture.Gesture(
+                gesture_series = [
+                    {
+                        'type': 'arrow',
+                        'points': {
+                            'tail': (-11 / scale, -5.25 / scale, 0),
+                            'head': (2 / scale, -5.25 / scale, 0)
+                        }
+                    },
+                ],
+                scale = scale,
+                color = 'color2'
+            )
+
+            arrow.add_to_blender(appear_time = st + 10, transition_time = OBJECT_APPEARANCE_TIME)
+            rf_blob.move_to(
+                new_angle = [0, math.pi / 2, 0],
+                start_time = st + 9.8,
+                end_time = st + 9.8 + 0.4
+            )
+            rf_blob.move_to(
+                new_location = [4, -5, 0],
+                start_time = st + 10,
+                #end_time = st + 11
+            )
+            rf_blob.move_to(
+                new_angle = [0, 0, 0],
+                start_time = st + 10.3,
+            )
+
+            time = list(range(0,6))
+            time = [x/10 for x in time]
+            time_exprs = [('\\text{Time}=' + str(x)) for x in time]
+            print(time_exprs)
+
+            fast_time = tex_bobject.TexBobject(
+                *time_exprs,
+                location = [6, -4.5, 0],
+                transition_type = 'instant'
+            )
+            fast_time.add_to_blender(appear_time = st + 9)
+            for i in range(1, len(time_exprs)):
+                start_time = st + 10 + i * (0.5/len(time_exprs)) #0.5 is the movement duration
+                fast_time.morph_figure(i, start_time = start_time)
+
+            energy_exprs = [('\\text{Energy}=' + str(x*4)) for x in time]
+            fast_energy = tex_bobject.TexBobject(
+                *energy_exprs,
+                location = [6, -6, 0],
+                transition_type = 'instant'
+            )
+            fast_energy.add_to_blender(appear_time = st + 9)
+            for i in range(1, len(energy_exprs)):
+                start_time = st + 10 + i * (0.5/len(energy_exprs)) #0.5 is the movement duration
+                fast_energy.morph_figure(i, start_time = start_time)
+
+            return fast_time, fast_energy, arrow
+
+        slow_time, slow_energy, slow_arrow = slow_move()
+        fast_time, fast_energy, fast_arrow = fast_move()
+
+        for tex in [slow_time, fast_time]:
+            tex.pulse(start_time = st + 12)
+
+        for tex in [slow_energy, fast_energy]:
+            tex.pulse(start_time = st + 13)
+
+        #TODO: Pulse tex_bobjects along with speech
+              #Make everything disappear
+        to_disappear = [
+                        fast_energy,
+                        fast_time,
+                        rf_blob,
+                        fast_arrow,
+                        slow_energy,
+                        slow_time,
+                        blob,
+                        slow_arrow,
+                        text
+                        ]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = cues['end'] - (len(to_disappear) - 1 - i) * 0.05)

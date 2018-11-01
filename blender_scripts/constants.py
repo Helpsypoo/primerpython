@@ -28,7 +28,7 @@ if RENDER_QUALITY == 'high':
     LAMPS_TO_A_SIDE = 1
     LAMP_TYPE = 'SUN'
     ICO_SUBDIVISIONS = 6
-    CONTROL_POINTS_PER_SPLINE = 40 #TODO: figure out the threshold for noticing a difference
+    CONTROL_POINTS_PER_SPLINE = 50 #TODO: figure out the threshold for noticing a difference
     PARTICLES_PER_MESH = 300000 #Could be smaller if morphing smaller objects
     #Could even be a function of scale
     #Or number of other objects
@@ -76,7 +76,8 @@ elif color_scheme == 2: #Main. Why isn't #1 main? Because your face.
         [214, 59, 80, 1],
         #[255, 0, 0, 1]
         [105, 143, 63, 1],
-        [145, 146.5, 147, 1] #Grat from averaging 1 and 2
+        [219, 90, 186, 1],
+        [145, 146.5, 147, 1] #Gray from averaging 1 and 2
     ]
 
 elif color_scheme == 3:
@@ -156,9 +157,9 @@ Sim motion constants
 CREATURE_BUBBLE_WIDTH = 0.1
 BOUNCE_DAMP_FACTOR = 0.8
 FLOOR_PADDING = 1
-BLINK_CHANCE = 0.005
+BLINK_CHANCE = 0.0025
 BLINK_LENGTH = 11
-BLINK_CYCLE_LENGTH = 600
+BLINK_CYCLE_LENGTH = 1200
 #Could make a constant for the velocity parameters
 
 '''

@@ -171,12 +171,14 @@ class Bobject(object):
                           "but you still managed to give an invalid value.")
 
     #Keyframe additions
-    def disappear(self,
+    def disappear(
+        self,
         disappear_frame = None,
         disappear_time = None,
         animate = True,
         no_shrink = False,
-        is_creature = False
+        is_creature = False,
+        duration_frames = OBJECT_APPEARANCE_TIME
     ):
         if disappear_time != None:
             if disappear_frame != None:
@@ -201,9 +203,7 @@ class Bobject(object):
             )
 
         if is_creature == True:
-            duration = MATURATION_TIME
-        else:
-            duration = OBJECT_APPEARANCE_TIME
+            duration_frames = MATURATION_TIME
 
         if animate == True:
             #scale_down_frame = disappear_frame + OBJECT_APPEARANCE_TIME
@@ -214,7 +214,7 @@ class Bobject(object):
             #Uses current scale. This assumes keyframes have been added
             #chronologically, so the previous keyframe agrees with the current
             #object scale.
-            main_obj.keyframe_insert(data_path="scale", frame = scale_down_frame - duration)
+            main_obj.keyframe_insert(data_path="scale", frame = scale_down_frame - duration_frames)
             main_obj.scale = [0, 0, 0]
             main_obj.keyframe_insert(data_path="scale", frame = scale_down_frame)
 
