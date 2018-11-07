@@ -590,8 +590,9 @@ def make_parent_tree():
     establish_ancestors(central_mesh, intersections)
 
 '''
-Blender object imports
+Bobject helpers
 '''
+#Import object from another blend file and return bobject
 def import_object(filename, *folders, **kwargs):
     #Needs filename and the name of the template object to be the same
     DIR = BLEND_DIR
@@ -914,6 +915,40 @@ def import_object(filename, *folders, **kwargs):
 
     return new_bobject
 
+def cam_and_swivel(
+    cam_location = [25, 0, 0],
+    cam_rotation_euler = [0, 0, 0],
+    cam_name = "Camera Bobject",
+    swivel_location = [0, 0, 0],
+    swivel_rotation_euler = [0, 0, 0],
+    swivel_name = 'Cam swivel',
+    control_sun = False
+):
+    cam_bobj = bobject.Bobject(
+        location = cam_location,
+        rotation_euler = cam_rotation_euler,
+        name = cam_name
+    )
+    cam_swivel = bobject.Bobject(
+        cam_bobj,
+        location = swivel_location,
+        rotation_euler = swivel_rotation_euler,
+        name = swivel_name,
+    )
+
+    cam_obj = bpy.data.objects['Camera']
+    cam_obj.data.clip_end = 100
+    cam_obj.location = [0, 0, 0]
+    cam_obj.parent = cam_bobj.ref_obj
+
+    if control_sun == True:
+        sun_obj = bpy.data.objects['Sun']
+        sun_obj.location = [0, 0, 0]
+        sun_obj.parent = cam_bobj.ref_obj
+
+    return cam_bobj, cam_swivel
+
+
 '''
 Animation helpers
 '''
@@ -926,7 +961,7 @@ def make_animations_linear(thing_with_animation_data):
             kp.handle_right_type = 'VECTOR'
 
 '''
-Time testing
+Time measurement
 '''
 TIME_LIST = []
 now = datetime.datetime.now()

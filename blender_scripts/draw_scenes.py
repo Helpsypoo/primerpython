@@ -466,7 +466,10 @@ def graph_test():
     initialize_blender(total_duration = 120)
 
     g = graph_bobject.GraphBobject(
+        #location = [-5, 0, 0],
         centered = True,
+        x_range = 2,
+        tick_step = 1/2,
         include_y = False
     )
 
@@ -523,34 +526,46 @@ def nat_sim_test():
 
     sim = natural_sim.DrawnNaturalSim(
         scale = 1,
-        food_count = 10,
-        #sim = 'decay_to_low_food',
-        #sim = 'f200_5base_30sp',
+        food_count = 30,
+        #initial_creatures = 0,
+        sim = 'gradual_f10_[True, True, True]_201',
+        #sim = 'all_mut_f100_[True, True, True]_19',
         location = [-6.5, 0, 0],
         day_length_style = 'fixed_speed',
         #day_length_style = 'fixed_length'
         #mutation_switches = [False, False, False]
     )
 
-    sim.sim.mutation_switches = [False, False, False]
+    #sim.sim.mutation_switches = [True, True, True]
+    #sim.sim.food_count = 10
 
-    sim_length = 3
+    sim_length = 0
     for i in range(sim_length):
         save = False
-        if i == sim_length - 1:
+        #filename = None
+        filename = 'f' + str(sim.sim.food_count) + '_' + \
+                    str(sim.sim.mutation_switches) + '_' + \
+                    str(len(sim.sim.date_records))
+        '''if i == sim_length - 1:
+            save = True'''
+        if (i+1) % 20 == 0:
             save = True
+            filename = 'f' + str(sim.sim.food_count) + '_' + \
+                        str(sim.sim.mutation_switches) + '_' + \
+                        str(len(sim.sim.date_records))
         if i == 10:
-            sim.sim.mutation_switches = [True, False, False]
+            #sim.sim.mutation_switches = [True, False, False]
             print()
         if i == 30:
-            sim.sim.mutation_switches = [True, True, True]
+            #sim.sim.mutation_switches = [True, True, True]
             print()
-        if i >= 50 and i % 2 == 0:
-            sim.sim.food_count -= 1
+        #if i < 180 and i % 2 == 0:
+        #    sim.sim.food_count -= 1
+        #    print(' Food count now ' + str(sim.sim.food_count))
         if i == 50:
             print()
 
-        sim.sim.sim_next_day(save = save)
+        sim.sim.sim_next_day(save = save, filename = filename)
 
     g = graph_bobject.GraphBobject3D(
         x_range = [0, 2],
@@ -567,13 +582,14 @@ def nat_sim_test():
         centered = True,
         tick_step = 0.5
     )
-    #g.add_to_blender(appear_time = 1)
+    g.add_to_blender(appear_time = 1)
     #Graphs have many tex_bobjects, whose speed is sensitive to the number of object in
     #Blender at the moment, so it's good to add the graph to blender before the sim.
 
     sim.add_to_blender(
         appear_time = 1,
-        start_delay = 1
+        start_day = 199,
+        end_day = 199
     )
 
     cres_with_points = []
@@ -585,80 +601,85 @@ def nat_sim_test():
     for date in range(len(records)):
         #Add count at date to list, for the counter tex_bobject
         if date == 10:
-            print()
+            pass
+            #print()
+
         cre_counts.append(str(len(records[date]['creatures'])))
-        print(cre_counts[-1])
-
-
-
-
-
-
-
+        print('Creatures on day ' + str(date) + ': ' + str(cre_counts[-1]))
+        tot_size = 0
+        tot_spd = 0
+        tot_sense = 0
+        for cre in records[date]['creatures']:
+            tot_size += cre.size
+            tot_spd += cre.speed
+            tot_sense += cre.sense
+        if tot_size > 0: #Avoid error on extinction
+            avg_size = tot_size / len(records[date]['creatures'])
+            avg_spd = tot_spd / len(records[date]['creatures'])
+            avg_sense = tot_sense / len(records[date]['creatures'])
+            print(" Avgs for today are (size, speed, sense) " + \
+                        str(round(avg_size, 2)) + ' ' + \
+                        str(round(avg_spd, 2)) + ' ' + \
+                        str(round(avg_sense, 2))
+                 )
 
     graph_point_leftovers = []
 
-
-
-
-
-
-
-
-
     for date in range(len(records)):
-        #print()
-        #print("The date is " + str(date))
-        #print(" There are " + str(len(records[date]['creatures'])) + " creatures today")
-        #print(" " + str(len(cres_with_points)) + " creatures have points now")
-        print("Updating graph for day " + str(date))
+        if date == len(records) - 1:
+            #print()
+            #print("The date is " + str(date))
+            #print(" There are " + str(len(records[date]['creatures'])) + " creatures today")
+            #print(" " + str(len(cres_with_points)) + " creatures have points now")
+            print("Updating graph for day " + str(date))
 
-        #Add count at date to list, for the counter tex_bobject
-        #cre_counts.append(str(len(records[date]['creatures'])))
 
-        #Delete points for creatures the died
-        to_delete = []
-        for cre in cres_with_points:
-            #print(' A creature has a point')
-            if cre not in records[date]['creatures']:
-                #print(' taking point from creature')
-                cre.point.disappear(
-                    disappear_time = time,
-                    #Will need duration in actual scene
-                )
-                to_delete.append(cre)
-        for cre in to_delete:
-            cres_with_points.remove(cre)
-        #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+            #Add count at date to list, for the counter tex_bobject
+            #cre_counts.append(str(len(records[date]['creatures'])))
 
-        #Add points for new creatures
-        for cre in records[date]['creatures']:
-            #print(" There's a cre")
-            if cre not in cres_with_points:
-                #print(' Giving a point')
-                point = g.add_point_at_coord(
-                    coord = [
-                        cre.size + uniform(-0.03, 0.03),
-                        cre.speed + uniform(-0.03, 0.03),
-                        cre.sense + uniform(-0.03, 0.03)
-                    ],
-                    appear_time = time,
-                    #Will need duration in actual scene
-                )
-                """apply_material(
-                    point.ref_obj.children[0],
-                    cre.bobject.ref_obj.children[0].children[0].active_material
-                )"""
-                cre.point = point
-                cres_with_points.append(cre)
-                #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+            #Delete points for creatures the died
+            to_delete = []
+            for cre in cres_with_points:
+                #print(' A creature has a point')
+                if cre not in records[date]['creatures']:
+                    #print(' taking point from creature')
+                    cre.point.disappear(
+                        disappear_time = time,
+                        #Will need duration in actual scene
+                    )
+                    to_delete.append(cre)
+            for cre in to_delete:
+                cres_with_points.remove(cre)
+            #print(' Now ' + str(len(cres_with_points)) + " cres have points")
 
-        #Add time after day
-        time += records[date]['anim_durations']['dawn'] + \
-                records[date]['anim_durations']['morning'] + \
-                records[date]['anim_durations']['day'] + \
-                records[date]['anim_durations']['evening'] + \
-                records[date]['anim_durations']['night']
+            #Add points for new creatures
+            for cre in records[date]['creatures']:
+                #print(" There's a cre")
+                if cre not in cres_with_points:
+                    #print(' Giving a point')
+                    point = g.add_point_at_coord(
+                        coord = [
+                            cre.size + uniform(-0.03, 0.03),
+                            cre.speed + uniform(-0.03, 0.03),
+                            cre.sense + uniform(-0.03, 0.03)
+                        ],
+                        appear_time = time,
+                        #Will need duration in actual scene
+                    )
+                    '''apply_material(
+                        point.ref_obj.children[0],
+                        cre.bobject.ref_obj.children[0].children[0].active_material
+                    )'''
+                    cre.point = point
+                    cres_with_points.append(cre)
+                    #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+
+            #Add time after day
+            time += records[date]['anim_durations']['dawn'] + \
+                    records[date]['anim_durations']['morning'] + \
+                    records[date]['anim_durations']['day'] + \
+                    records[date]['anim_durations']['evening'] + \
+                    records[date]['anim_durations']['night']
 
 
     #print(cre_counts)
@@ -692,20 +713,15 @@ def nat_sim_test():
                 records[date]['anim_durations']['night']
     """
 
+
 def main():
     """Use this as a test scene"""
-    tex_test()
+    #tex_test()
     """"""
 
-    #nat_sim_test()
+    nat_sim_test()
     #graph_test()
     #draw_scenes_from_file(natural_selection)
-
-
-    #bpy.ops.wm.revert_mainfile()
-    #bpy.ops.wm.open_mainfile(filepath="C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\files\\blend\\UCSF\\inner_ear_rigid_body.blend")
-    #draw_scenes_from_file(bppv, clear = False)
-
 
     print_time_report()
     finish_noise()

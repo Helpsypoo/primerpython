@@ -638,6 +638,44 @@ class Bobject(object):
             frame = start_frame + duration_frames
         )
 
+    def eat_animation(self, start_frame = None, end_frame = None):
+        #I parented the mouth in a pretty ridicukous way, but it works.
+        for child in self.ref_obj.children[0].children:
+            if 'Mouth' in child.name:
+                mouth = child
+
+        o_loc = copy(mouth.location)
+        o_rot = copy(mouth.rotation_euler)
+        o_scale = copy(mouth.scale)
+
+        mouth.keyframe_insert(data_path = 'location', frame = start_frame)
+        mouth.keyframe_insert(data_path = 'rotation_euler', frame = start_frame)
+        mouth.keyframe_insert(data_path = 'scale', frame = start_frame)
+
+        mouth.location = [-0.04, 0.36, 0.3760]
+        mouth.rotation_euler = [
+            -8.91 * math.pi / 180,
+            -0.003 * math.pi / 180,
+            -3.41 * math.pi / 180,
+        ]
+        mouth.scale = [
+            0.853,
+            2.34,
+            0.889
+        ]
+
+        mouth.keyframe_insert(data_path = 'location', frame = (start_frame + end_frame) / 2)
+        mouth.keyframe_insert(data_path = 'rotation_euler', frame = (start_frame + end_frame) / 2)
+        mouth.keyframe_insert(data_path = 'scale', frame = (start_frame + end_frame) / 2)
+
+        mouth.location = o_loc
+        mouth.rotation_euler = o_rot
+        mouth.scale = o_scale
+
+        mouth.keyframe_insert(data_path = 'location', frame = end_frame)
+        mouth.keyframe_insert(data_path = 'rotation_euler', frame = end_frame)
+        mouth.keyframe_insert(data_path = 'scale', frame = end_frame)
+
     def de_explode(
         self,
         start_time = 0,

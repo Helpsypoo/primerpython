@@ -20,6 +20,7 @@ PREDATOR_SIZE_RATIO = 1.2 #Vals close to 1 apply strong pressure toward bigness,
 SPEED_ADJUST_FACTOR = 1.0 #Scale speed to keep creature speeds in the 0-2 range
                           #for graphing. Units are arbitrary anyway, so this is
                           #easier than adjusting all the distances.
+SIZE_ADJUST_FACTOR = 1.0
 HEADING_TARGET_VARIATION = 0.4 #Range for random heading target changes, radians
 MAX_TURN_SPEED = 0.07
 TURN_ACCELERATION = 0.005
@@ -35,7 +36,7 @@ BLENDER_UNITS_PER_WORLD_UNIT = 1 / 40
 FOOD_SCALE = 2 * BLENDER_UNITS_PER_WORLD_UNIT
 BASE_CREATURE_SCALE = 0.25
 CREATURE_HEIGHT = 0.65 * BASE_CREATURE_SCALE / BLENDER_UNITS_PER_WORLD_UNIT
-SPEED_PER_COLOR = 0.2 #Speed change for one color unit change
+SPEED_PER_COLOR = 0.3 #Speed change for one color unit change
 
 DEFAULT_ANIM_DURATIONS = {
     'dawn' : 0.5, #Put out food and creatures
@@ -106,6 +107,9 @@ Learnings:
   time unit. This is all well and good when thinking directly about a timeline,
   but using them alongside the blender api creates a need to convert units often,
   giving many chances for confusion, bugs, and ugliness.
+- Managing the double-parent relationships has proven difficult. It may have been
+  better to have a childof constraint rather than full parenting of the food,
+  since the constraints can simply be turned off.
 """
 
 class CreatureDay(object):
@@ -342,8 +346,8 @@ class Creature(Food):
         self.world = world
 
         cost = 0
-        cost += self.size ** 3 * (self.speed * SPEED_ADJUST_FACTOR) ** 2 #* 2
-        cost += self.size ** 3 / 2
+        cost += (self.size * SIZE_ADJUST_FACTOR) ** 3 * (self.speed * SPEED_ADJUST_FACTOR) ** 2 #* 2
+        cost += (self.size * SIZE_ADJUST_FACTOR) ** 3 / 2
         cost += self.sense / 2
         self.energy_cost = cost
 
@@ -469,7 +473,8 @@ class Creature(Food):
             day.d_headings.append(None)
             day.headings.append(None)
             day.locations.append(None)
-            day.has_eaten.append(None)
+            #day.has_eaten.append(None)
+            day.has_eaten.append(copy(day.has_eaten[-1]))
             day.energies.append(None)
         else:
             day.has_eaten.append(copy(day.has_eaten[-1])) #Append new eaten state to fill with food
@@ -762,42 +767,8 @@ class Creature(Food):
 
         start_frame = start_time * FRAME_RATE
         end_frame = end_time * FRAME_RATE
-        #I parented the mouth in a pretty ridicukous way, but it works.
-        for child in self.bobject.ref_obj.children[0].children:
-            if 'Mouth' in child.name:
-                mouth = child
 
-        o_loc = copy(mouth.location)
-        o_rot = copy(mouth.rotation_euler)
-        o_scale = copy(mouth.scale)
-
-        mouth.keyframe_insert(data_path = 'location', frame = start_frame)
-        mouth.keyframe_insert(data_path = 'rotation_euler', frame = start_frame)
-        mouth.keyframe_insert(data_path = 'scale', frame = start_frame)
-
-        mouth.location = [-0.04, 0.36, 0.3760]
-        mouth.rotation_euler = [
-            -8.91 * math.pi / 180,
-            -0.003 * math.pi / 180,
-            -3.41 * math.pi / 180,
-        ]
-        mouth.scale = [
-            0.853,
-            2.34,
-            0.889
-        ]
-
-        mouth.keyframe_insert(data_path = 'location', frame = (start_frame + end_frame) / 2)
-        mouth.keyframe_insert(data_path = 'rotation_euler', frame = (start_frame + end_frame) / 2)
-        mouth.keyframe_insert(data_path = 'scale', frame = (start_frame + end_frame) / 2)
-
-        mouth.location = o_loc
-        mouth.rotation_euler = o_rot
-        mouth.scale = o_scale
-
-        mouth.keyframe_insert(data_path = 'location', frame = end_frame)
-        mouth.keyframe_insert(data_path = 'rotation_euler', frame = end_frame)
-        mouth.keyframe_insert(data_path = 'scale', frame = end_frame)
+        self.bobject.eat_animation(start_frame = start_frame, end_frame = end_frame)
 
     def add_to_blender(self, appear_time = None, world = None, transition_time = None):
         #Note that this is not a subclass of bobject
@@ -813,7 +784,8 @@ class Creature(Food):
                 world.blender_units_per_world_unit
             ),
             scale = self.size * BASE_CREATURE_SCALE,
-            rotation_euler = [0, 0, self.days[0].headings[0]]
+            rotation_euler = [0, 0, self.days[0].headings[0]],
+            wiggle = True
         )
         #Rotate creature so a ref_obj rotation_euler of [0, 0, 0] results in
         #an x-facing blob standing in the z direction
@@ -845,14 +817,26 @@ class Creature(Food):
 
     def apply_material_by_speed(
         self,
-        time = 0
+        time = 0,
+        bobj = None,
+        spd = None
     ):
         #2 -> Blue
         #6 -> Green
         #4 -> Yellow
         #3 -> Orange
         #5 -> Red
-        spd = self.speed
+
+        #Kind of ridiculous. Should really just make this a more generalized
+        #bobject method.
+        if bobj == None:
+            bobj = self.bobject
+            spd = self.speed
+            obj = self.bobject.ref_obj.children[0].children[0]
+        else:
+            obj = bobj.ref_obj.children[0]
+
+
         '''if spd < 1 - 2 * SPEED_PER_COLOR:
             color = COLORS_SCALED[2]
         elif spd < 1 - SPEED_PER_COLOR:
@@ -874,49 +858,49 @@ class Creature(Food):
         else:
             color = COLORS_SCALED[5]'''
 
-        if spd < 1 - 2 * SPEED_PER_COLOR:
+        if spd < 1 - 3 * SPEED_PER_COLOR:
             color = COLORS_SCALED[0]
-        elif spd < 1 - SPEED_PER_COLOR:
-            #Purple to blue
-            range_floor = 1 - SPEED_PER_COLOR
+        elif spd < 1 - 2 * SPEED_PER_COLOR:
+            #black to purple
+            range_floor = 1 - 3 * SPEED_PER_COLOR
             mix = (spd - range_floor) / SPEED_PER_COLOR
             #color = mix_colors(COLORS_SCALED[6], COLORS_SCALED[4], mix)
-            color = mix_colors(COLORS_SCALED[7], COLORS_SCALED[0], mix)
-        elif spd < 1:
+            color = mix_colors(COLORS_SCALED[0], COLORS_SCALED[7], mix)
+        elif spd < 1 - SPEED_PER_COLOR:
             #Purple to blue
-            range_floor = 1 - SPEED_PER_COLOR
+            range_floor = 1 - 2 * SPEED_PER_COLOR
             mix = (spd - range_floor) / SPEED_PER_COLOR
             #color = mix_colors(COLORS_SCALED[6], COLORS_SCALED[4], mix)
             color = mix_colors(COLORS_SCALED[7], COLORS_SCALED[2], mix)
-        elif spd < 1 + SPEED_PER_COLOR:
+        elif spd < 1:
             #Blue to green
-            range_floor = 1
+            range_floor = 1 - SPEED_PER_COLOR
             mix = (spd - range_floor) / SPEED_PER_COLOR
             #color = mix_colors(COLORS_SCALED[4], COLORS_SCALED[3], mix)
             color = mix_colors(COLORS_SCALED[2], COLORS_SCALED[6], mix)
-        elif spd < 1 + 2 * SPEED_PER_COLOR:
+        elif spd < 1 + SPEED_PER_COLOR:
             #Green to yellow
-            range_floor = 1 + SPEED_PER_COLOR
+            range_floor = 1
             mix = (spd - range_floor) / SPEED_PER_COLOR
             color = mix_colors(COLORS_SCALED[6], COLORS_SCALED[4], mix)
             #color = mix_colors(COLORS_SCALED[3], COLORS_SCALED[5], mix)
-        elif spd < 1 + 3 * SPEED_PER_COLOR:
+        elif spd < 1 + 2 * SPEED_PER_COLOR:
             #Yellow to orange
             range_floor = 1 + SPEED_PER_COLOR
             mix = (spd - range_floor) / SPEED_PER_COLOR
             color = mix_colors(COLORS_SCALED[4], COLORS_SCALED[3], mix)
             #color = mix_colors(COLORS_SCALED[3], COLORS_SCALED[5], mix)
-        elif spd < 1 + 4 * SPEED_PER_COLOR:
+        elif spd < 1 + 3 * SPEED_PER_COLOR:
             #Orange to Red
-            range_floor = 1 + SPEED_PER_COLOR
+            range_floor = 1 + 2 * SPEED_PER_COLOR
             mix = (spd - range_floor) / SPEED_PER_COLOR
             color = mix_colors(COLORS_SCALED[3], COLORS_SCALED[5], mix)
         else:
             color = COLORS_SCALED[5]
 
-        obj = self.bobject.ref_obj.children[0].children[0]
+
         apply_material(obj, 'creature_color1')
-        self.bobject.color_shift(
+        bobj.color_shift(
             duration_time = None,
             color = color,
             start_time = time - 1 / FRAME_RATE,
@@ -925,7 +909,7 @@ class Creature(Food):
         )
 
         #Add speed property to bobject for reference when reusing bobjects
-        self.bobject.speed = spd
+        bobj.speed = spd
         #Not actually used?
 
     def git_ate(self, **kwargs):
@@ -933,11 +917,11 @@ class Creature(Food):
         #When a creature is eaten, it corrects the position of the things it has
         #already eaten that day to offset the effect the grandparent relationship
         start_time = kwargs['start_time']
-        corrected_loc = []
 
         has_eaten = self.days[-1].has_eaten
         if len(has_eaten) > 0 and has_eaten[-1] is not None:
             for eaten in has_eaten[-1]:
+                corrected_loc = []
                 for i, x in enumerate(eaten.bobject.ref_obj.location):
                     corrected_loc.append(x - diffs[0][i])
 
@@ -945,15 +929,18 @@ class Creature(Food):
                 for i, x in enumerate(eaten.bobject.ref_obj.rotation_euler):
                     corrected_rot.append(x - diffs[1][i])
 
-                #Change location and rotation
-                eaten.bobject.move_to(
-                    start_time = start_time,
-                    end_time = start_time + 1 / FRAME_RATE,
-                    new_location = corrected_loc,
-                    new_angle = corrected_rot
-                )
-
-        #return diffs
+                try:
+                    #Change location and rotation
+                    eaten.bobject.move_to(
+                        start_time = start_time,
+                        end_time = start_time + 1 / FRAME_RATE,
+                        new_location = corrected_loc,
+                        new_angle = corrected_rot
+                    )
+                except:
+                    print(corrected_loc)
+                    print(corrected_rot)
+                    raise()
 
 class NaturalSim(object):
     """docstring for NaturalSim."""
@@ -1069,6 +1056,7 @@ class NaturalSim(object):
     def sim_next_day(
         self,
         save = False,
+        filename = None,
         anim_durations = DEFAULT_ANIM_DURATIONS,
         custom_creature_set = None #For stringing separate sims together
     ):
@@ -1160,11 +1148,14 @@ class NaturalSim(object):
                     #print()
 
         if save == True:
-            self.save_sim_result()
+            self.save_sim_result(filename)
 
-    def save_sim_result(self):
-        now = datetime.datetime.now()
-        name = "NAT" + now.strftime('%Y%m%dT%H%M%S')
+    def save_sim_result(self, filename):
+        if filename == None:
+            now = datetime.datetime.now()
+            name = "NAT" + now.strftime('%Y%m%dT%H%M%S')
+        else:
+            name = filename
         #name = 'test'
         result = os.path.join(
             SIM_DIR,
@@ -1218,8 +1209,11 @@ class DrawnNaturalSim(Bobject):
         self.reusable_food_bobjs = []
         self.reusable_cre_bobjs = []
 
-    def animate_days(self):
-        for i, date_record in enumerate(self.sim.date_records):
+    def animate_days(self, start_day, end_day):
+        if end_day == None:
+            end_day = len(self.sim.date_records) - 1
+        for i in range(start_day, end_day + 1):
+            date_record = self.sim.date_records[i]
             print("Animating day " + str(i))
             """Place food"""
             print(" Placing food")
@@ -1277,7 +1271,7 @@ class DrawnNaturalSim(Bobject):
                     OBJECT_APPEARANCE_TIME,
                     date_record['anim_durations']['dawn'] * FRAME_RATE
                 )
-                if date_record['date'] == 0:
+                if date_record['date'] == start_day:
                     for cre in date_record['creatures']:
                         cre.add_to_blender(
                             appear_time = self.start_time + self.elapsed_time,
@@ -1362,7 +1356,7 @@ class DrawnNaturalSim(Bobject):
                     for k in range(len(cres)):
                         for j in range(k):
                             if cres[k].bobject == cres[j].bobject:
-                                print(cres[k].bobject.name)
+                                #print(cres[k].bobject.name)
                                 raise Warning('Two creatures are sharing a bobject')
 
                 self.elapsed_time += date_record['anim_durations']['dawn'] + \
@@ -1529,6 +1523,8 @@ class DrawnNaturalSim(Bobject):
     def add_to_blender(
         self,
         start_delay = 1,
+        start_day = 0,
+        end_day = None,
         **kwargs
     ):
         if 'appear_time' not in kwargs:
@@ -1554,5 +1550,5 @@ class DrawnNaturalSim(Bobject):
         super().add_to_blender(**kwargs)
         #execute_and_time(
         #    'Animated day',
-        self.animate_days(),
+        self.animate_days(start_day, end_day),
         #

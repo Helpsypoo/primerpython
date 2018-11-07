@@ -66,6 +66,7 @@ class GraphBobject(Bobject):
         #Calculate factor for converting from function space to draw space
         self.domain_scale_factor = self.width / (self.x_range[1] - self.x_range[0])
         self.range_scale_factor = self.height / (self.y_range[1] - self.y_range[0])
+
         self.z_scale_factor = 1 #Overridden in the 3D class
 
         self.arrows = arrows
@@ -93,6 +94,8 @@ class GraphBobject(Bobject):
             if self.include_y == True:
                 self.ref_obj.location[1] -= \
                     (self.y_range[1] + self.y_range[0]) * self.range_scale_factor / 2 * scale
+        else:
+            self.centered = False
 
     def add_axes(self):
         #x axis
@@ -175,54 +178,58 @@ class GraphBobject(Bobject):
             self.add_subbobject(y_lab)
             self.y_label_bobject = y_lab
 
-
+        #Ticks
         tick_step = self.tick_step
         if tick_step == 'auto':
             num_steps_x = self.width / AUTO_TICK_SPACING_TARGET
-            x_tick_step = math.floor((self.x_range[1] - self.x_range[0]) / num_steps_x)
+            self.x_tick_step = math.floor((self.x_range[1] - self.x_range[0]) / num_steps_x)
+            if self.x_tick_step == 0:
+                raise Warning('Automatic tick step is 0. :(')
 
             num_steps_y = self.height / AUTO_TICK_SPACING_TARGET
-            y_tick_step = math.floor((self.y_range[1] - self.y_range[0]) / num_steps_y)
+            self.y_tick_step = math.floor((self.y_range[1] - self.y_range[0]) / num_steps_y)
 
         else:
             if isinstance(tick_step, list):
-                x_tick_step = tick_step[0]
-                y_tick_step = tick_step[1]
+                self.x_tick_step = tick_step[0]
+                self.y_tick_step = tick_step[1]
             elif isinstance(tick_step, int) or isinstance(tick_step, float):
-                x_tick_step = y_tick_step = tick_step
+                self.x_tick_step = self.y_tick_step = tick_step
             else:
                 raise Warning('Idk wtf to do with that tick step.')
 
-        if x_tick_step != None:
-            current_tick = x_tick_step
+        if self.x_tick_step != None:
+            current_tick = self.x_tick_step
             if self.include_y == False:
                 current_tick = 0
             #Positive x ticks
             while current_tick <= self.x_range[1]:
                 self.add_tick_x(current_tick)
-                current_tick += x_tick_step
+                current_tick += self.x_tick_step
 
             #Negative x ticks
-            current_tick = -x_tick_step
+            current_tick = -self.x_tick_step
             while current_tick >= self.x_range[0]:
                 self.add_tick_x(current_tick)
-                current_tick -= x_tick_step
+                current_tick -= self.x_tick_step
 
-        if y_tick_step != None and self.include_y == True:
+        if self.y_tick_step != None and self.include_y == True:
             #Positive y ticks
-            current_tick = y_tick_step
+            current_tick = self.y_tick_step
             while current_tick <= self.y_range[1]:
                 self.add_tick_y(current_tick)
-                current_tick += y_tick_step
+                current_tick += self.y_tick_step
 
             #Negative y ticks
-            current_tick = -y_tick_step
+            current_tick = -self.y_tick_step
             while current_tick >= self.y_range[0]:
                 self.add_tick_y(current_tick)
-                current_tick -= y_tick_step
+                current_tick -= self.y_tick_step
 
     def add_tick_x(self, value):
         tick_scale = min(self.width, self.height) / 20
+        if self.include_y == False:
+            tick_scale = self.width / 20
         cyl_bobj = import_object('cylinder', 'primitives', name = 'x_tick')
         apply_material(cyl_bobj.objects[0], 'color2')
         self.add_subbobject(cyl_bobj)
@@ -317,22 +324,22 @@ class GraphBobject(Bobject):
         tick_step = new_tick_step
         if tick_step == 'auto':
             num_steps_x = self.width / AUTO_TICK_SPACING_TARGET
-            x_tick_step = math.floor((new_x_range[1] - new_x_range[0]) / num_steps_x)
+            self.x_tick_step = math.floor((new_x_range[1] - new_x_range[0]) / num_steps_x)
 
             num_steps_y = self.height / AUTO_TICK_SPACING_TARGET
-            y_tick_step = math.floor((new_y_range[1] - new_y_range[0]) / num_steps_y)
+            self.y_tick_step = math.floor((new_y_range[1] - new_y_range[0]) / num_steps_y)
 
         else:
             if isinstance(tick_step, list):
-                x_tick_step = tick_step[0]
-                y_tick_step = tick_step[1]
+                self.x_tick_step = tick_step[0]
+                self.y_tick_step = tick_step[1]
             elif isinstance(tick_step, int) or isinstance(tick_step, float):
-                x_tick_step = y_tick_step = tick_step
+                self.x_tick_step = self.y_tick_step = tick_step
             else:
                 raise Warning('Idk wtf to do with that tick step.')
 
-        if x_tick_step != None:
-            current_tick = x_tick_step
+        if self.x_tick_step != None:
+            current_tick = self.x_tick_step
             #Positive x ticks
             while current_tick <= new_x_range[1]:
                 stagger_frame = (new_x_range[1] - current_tick) / new_x_range[1] * OBJECT_APPEARANCE_TIME
@@ -344,10 +351,10 @@ class GraphBobject(Bobject):
                     new_tick_bobjs = self.add_tick_x(current_tick)
                     for bobj in new_tick_bobjs:
                         bobj.add_to_blender(appear_frame = start_frame + OBJECT_APPEARANCE_TIME - stagger_frame)
-                current_tick += x_tick_step
+                current_tick += self.x_tick_step
 
             #Negative x ticks
-            current_tick = -x_tick_step
+            current_tick = -self.x_tick_step
             while current_tick >= new_x_range[0]:
                 stagger_frame = (current_tick - new_x_range[0]) / new_x_range[1] * OBJECT_APPEARANCE_TIME
                 needed = True
@@ -358,10 +365,10 @@ class GraphBobject(Bobject):
                     new_tick_bobjs = self.add_tick_x(current_tick)
                     for bobj in new_tick_bobjs:
                         bobj.add_to_blender(appear_frame = start_frame + OBJECT_APPEARANCE_TIME - stagger_frame)
-                current_tick -= x_tick_step
+                current_tick -= self.x_tick_step
 
-        if y_tick_step != None:
-            current_tick = y_tick_step
+        if self.y_tick_step != None:
+            current_tick = self.y_tick_step
             #Positive y ticks
             while current_tick <= new_y_range[1]:
                 stagger_frame = (new_y_range[1] - current_tick) / new_y_range[1] * OBJECT_APPEARANCE_TIME
@@ -373,10 +380,10 @@ class GraphBobject(Bobject):
                     new_tick_bobjs = self.add_tick_y(current_tick)
                     for bobj in new_tick_bobjs:
                         bobj.add_to_blender(appear_frame = start_frame + OBJECT_APPEARANCE_TIME - stagger_frame)
-                current_tick += y_tick_step
+                current_tick += self.y_tick_step
 
             #Negative y ticks
-            current_tick = -y_tick_step
+            current_tick = -self.y_tick_step
             while current_tick >= new_y_range[0]:
                 stagger_frame = (current_tick - new_y_range[0]) / new_y_range[1] * OBJECT_APPEARANCE_TIME
                 needed = True
@@ -387,7 +394,7 @@ class GraphBobject(Bobject):
                     new_tick_bobjs = self.add_tick_y(current_tick)
                     for bobj in new_tick_bobjs:
                         bobj.add_to_blender(appear_frame = start_frame + OBJECT_APPEARANCE_TIME - stagger_frame)
-                current_tick -= y_tick_step
+                current_tick -= self.y_tick_step
 
         self.tick_step = new_tick_step
 
@@ -591,6 +598,78 @@ class GraphBobject(Bobject):
             )
 
             region.disappear(disappear_frame = end_frame + OBJECT_APPEARANCE_TIME)
+
+    def add_bar(
+        self,
+        appear_time = None,
+        duration = OBJECT_APPEARANCE_TIME / FRAME_RATE,
+        x = 0,
+        dx = None,
+        value = 100,
+        color = 'color7'
+    ):
+        if appear_time == None:
+            raise Warning('Must define appear time for change_window()')
+        appear_frame = int(appear_time * FRAME_RATE)
+
+        end_time = appear_time + duration
+        end_frame = int(end_time * FRAME_RATE)
+
+        x *= self.domain_scale_factor
+        value *= self.range_scale_factor
+
+        if dx == None:
+            dx = self.x_tick_step * self.domain_scale_factor
+        else:
+            dx *= self.domain_scale_factor
+
+        bpy.ops.mesh.primitive_plane_add(location = [0, 0, 0])
+        rect = bpy.context.object
+
+        bar = bobject.Bobject(
+            objects = [rect],
+            location = [x, 0, 0],
+            name = 'bar ' + str(x / self.domain_scale_factor),
+            scale = [dx / 2, 0, 0]
+        )
+        bar.ref_obj.parent = self.ref_obj
+        apply_material(rect, color)
+        bar.add_to_blender(appear_time = appear_time)
+
+        #expand region
+        bar.move_to(
+            start_frame = appear_frame,
+            new_location = [
+                x,
+                value / 2,
+                0
+            ],
+            new_scale = [
+                dx / 2,
+                value / 2,
+                0
+            ]
+        )
+
+        return bar
+
+    def update_bar(self, start_time, new_value, bar):
+        start_frame = start_time * FRAME_RATE
+        new_value *= self.range_scale_factor
+
+        bar.move_to(
+            start_frame = start_frame,
+            new_location = [
+                bar.ref_obj.location[0],
+                new_value / 2,
+                bar.ref_obj.location[2]
+            ],
+            new_scale = [
+                bar.ref_obj.scale[0],
+                new_value / 2,
+                bar.ref_obj.scale[2]
+            ]
+        )
 
     def add_function_curve(
         self,
@@ -1354,8 +1433,9 @@ class GraphBobject(Bobject):
             kwargs['new_location'] = list(kwargs['new_location'])
             kwargs['new_location'][0] -= (self.x_range[1] + self.x_range[0]) * \
                         self.domain_scale_factor * scale[0] / 2
-            kwargs['new_location'][1] -= (self.y_range[1] + self.y_range[0]) * \
-                        self.range_scale_factor * scale[1] / 2
+            if self.include_y == True:
+                kwargs['new_location'][1] -= (self.y_range[1] + self.y_range[0]) * \
+                            self.range_scale_factor * scale[1] / 2
 
         super().move_to(**kwargs)
 
@@ -1437,28 +1517,28 @@ class GraphBobject3D(GraphBobject):
         tick_step = self.tick_step
         if tick_step == 'auto':
             num_steps_z = self.width / AUTO_TICK_SPACING_TARGET
-            z_tick_step = math.floor((self.z_range[1] - self.z_range[0]) / num_steps_z)
+            self.z_tick_step = math.floor((self.z_range[1] - self.z_range[0]) / num_steps_z)
 
         else:
             if isinstance(tick_step, list):
-                z_tick_step = tick_step[2]
+                self.z_tick_step = tick_step[2]
             elif isinstance(tick_step, int) or isinstance(tick_step, float):
-                z_tick_step = tick_step
+                self.z_tick_step = tick_step
             else:
                 raise Warning('Idk wtf to do with that tick step.')
 
-        if z_tick_step != None:
-            current_tick = z_tick_step
+        if self.z_tick_step != None:
+            current_tick = self.z_tick_step
             #Positive z ticks
             while current_tick <= self.z_range[1]:
                 self.add_tick_z(current_tick)
-                current_tick += z_tick_step
+                current_tick += self.z_tick_step
 
             #Negative z ticks
-            current_tick = -z_tick_step
+            current_tick = -self.z_tick_step
             while current_tick >= self.z_range[0]:
                 self.add_tick_z(current_tick)
-                current_tick -= z_tick_step
+                current_tick -= self.z_tick_step
 
     def add_tick_x(self, value):
         tick_scale = min(self.width, self.height, self.depth) / 20
