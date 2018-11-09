@@ -227,7 +227,7 @@ class GraphBobject(Bobject):
                 current_tick -= self.y_tick_step
 
     def add_tick_x(self, value):
-        tick_scale = min(self.width, self.height) / 20
+        tick_scale = max(self.width, self.height) / 20
         if self.include_y == False:
             tick_scale = self.width / 20
         cyl_bobj = import_object('cylinder', 'primitives', name = 'x_tick')
@@ -262,7 +262,7 @@ class GraphBobject(Bobject):
         return cyl_bobj, label
 
     def add_tick_y(self, value):
-        tick_scale = min(self.width, self.height) / 20
+        tick_scale = max(self.width, self.height) / 20
         cyl_bobj = import_object('cylinder', 'primitives', name = 'y_tick')
         apply_material(cyl_bobj.objects[0], 'color2')
         self.add_subbobject(cyl_bobj)
@@ -653,9 +653,15 @@ class GraphBobject(Bobject):
 
         return bar
 
-    def update_bar(self, start_time, new_value, bar):
+    def update_bar(self, start_time, new_value, bar, end_time = None):
         start_frame = start_time * FRAME_RATE
         new_value *= self.range_scale_factor
+
+        if end_time == None:
+            end_frame = None
+        else:
+            end_frame = end_time * FRAME_RATE
+
 
         bar.move_to(
             start_frame = start_frame,
@@ -668,7 +674,8 @@ class GraphBobject(Bobject):
                 bar.ref_obj.scale[0],
                 new_value / 2,
                 bar.ref_obj.scale[2]
-            ]
+            ],
+            end_frame = end_frame
         )
 
     def add_function_curve(
@@ -1541,7 +1548,7 @@ class GraphBobject3D(GraphBobject):
                 current_tick -= self.z_tick_step
 
     def add_tick_x(self, value):
-        tick_scale = min(self.width, self.height, self.depth) / 20
+        tick_scale = max(self.width, self.height, self.depth) / 20
         #y-tick
         cyl_bobj = import_object('cylinder', 'primitives', name = 'xy_tick')
         apply_material(cyl_bobj.objects[0], 'color2')
@@ -1586,7 +1593,7 @@ class GraphBobject3D(GraphBobject):
         return cyl_bobj, cyl_bobj2, label
 
     def add_tick_y(self, value):
-        tick_scale = min(self.width, self.height, self.depth) / 20
+        tick_scale = max(self.width, self.height, self.depth) / 20
         #z-tick
         cyl_bobj = import_object('cylinder', 'primitives', name = 'yz_tick')
         apply_material(cyl_bobj.objects[0], 'color2')
@@ -1631,7 +1638,7 @@ class GraphBobject3D(GraphBobject):
         return cyl_bobj, cyl_bobj2, label
 
     def add_tick_z(self, value):
-        tick_scale = min(self.width, self.height, self.depth) / 20
+        tick_scale = max(self.width, self.height, self.depth) / 20
         #x-tick
         cyl_bobj = import_object('cylinder', 'primitives', name = 'zx_tick')
         apply_material(cyl_bobj.objects[0], 'color2')

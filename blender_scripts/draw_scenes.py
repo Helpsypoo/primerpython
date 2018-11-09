@@ -531,8 +531,8 @@ def nat_sim_test():
         sim = 'gradual_f10_[True, True, True]_201',
         #sim = 'all_mut_f100_[True, True, True]_19',
         location = [-6.5, 0, 0],
-        day_length_style = 'fixed_speed',
-        #day_length_style = 'fixed_length'
+        #day_length_style = 'fixed_speed',
+        day_length_style = 'fixed_length'
         #mutation_switches = [False, False, False]
     )
 
@@ -719,9 +719,9 @@ def main():
     #tex_test()
     """"""
 
-    nat_sim_test()
+    #nat_sim_test()
     #graph_test()
-    #draw_scenes_from_file(natural_selection)
+    draw_scenes_from_file(natural_selection)
 
     print_time_report()
     finish_noise()

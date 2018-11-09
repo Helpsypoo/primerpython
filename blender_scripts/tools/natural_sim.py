@@ -31,7 +31,7 @@ STARTING_ENERGY = 800 #1800
 HOMEBOUND_RATIO = 2# 1.5
 
 #Visual constants
-DEFAULT_DAY_ANIM_DURATION = 5 #seconds
+DEFAULT_DAY_ANIM_DURATION = 8 #seconds
 BLENDER_UNITS_PER_WORLD_UNIT = 1 / 40
 FOOD_SCALE = 2 * BLENDER_UNITS_PER_WORLD_UNIT
 BASE_CREATURE_SCALE = 0.25
@@ -819,7 +819,8 @@ class Creature(Food):
         self,
         time = 0,
         bobj = None,
-        spd = None
+        spd = None,
+        obj = None
     ):
         #2 -> Blue
         #6 -> Green
@@ -829,34 +830,13 @@ class Creature(Food):
 
         #Kind of ridiculous. Should really just make this a more generalized
         #bobject method.
-        if bobj == None:
-            bobj = self.bobject
-            spd = self.speed
-            obj = self.bobject.ref_obj.children[0].children[0]
-        else:
-            obj = bobj.ref_obj.children[0]
-
-
-        '''if spd < 1 - 2 * SPEED_PER_COLOR:
-            color = COLORS_SCALED[2]
-        elif spd < 1 - SPEED_PER_COLOR:
-            range_floor = 1 - 2 * SPEED_PER_COLOR
-            mix = (spd - range_floor) / SPEED_PER_COLOR
-            color = mix_colors(COLORS_SCALED[2], COLORS_SCALED[6], mix)
-        elif spd < 1:
-            range_floor = 1 - SPEED_PER_COLOR
-            mix = (spd - range_floor) / SPEED_PER_COLOR
-            color = mix_colors(COLORS_SCALED[6], COLORS_SCALED[4], mix)
-        elif spd < 1 + SPEED_PER_COLOR:
-            range_floor = 1
-            mix = (spd - range_floor) / SPEED_PER_COLOR
-            color = mix_colors(COLORS_SCALED[4], COLORS_SCALED[3], mix)
-        elif spd < 1 + 2 * SPEED_PER_COLOR:
-            range_floor = 1 + SPEED_PER_COLOR
-            mix = (spd - range_floor) / SPEED_PER_COLOR
-            color = mix_colors(COLORS_SCALED[3], COLORS_SCALED[5], mix)
-        else:
-            color = COLORS_SCALED[5]'''
+        if obj == None:
+            if bobj == None:
+                bobj = self.bobject
+                spd = self.speed
+                obj = self.bobject.ref_obj.children[0].children[0]
+            else:
+                obj = bobj.ref_obj.children[0]
 
         if spd < 1 - 3 * SPEED_PER_COLOR:
             color = COLORS_SCALED[0]
@@ -895,8 +875,13 @@ class Creature(Food):
             range_floor = 1 + 2 * SPEED_PER_COLOR
             mix = (spd - range_floor) / SPEED_PER_COLOR
             color = mix_colors(COLORS_SCALED[3], COLORS_SCALED[5], mix)
+        elif spd < 1 + 4 * SPEED_PER_COLOR:
+            #Red to white
+            range_floor = 1 + 3 * SPEED_PER_COLOR
+            mix = (spd - range_floor) / SPEED_PER_COLOR
+            color = mix_colors(COLORS_SCALED[5], COLORS_SCALED[1], mix)
         else:
-            color = COLORS_SCALED[5]
+            color = COLORS_SCALED[1]
 
 
         apply_material(obj, 'creature_color1')
@@ -1484,6 +1469,15 @@ class DrawnNaturalSim(Bobject):
                         #if cre.is_eaten = False:
                         self.reusable_cre_bobjs.append(cre.bobject)
                     else:
+                        cre.bobject.move_to(
+                            new_angle = [
+                                cre.bobject.ref_obj.rotation_euler[0],
+                                cre.bobject.ref_obj.rotation_euler[1],
+                                cre.bobject.ref_obj.rotation_euler[2] + math.pi
+                            ],
+                            start_time = self.start_time + self.elapsed_time,
+                            end_time = self.start_time + self.elapsed_time + date_record['anim_durations']['night']
+                        )
                         try: #This is for putting surviving creatures away if the
                              #next day is actually another sim.
                             next_day = self.sim.date_records[i + 1]
