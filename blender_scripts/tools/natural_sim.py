@@ -1257,6 +1257,7 @@ class DrawnNaturalSim(Bobject):
                     date_record['anim_durations']['dawn'] * FRAME_RATE
                 )
                 if date_record['date'] == start_day:
+                    #print("  Adding new creatures on initial day")
                     for cre in date_record['creatures']:
                         cre.add_to_blender(
                             appear_time = self.start_time + self.elapsed_time,
@@ -1265,18 +1266,17 @@ class DrawnNaturalSim(Bobject):
                         )
                         cre.bobject.ref_obj.parent = self.ref_obj
                 else:
+                    #print("  Looking to reuse creature objects")
                     for cre in date_record['creatures']:
                         if cre not in self.sim.date_records[i - 1]['creatures']:
-                            #Only pick bobjects of the appropriate color
-                            #Since the color_shift function creates a whole new
-                            #material, making it not work for multiple shifts.
-                            #May change that one day.
-                            #But it works for multiple shifts on tex_bobjects,
-                            #so maybe something else was wrong.
-                            #Anyway, this works fine.
+                            #print('   Found a creature that isn\'t in previous day')
+
                             reusables = [x for x in self.reusable_cre_bobjs if x.speed == cre.speed]
+                            #if len(self.reusable_cre_bobjs) > 0:
                             if len(reusables) > 0:
+                                #print('    Reusing a bobject')
                                 bobj = reusables[-1]
+                                #bobj = self.reusable_cre_bobjs[-1]
                                 #print()
                                 #print(bobj.name)
                                 #print([x.name for x in self.reusable_cre_bobjs])
@@ -1303,18 +1303,6 @@ class DrawnNaturalSim(Bobject):
                                     transition_time = duration_frames
                                 )
 
-                                '''#In case object was eaten in previous day
-                                for cons in bobj.ref_obj.constraints:
-                                    cons.keyframe_insert(
-                                        data_path = 'influence',
-                                        frame = (self.start_time + self.elapsed_time) * FRAME_RATE - 1
-                                    )
-                                    cons.influence = 0
-                                    cons.keyframe_insert(
-                                        data_path = 'influence',
-                                        frame = (self.start_time + self.elapsed_time) * FRAME_RATE
-                                    )'''
-
                                 eyes = []
                                 for obj in bobj.ref_obj.children[0].children:
                                     if 'Eye' in obj.name:
@@ -1329,7 +1317,15 @@ class DrawnNaturalSim(Bobject):
                                     eye.keyframe_insert(data_path = 'scale', frame = (self.start_time + self.elapsed_time) * FRAME_RATE)
 
                                 cre.bobject = bobj
+
+                                #For some reason, this produces broken matertials
+                                #So above, we just choose bobjects from creatures
+                                #with the same speed. This takes more memory.
+                                if cre.bobject.speed != cre.speed:
+                                    cre.apply_material_by_speed(time = self.start_time + self.elapsed_time)
+
                             else:
+                                #print('    Just making a new one')
                                 cre.add_to_blender(
                                     appear_time = self.start_time + self.elapsed_time,
                                     world = self,
@@ -1337,12 +1333,12 @@ class DrawnNaturalSim(Bobject):
                                 )
                                 cre.bobject.ref_obj.parent = self.ref_obj
 
-                    cres = date_record['creatures']
+                    """cres = date_record['creatures']
                     for k in range(len(cres)):
                         for j in range(k):
                             if cres[k].bobject == cres[j].bobject:
                                 #print(cres[k].bobject.name)
-                                raise Warning('Two creatures are sharing a bobject')
+                                raise Warning('Two creatures are sharing a bobject')"""
 
                 self.elapsed_time += date_record['anim_durations']['dawn'] + \
                                                 date_record['anim_durations']['morning']
@@ -1362,6 +1358,12 @@ class DrawnNaturalSim(Bobject):
                         self.elapsed_time += date_record['anim_durations']['evening']
                         return
                     time_step = 1 / date_record['day_length'] * date_record['anim_durations']['day']
+
+                #Reduce number of keyframes when there's two or more per frame.
+                #Number of time steps in one frame
+                key_every_n_t = math.floor(1 / FRAME_RATE / time_step)
+                if key_every_n_t < 1:
+                    key_every_n_t = 1
                 #print(str(date_record['date']) + ' ' + str(len(date_record['creatures'])))
                 for t in range(date_record['day_length']):
                     time_of_day = t * time_step
@@ -1380,13 +1382,14 @@ class DrawnNaturalSim(Bobject):
 
                         #If None, the creature was eaten by this point
                         if day.locations[t] != None:
-                            obj.location = scalar_mult_vec(
-                                day.locations[t],
-                                self.blender_units_per_world_unit
-                            )
-                            obj.keyframe_insert(data_path = 'location', frame = frame)
-                            obj.rotation_euler = [0, 0, day.headings[t]]
-                            obj.keyframe_insert(data_path = 'rotation_euler', frame = frame)
+                            if t % key_every_n_t == 0:
+                                obj.location = scalar_mult_vec(
+                                    day.locations[t],
+                                    self.blender_units_per_world_unit
+                                )
+                                obj.keyframe_insert(data_path = 'location', frame = frame)
+                                obj.rotation_euler = [0, 0, day.headings[t]]
+                                obj.keyframe_insert(data_path = 'rotation_euler', frame = frame)
 
                             #Old version that called git_ate on all new food,
                             #Even if it's food that was actually eaten previously
@@ -1441,7 +1444,7 @@ class DrawnNaturalSim(Bobject):
             def clean_up():
                 duration_frames = min(
                     OBJECT_APPEARANCE_TIME,
-                    date_record['anim_durations']['night'] * FRAME_RATE - 1
+                    date_record['anim_durations']['night'] * FRAME_RATE
                 )
                 for cre in date_record['creatures']:
                     day = None
@@ -1506,7 +1509,7 @@ class DrawnNaturalSim(Bobject):
                     if food.is_eaten == False:
                         food.bobject.disappear(
                             disappear_time = self.start_time + self.elapsed_time + date_record['anim_durations']['night'],
-                            duration_frames = duration_frames
+                            duration_frames = duration_frames / 2
                         )
                         self.reusable_food_bobjs.append(food.bobject)
 

@@ -1,5 +1,6 @@
 import collections
 import math
+import bpy
 
 import imp
 import scene
@@ -49,7 +50,7 @@ class NaturalSelectionScene(Scene):
         #self.environment()
         #self.base_sim()
         #self.speed()
-        self.speed_sim()
+        #self.speed_sim()
         #self.pokemon()
         #self.selfish_gene()
         #self.size()
@@ -57,6 +58,7 @@ class NaturalSelectionScene(Scene):
         #self.all_traits()
         #self.sudden_famine()
         #self.gradual_famine()
+        self.evolution_diagram()
         #self.recap()
 
     def intro(self):
@@ -749,13 +751,13 @@ class NaturalSelectionScene(Scene):
         et = cues['end']
 
         cam_bobj, cam_swivel = cam_and_swivel(
-            cam_location = [25, 0, 0],
-            cam_rotation_euler = [math.pi / 2, 0, math.pi / 2],
+            cam_location = [0, 0, 25],
+            cam_rotation_euler = [0, 0, 0],
             cam_name = "Camera Bobject",
             swivel_location = [0, 0, 0],
-            swivel_rotation_euler = [0, -16 * math.pi / 180, -math.pi / 2],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
             swivel_name = 'Cam swivel',
-            control_sun = True
+            #control_sun = True
         )
         cam_swivel.add_to_blender(appear_time = 0)
 
@@ -764,8 +766,8 @@ class NaturalSelectionScene(Scene):
             sim = 'spd_mut_f100_[True, False, False]_69',
             #sim = 'ns_env_intro_3',
             location = [0, 0, 0],
-            day_length_style = 'fixed_speed',
-            #day_length_style = 'fixed_length'
+            #day_length_style = 'fixed_speed',
+            day_length_style = 'fixed_length'
         )
 
         first_day = 6
@@ -779,19 +781,19 @@ class NaturalSelectionScene(Scene):
                 uncorrected += sum(durs.values())
 
         correction_factor = total_animation_length / uncorrected
-        print()
-        print('Correction factor')
-        print(' ' + str(correction_factor))
-        print()
+        #print()
+        #print('Correction factor for first section')
+        #print(' ' + str(correction_factor))
+        #print()
 
         for record in sim.sim.date_records:
             if record['date'] >= first_day and record['date'] < first_day + 5:
                 durs = record['anim_durations']
                 for key in durs:
-                    print(durs[key])
+                    #print(durs[key])
                     durs[key] *= correction_factor
-                    print(durs[key])
-                    print()
+                    #print(durs[key])
+                    #print()
 
         #Set timing for the rest
         total_animation_length = 11
@@ -809,11 +811,6 @@ class NaturalSelectionScene(Scene):
                 for key in durs:
                     durs[key] *= correction_factor
 
-        '''sim.add_to_blender(
-            appear_time = 150.5,
-            start_day = 6,
-            end_day = 6
-        )'''
         #Move camera instead of sim, because moving or displaced sims don't function
         #well.
         cam_swivel.move_to(
@@ -821,8 +818,8 @@ class NaturalSelectionScene(Scene):
             new_location = [0, 0, 2],
         )
 
-        g = graph_bobject.GraphBobject(
-            location = [0, 0, 9.5],
+        '''g = graph_bobject.GraphBobject(
+            location = [-1, 0, 9.5],
             rotation_euler = [74 * math.pi / 180, 0, 0],
             width = 12,
             x_range = 2.2,
@@ -836,15 +833,15 @@ class NaturalSelectionScene(Scene):
             centered = True,
             include_y = True,
             arrows = 'positive'
-        )
+        )'''
 
 
-        g.add_to_blender(appear_time = 0)
+        '''g.add_to_blender(appear_time = 0)
         g.move_to(
-            new_location = [0, 0, 4],
+            new_location = [-1, 0, 4.5],
             start_time = 153.5 + 2
-        )
-
+        )'''
+        '''
         def count_by_speed(date, speed_vals, nat_sim):
             counts = []
             creatures = nat_sim.date_records[date]['creatures']
@@ -852,11 +849,11 @@ class NaturalSelectionScene(Scene):
             for spd in speed_vals:
                 #print()
                 #print(spd)
-                '''count = 0
+                count = 0
                 for cre in creatures:
                     print(str(spd) + '   ' + str(cre.speed))
                     if round(cre.speed, 1) == spd:
-                        count += 1'''
+                        count += 1
                 count = len([x for x in creatures if round(x.speed, 1) == spd])
                 #print(count)
                 counts.append(count)
@@ -941,9 +938,8 @@ class NaturalSelectionScene(Scene):
                 counts.append(count)
             update_graph_bars(start_time, bars, counts)
 
-
-        draw_possible_states()
-
+        '''
+        #draw_possible_states()
 
         first_day_start = 172
         sim_appearance_time = 150.5
@@ -956,12 +952,39 @@ class NaturalSelectionScene(Scene):
                            1 #For standard start_delay on drawn sims
         initial_day_durs['morning'] = first_morning_dur
 
+
+
+
+
+
+
+
+        #Correct sim appearance time for start_day after 6
+        actual_start_day = 48
+        for record in sim.sim.date_records:
+            if record['date'] < actual_start_day and record['date'] >= first_day :
+                durs = record['anim_durations']
+                sim_appearance_time += sum(durs.values())
+
+
+
+        #6 -> 27
+        #27 -> 48
+        #48 -> 69
+
+
+
+
+
         sim.add_to_blender(
             appear_time = sim_appearance_time,
-            start_day = 6
+            #start_day = first_day,
+            #end_day = first_day + 21
+            start_day = actual_start_day,
+            end_day = actual_start_day + 21
         )
 
-        #Sim day should start on
+        '''#Update bars each day
         for day in sim.sim.date_records:
             date = day['date']
             if date == 6: #Don't regraph the old days
@@ -990,32 +1013,28 @@ class NaturalSelectionScene(Scene):
 
                 counts = count_by_speed(date, speed_vals, sim.sim)
                 update_graph_bars(start_time, bars, counts, end_time = end_time)
-                start_time += day['anim_durations']['dawn']
+                start_time += day['anim_durations']['dawn']'''
 
 
-
-
-        """bar = g.add_bar(
-            appear_time = st + 3,
-            x = 1,
-            value = 100,
-            dx = 0.08
+        cam_swivel.move_to(
+            start_time = 190,
+            end_time = 203,
+            new_angle = [74 * math.pi / 180, 0, 10 * math.pi / 180]
         )
-        g.add_bar(
-            appear_time = st + 4,
-            x = 1.1,
-            value = 40,
-            dx = 0.08
+        cam_swivel.move_to(
+            start_time = 203,
+            end_time = 216,
+            new_angle = [74 * math.pi / 180, 0, 0 * math.pi / 180]
         )
-        g.update_bar(
-            start_time = st + 5,
-            bar = bar,
-            new_value = 70
-        )"""
+
+        end = 216
+        to_disappear = [sim]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = end - (len(to_disappear) - 1 - i) * 0.05)
 
     def pokemon(self):
-        cues = self.subscenes['pkmn']
-        st = cues['start']
+        #cues = self.subscenes['pkmn']
+        #st = cues['start']
 
         what = tex_bobject.TexBobject(
             '\\text{What?}',
@@ -1042,13 +1061,22 @@ class NaturalSelectionScene(Scene):
             #centered = True
         )
 
-        what.add_to_blender(appear_time = st + 1)
-        what.morph_figure(1, start_time = st + 2)
-        what.morph_figure(2, start_time = st + 3)
-        what.morph_figure(3, start_time = st + 4)
-        what.move_to(new_location = [-11.5, -2, 0], start_time = st + 4)
-        dev.add_to_blender(appear_time = st + 4)
-        but.add_to_blender(appear_time = st + 5)
+        what.add_to_blender(appear_time = 217)
+        what.morph_figure(1, start_time = 218)
+        what.morph_figure(2, start_time = 219)
+        what.morph_figure(3, start_time = 220)
+        what.move_to(new_location = [-11.5, -2, 0], start_time = 220)
+        dev.add_to_blender(appear_time = 220)
+        but.add_to_blender(appear_time = 223)
+
+        to_disappear = [what, dev, but]
+        for i, thing in enumerate(to_disappear):
+            #thing.disappear(disappear_time = 224 - (len(to_disappear) - 1 - i) * 0.05)
+            thing.move_to(
+                displacement = [54, 0, 0],
+                start_time = 224,
+                end_time = 225
+            )
 
     def selfish_gene(self):
         cues = self.subscenes['selfish']
@@ -1086,42 +1114,12 @@ class NaturalSelectionScene(Scene):
             centered = True,
             tick_step = [10, 20],
         )
-        g.add_to_blender(appear_time = st + 1)
+        g.add_to_blender(appear_time = 225)
         g.animate_function_curve(
-            start_time = st + 4,
-            end_time = st + 5,
+            start_time = 230,
+            end_time = 232,
         )
-        '''g.add_point_at_coord(
-            appear_time = st + 4,
-            coord = [7, 0, 0],
-            track_curve = 0
-        )
-        n_arrow = gesture.Gesture(
-            gesture_series = [
-                {
-                    'type': 'arrow',
-                    'points': {
-                        'tail': (-8.5, -0.5, 0),
-                        'head': (-9.4, 2.3, 0)
-                    }
-                },
-            ],
-            scale = 1,
-            color = 'color2'
-        )
-        n_lab = tex_bobject.TexBobject(
-            'N = 94',
 
-        )
-        n_arrow.add_to_blender(appear_time = st + 5)'''
-
-
-        '''g.add_point_at_coord(
-            appear_time = st + 4.25,
-            coord = [60, 0, 0],
-            track_curve = 0
-        )
-        '''
 
 
 
@@ -1138,25 +1136,27 @@ class NaturalSelectionScene(Scene):
             centered = True,
             tick_step = [10, 0.5],
         )
-        g2.add_to_blender(appear_time = st + 1)
+        g2.add_to_blender(appear_time = 225)
         g2.animate_function_curve(
-            start_time = st + 2,
-            end_time = st + 3,
+            start_time = 227,
+            end_time = 229,
         )
-        '''g2.add_point_at_coord(
-            appear_time = st + 4,
-            coord = [7, 0, 0],
-            track_curve = 0
+
+        sg = tex_bobject.TexBobject(
+            '\\text{"Selfish gene"}',
+            location = [-8.5, -2, 0],
+            color = 'color2',
+            scale = 1.5
         )
-        g2.add_point_at_coord(
-            appear_time = st + 4.25,
-            coord = [60, 0, 0],
-            track_curve = 0
-        )'''
+        sg.add_to_blender(appear_time = 238.5)
+
+        to_disappear = [sg, g, g2]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = 258.5 - (len(to_disappear) - 1 - i) * 0.05)
 
     def size(self):
-        cues = self.subscenes['size']
-        st = cues['start']
+        #cues = self.subscenes['size']
+        #st = cues['start']
 
         text = tex_bobject.TexBobject(
             '\\text{Second trait: Size}',
@@ -1166,7 +1166,7 @@ class NaturalSelectionScene(Scene):
             centered = True
         )
 
-        text.add_to_blender(appear_time = st + 1)
+        text.add_to_blender(appear_time = 265)
 
         plane = import_object(
             'xyplane', 'primitives',
@@ -1175,7 +1175,7 @@ class NaturalSelectionScene(Scene):
             rotation_euler = [math.pi / 2, 0, 0],
             name = 'sim_plane'
         )
-        plane.add_to_blender(appear_time = st + 2.5)
+        plane.add_to_blender(appear_time = 265.5)
 
         blob = import_object(
             'boerd_blob', 'creatures',
@@ -1184,7 +1184,7 @@ class NaturalSelectionScene(Scene):
             wiggle = True
         )
         apply_material(blob.ref_obj.children[0].children[0], 'creature_color3')
-        blob.add_to_blender(appear_time = st + 2)
+        blob.add_to_blender(appear_time = 266)
 
         s_blob = import_object(
             'boerd_blob', 'creatures',
@@ -1193,48 +1193,53 @@ class NaturalSelectionScene(Scene):
             wiggle = True
         )
         apply_material(s_blob.ref_obj.children[0].children[0], 'creature_color3')
-        s_blob.add_to_blender(appear_time = st + 2)
+        s_blob.add_to_blender(appear_time = 266.5)
 
+        #Grow
         blob.move_to(
             new_scale = 5,
             new_location = [-5, -1.5, -5],
-            start_time = st + 3
+            start_time = 267.5,
+            end_time = 269.5
         )
+
+        #Go eat the other blob
         blob.move_to(
             new_angle = [0, math.pi / 4, 0],
-            start_time = st + 4.8
+            start_time = 271.3
         )
         blob.move_to(
             new_location = [1, -1.5, -2.5],
-            start_time = st + 5,
-            end_time = st + 6
+            start_time = 271.5,
+            end_time = 272.5
         )
-        blob.blob_scoop(start_time = st + 5.5, duration = 1)
-        blob.eat_animation(start_frame = (st + 5.5) * FRAME_RATE, end_frame = (st + 6.5) * FRAME_RATE)
-        blob.move_to(
-            new_angle = [0, 0, 0],
-            start_time = st + 6.7
-        )
+        blob.blob_scoop(start_time = 272, duration = 1)
+        blob.eat_animation(start_frame = 272 * FRAME_RATE, end_frame = 273 * FRAME_RATE)
+
 
         s_blob.move_to(
             new_location = [5, 1, 0],
             new_angle = [0, math.pi / 4, 0],
             new_scale = 1.25,
-            start_time = st + 5.7,
-            end_time = st + 5.7 + 0.3
+            start_time = 271.5 + 0.7,
+            end_time = 271.5 + 0.7 + 0.3
         )
         s_blob.move_to(
             new_location = blob.ref_obj.location,
             new_scale = 0,
-            start_time = st + 6,
-            end_time = st + 6 + 0.3
+            start_time = 272.5,
+            end_time = 272.5 + 0.3
         )
 
-        plane.disappear(disappear_time = st + 7)
+        #look back at camera
         blob.move_to(
-            new_location = [-8, -2, 0],
-            start_time = st + 8
+            new_angle = [0, 0, 0],
+            start_time = 274.5
         )
+
+
+        plane.disappear(disappear_time = 280.5)
+
 
         cost = tex_bobject.TexBobject(
             '\\substack{ \\text{Energy cost} \\\\ \\text{per time step} } \\sim \\text{size}^3',
@@ -1247,14 +1252,18 @@ class NaturalSelectionScene(Scene):
             centered = True
         )
 
-        cost.add_to_blender(appear_time = st + 8)
-        cost.morph_figure(1, start_time = st + 9)
-        cost.move_to(new_location = [4.5, -2, 0], start_time = st + 9)
-        blob.move_to(new_location = [-9.5, -2, 0], start_time = st + 9)
-        cost.morph_figure(2, start_time = st + 10)
-        cost.morph_figure(3, start_time = st + 11)
+        blob.move_to(
+            new_location = [-8, -2, 0],
+            start_time = 281
+        )
+        cost.add_to_blender(appear_time = 281)
+        cost.morph_figure(1, start_time = 298)
+        cost.move_to(new_location = [4.5, -2, 0], start_time = 298)
+        blob.move_to(new_location = [-9.5, -2, 0], start_time = 298)
+        cost.morph_figure(2, start_time = 305.5)
+        cost.morph_figure(3, start_time = 307.5)
 
-        cost.disappear(disappear_time = st + 12)
+        cost.disappear(disappear_time = 312.5)
 
         s_blob2 = import_object(
             'boerd_blob', 'creatures',
@@ -1264,38 +1273,45 @@ class NaturalSelectionScene(Scene):
             wiggle = True
         )
         apply_material(s_blob2.ref_obj.children[0].children[0], 'creature_color7')
-        s_blob2.add_to_blender(appear_time = st + 12)
+        s_blob2.add_to_blender(appear_time = 312.5)
 
         s_blob2.move_to(
             new_location = [-2, -4, 0],
-            start_time = st + 13
+            start_time = 313,#st + 13
+            end_time = 314
         )
         s_blob2.move_to(
             new_angle = [0, math.pi / 2, 0],
-            start_time = st + 13.25
+            start_time = 313.7# st + 13.25
         )
         s_blob2.move_to(
             new_location = [18, -4, 0],
-            start_time = st + 13.5
+            start_time = 314,#st + 13.5
+            end_time = 315
         )
 
         blob.move_to(
             new_angle = [0, math.pi / 2, 0],
-            start_time = st + 13.3#4.8
+            start_time = 313.8, #st + 13.3#4.8
+            end_time = 314.5
         )
         blob.move_to(
             new_location = [0, -2, 0],
-            start_time = st + 13.5,
-            end_time = st + 14
+            start_time = 314.2,#st + 13.5,
+            end_time = 315.2#st + 14
         )
         blob.move_to(
             new_angle = [0, 0, 0],
-            start_time = st + 15
+            start_time = 317#st + 15
         )
 
+        to_disappear = [text, blob]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = 324 - (len(to_disappear) - 1 - i) * 0.05)
+
     def sense(self):
-        cues = self.subscenes['sense']
-        st = cues['start']
+        #cues = self.subscenes['sense']
+        #st = cues['start']
 
         text = tex_bobject.TexBobject(
             '\\text{Third trait: Sense}',
@@ -1305,7 +1321,7 @@ class NaturalSelectionScene(Scene):
             centered = True
         )
 
-        text.add_to_blender(appear_time = st + 1)
+        text.add_to_blender(appear_time = 325)
 
         blob = import_object(
             'boerd_blob', 'creatures',
@@ -1316,7 +1332,15 @@ class NaturalSelectionScene(Scene):
             wiggle = True
         )
         apply_material(blob.ref_obj.children[0].children[0], 'creature_color3')
-        blob.add_to_blender(appear_time = st + 2)
+        blob.add_to_blender(appear_time = 326)
+
+        food = import_object(
+            'goodicosphere', 'primitives',
+            location = [-1, -5, 0],
+            scale = 0.5
+        )
+        apply_material(food.ref_obj.children[0], 'color7')
+        food.add_to_blender(appear_time = 326)
 
         torus = import_object(
             'flat_torus', 'primitives',
@@ -1325,13 +1349,13 @@ class NaturalSelectionScene(Scene):
             scale = 2.5
         )
         apply_material(torus.ref_obj.children[0], 'color2')
-        torus.add_to_blender(appear_time = st + 3)
+        torus.add_to_blender(appear_time = 327.5)
         torus.ref_obj.parent = blob.ref_obj
 
         blob.move_to(
             new_location = [3, -2, -5.5],
-            start_time = st + 4,
-            end_time = st + 5
+            start_time = 331,
+            end_time = 332
         )
         exclaim = tex_bobject.TexBobject(
             '\\text{!}',
@@ -1340,67 +1364,61 @@ class NaturalSelectionScene(Scene):
             scale = 0.75
         )
         exclaim.ref_obj.parent = blob.ref_obj
-        exclaim.add_to_blender(appear_time = st + 5)
-        exclaim.disappear(disappear_time = st + 6.5)
+        exclaim.add_to_blender(appear_time = 332)
+        exclaim.disappear(disappear_time = 333.5)
 
 
 
 
-        food = import_object(
-            'goodicosphere', 'primitives',
-            location = [-1, -5, 0],
-            scale = 0.5
-        )
-        apply_material(food.ref_obj.children[0], 'color7')
-        food.add_to_blender(appear_time = st + 2)
+
 
 
 
         blob.move_to(
             new_angle = [0, -math.pi / 8, 0],
-            start_time = st + 5.8
+            start_time = 332.8
         )
         exclaim.move_to(
             new_angle = [0, math.pi / 8, 0],
-            start_time = st + 5.8
+            start_time = 332.8
         )
         blob.move_to(
             new_location = [0, -2, 0],
-            start_time = st + 6,
-            end_time = st + 7
+            start_time = 333,
+            end_time = 334
         )
         blob.move_to(
             new_angle = [0, 0, 0],
-            start_time = st + 6.8
+            start_time = 333.8
         )
 
 
 
-        blob.blob_scoop(start_time = st + 6.5, duration = 1)
-        food.move_to(new_location = [-1, -1, 4], start_time = st + 6.5, end_time = st + 6.5 + 0.3)
+        blob.blob_scoop(start_time = 333.5, duration = 1)
+        food.move_to(new_location = [-1, -1, 4], start_time = 333.5, end_time = 333.8)
         food.move_to(
             new_location = [-0.5, -1, 0],
             new_scale = 0,
-            start_time = st + 6.8,
-            end_time = st + 6.8 + 0.3
+            start_time = 333.8,
+            end_time = 334.1
         )
-        blob.eat_animation(start_frame = (st + 6.5) * FRAME_RATE, end_frame = (st + 7.5) * FRAME_RATE)
+        blob.eat_animation(start_frame = 333.5 * FRAME_RATE, end_frame = 334.1 * FRAME_RATE)
 
 
         torus.move_to(
             new_scale = 3.5,
-            start_time = st + 10,
-            end_time = st + 11,
+            start_time = 339,
+            end_time = 341,
         )
         torus.move_to(
             new_scale = 1.5,
-            start_time = st + 11,
-            end_time = st + 12
+            start_time = 341,
+            end_time = 343
         )
         torus.move_to(
             new_scale = 2.5,
-            start_time = st + 12,
-            end_time = st + 13,
+            start_time = 343,
+            end_time = 345,
         )
 
         eyes = []
@@ -1408,64 +1426,68 @@ class NaturalSelectionScene(Scene):
             if 'Eye' in obj.name:
                 eyes.append(obj)
         for eye in eyes:
-            eye.keyframe_insert(data_path = 'scale', frame = (st + 10) * FRAME_RATE)
+            eye.keyframe_insert(data_path = 'scale', frame = 339 * FRAME_RATE)
             eye.scale = [
                 1.5,
                 1.5,
                 1.5,
             ]
-            eye.keyframe_insert(data_path = 'scale', frame = (st + 11) * FRAME_RATE)
+            eye.keyframe_insert(data_path = 'scale', frame = 341 * FRAME_RATE)
             eye.scale = [
                 0.5,
                 0.5,
                 0.5,
             ]
-            eye.keyframe_insert(data_path = 'scale', frame = (st + 12) * FRAME_RATE)
+            eye.keyframe_insert(data_path = 'scale', frame = 343 * FRAME_RATE)
             eye.scale = [
                 1,
                 1,
                 1,
             ]
-            eye.keyframe_insert(data_path = 'scale', frame = (st + 13) * FRAME_RATE)
+            eye.keyframe_insert(data_path = 'scale', frame = 345 * FRAME_RATE)
 
 
         cost = tex_bobject.TexBobject(
-            '\\substack{ \\text{Energy cost} \\\\ \\text{per time step} } = ',
-            location = [1, 0, 0],
-            scale = 2,
+            '\\substack{ \\text{Total cost} \\\\ \\text{per time step} } = ',
+            location = [-3, -1, 0],
+            scale = 1.5,
             color = 'color2',
             centered = False
         )
         eq = tex_bobject.TexBobject(
             '\\text{size}^3\\text{speed}^2',
             '\\text{size}^3\\text{speed}^2 + \\text{sense}',
-            location = [1, -3.5, 0],
-            scale = 1.5,
+            location = [4.5, -1, 0],
+            scale = 1.125,
             color = 'color2',
             centered = False
         )
         blob.move_to(
             new_location = [-7, -2, 0],
-            start_time = st + 14
+            start_time = 345
         )
-        cost.add_to_blender(appear_time = st + 15)
-        eq.add_to_blender(appear_time = st + 16)
-        eq.morph_figure(1, start_time = st + 17)
+        cost.add_to_blender(appear_time = 345.5)
+        eq.add_to_blender(appear_time = 347)
+        eq.morph_figure(1, start_time = 350.5)
+
+        to_disappear = [text, blob, cost, eq]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = 354 - (len(to_disappear) - 1 - i) * 0.05)
 
     def all_traits(self):
-        cues = self.subscenes['all']
-        st = cues['start']
+        #cues = self.subscenes['all']
+        #st = cues['start']
 
         cam_bobj, cam_swivel = cam_and_swivel(
-            cam_location = [34, 0, 0],
-            cam_rotation_euler = [math.pi / 2, 0, math.pi / 2],
+            cam_location = [0, 0, 34],
+            cam_rotation_euler = [0, 0, 0],
             cam_name = "Camera Bobject",
             swivel_location = [0, 0, 4],
-            swivel_rotation_euler = [0, -16 * math.pi / 180, -math.pi / 2],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
             swivel_name = 'Cam swivel',
-            control_sun = True
+            #control_sun = True
         )
-        cam_swivel.add_to_blender(appear_time = st - 1)
+        cam_swivel.add_to_blender(appear_time = 0)
 
         sim = natural_sim.DrawnNaturalSim(
             scale = 1.5,
@@ -1473,6 +1495,22 @@ class NaturalSelectionScene(Scene):
             location = [-6.5, 0, 0],
             day_length_style = 'fixed_length'
         )
+
+        first_day = 6
+        total_animation_length = 14
+        uncorrected = 0
+        for record in sim.sim.date_records:
+            if record['date'] >= first_day:
+                durs = record['anim_durations']
+                uncorrected += sum(durs.values())
+
+        correction_factor = total_animation_length / uncorrected
+
+        for record in sim.sim.date_records:
+            if record['date'] >= first_day:
+                durs = record['anim_durations']
+                for key in durs:
+                    durs[key] *= correction_factor
 
         g = graph_bobject.GraphBobject3D(
             x_range = [0, 2],
@@ -1484,7 +1522,8 @@ class NaturalSelectionScene(Scene):
             width = 10,
             height = 10,
             depth = 10,
-            location = [8, 8, 4],
+            #location = [8, 8, 4],
+            location = [0, 8, 4],
             rotation_euler = [math.pi / 2, 0, 0],
             centered = True,
             tick_step = 0.5
@@ -1498,105 +1537,296 @@ class NaturalSelectionScene(Scene):
             color = 'color2',
             centered = True
         )
-        tex.add_to_blender(appear_time = st + 1)
+        tex.add_to_blender(appear_time = 377)
 
         def draw_sim():
             sim.add_to_blender(
-                appear_time = st + 1,
-                start_day = 19#7
+                appear_time = 377,
+                start_day = 6,#7
+                #end_day = 19
             )
 
         def draw_graph():
-            g.add_to_blender(appear_time = st + 2)
-            #Graphs have many tex_bobjects, whose speed is sensitive to the number of object in
-            #Blender at the moment, so it's good to add the graph to blender before the sim.
+            cam_swivel.move_to(
+                new_angle = [74 * math.pi / 180, 0, 20 * math.pi / 180],
+                start_time = 90
+            )
+            cam_swivel.move_to(
+                new_angle = [74 * math.pi / 180, 0, -20 * math.pi / 180],
+                start_time = 100,
+                end_time = 105
+            )
+            cam_swivel.move_to(
+                new_angle = [74 * math.pi / 180, 0, 0],
+                start_time = 105,
+                end_time = 107
+            )
 
 
+            g.add_to_blender(appear_time = 364)
 
-            cres_with_points = []
-            cre_counts = []
-            records = sim.sim.date_records
-            time = 2 #start time
-            #graph_point_leftovers = []
+            point = g.add_point_at_coord(
+                coord = [1, 1, 1],
+                appear_time = 368,
+            )
+            apply_material(point.ref_obj.children[0], 'creature_color7')
 
-            for date in range(len(records)):
-                print("Updating graph for day " + str(date))
+            g_blob = import_object(
+                'boerd_blob', 'creatures',
+                location = [-9, 0, 1.8],
+                rotation_euler = [math.pi / 2, 0, 80 * math.pi / 180],
+                scale = 2
+            )
+            apply_material(g_blob.ref_obj.children[0].children[0], 'creature_color7')
+            g_blob.add_to_blender(appear_time = 369)
 
-                #Delete points for creatures the died
-                to_delete = []
-                for cre in cres_with_points:
-                    #print(' A creature has a point')
-                    if cre not in records[date]['creatures']:
-                        #print(' taking point from creature')
-                        cre.point.disappear(
-                            disappear_time = time,
-                            #Will need duration in actual scene
-                        )
-                        to_delete.append(cre)
-                for cre in to_delete:
-                    cres_with_points.remove(cre)
-                #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+            g.animate_point(
+                end_coord = [0, 0, 0],
+                start_time = 371,
+                point = point
+            )
+            g.animate_point(
+                end_coord = [0, 0, 1 * g.z_scale_factor],
+                start_time = 372.5,
+                point = point
+            )
+            g.animate_point(
+                end_coord = [1, 0, 1 * g.z_scale_factor],
+                start_time = 373,
+                point = point
+            )
+            g.animate_point(
+                end_coord = [1, 1, 1 * g.z_scale_factor],
+                start_time = 373.75,
+                point = point
+            )
 
-                #Add points for new creatures
-                for cre in records[date]['creatures']:
-                    #print(" There's a cre")
-                    if cre not in cres_with_points:
-                        #print(' Giving a point')
-                        point = g.add_point_at_coord(
-                            coord = [
-                                cre.size + uniform(-0.03, 0.03),
-                                cre.sense + uniform(-0.03, 0.03),
-                                cre.speed + uniform(-0.03, 0.03),
-                            ],
-                            appear_time = time,
-                            #Will need duration in actual scene
-                        )
-                        '''apply_material(
-                            point.ref_obj.children[0],
-                            cre.bobject.ref_obj.children[0].children[0].active_material
-                        )'''
-                        dummy = natural_sim.Creature()
-                        dummy.apply_material_by_speed(
-                            bobj = point,
-                            spd = cre.speed,
-                        )
-                        cre.point = point
-                        cres_with_points.append(cre)
-                        #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+            g.move_to(
+                new_location = [8, 8, 0], #0 instead of 4 because it doesn't properly handle z centering
+                start_time = 376.5
+            )
+            g_blob.disappear(disappear_time = 377)
+            point.disappear(disappear_time = 376.5)
 
-                #Add time after day
-                time += records[date]['anim_durations']['dawn'] + \
-                        records[date]['anim_durations']['morning'] + \
-                        records[date]['anim_durations']['day'] + \
-                        records[date]['anim_durations']['evening'] + \
-                        records[date]['anim_durations']['night']
+            def draw_sim_points():
+                cres_with_points = []
+                cre_counts = []
+                records = sim.sim.date_records
+                time = 378 #start time
+                #graph_point_leftovers = []
+
+                for date in range(6, len(records)):
+                    print("Updating graph for day " + str(date))
+
+                    #Delete points for creatures the died
+                    to_delete = []
+                    for cre in cres_with_points:
+                        #print(' A creature has a point')
+                        if cre not in records[date]['creatures']:
+                            #print(' taking point from creature')
+                            cre.point.disappear(
+                                disappear_time = time + 0.5,
+                                #Will need duration in actual scene
+                            )
+                            to_delete.append(cre)
+                    for cre in to_delete:
+                        cres_with_points.remove(cre)
+                    #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+
+                    #Add points for new creatures
+                    for cre in records[date]['creatures']:
+                        #print(" There's a cre")
+                        if cre not in cres_with_points:
+                            #print(' Giving a point')
+                            point = g.add_point_at_coord(
+                                coord = [
+                                    cre.size + uniform(-0.03, 0.03),
+                                    cre.sense + uniform(-0.03, 0.03),
+                                    cre.speed + uniform(-0.03, 0.03),
+                                ],
+                                appear_time = time,
+
+                                #Will need duration in actual scene
+                            )
+                            '''apply_material(
+                                point.ref_obj.children[0],
+                                cre.bobject.ref_obj.children[0].children[0].active_material
+                            )'''
+                            dummy = natural_sim.Creature()
+                            dummy.apply_material_by_speed(
+                                bobj = point,
+                                spd = cre.speed,
+                            )
+                            cre.point = point
+                            cres_with_points.append(cre)
+                            #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+
+                    #Add time after day
+                    time += records[date]['anim_durations']['dawn'] + \
+                            records[date]['anim_durations']['morning'] + \
+                            records[date]['anim_durations']['day'] + \
+                            records[date]['anim_durations']['evening'] + \
+                            records[date]['anim_durations']['night']
+
+
+            draw_sim_points()
 
         def focus_on_graph():
-            sim.disappear(disappear_time = st + 20)
+            sun = bpy.data.objects['Sun']
+            sun_bobj = bobject.Bobject(objects = [sun])
+
+            sun_bobj.move_to(
+                start_time = 0,
+                new_angle = [math.pi / 2, 0, 0]
+            )
+            sun_bobj.add_to_blender(appear_time = 0)
+
+            sim.disappear(disappear_time = 395)
             g.move_to(
-                start_time = st + 20,
+                start_time = 395,
                 new_location = [0, 8, 0]
             )
-            tex.disappear(disappear_time = st + 20)
+            tex.disappear(disappear_time = 395)
+
+
+
+            cam_swivel.move_to(
+                start_time = 395.5,
+                end_time = 397,
+                new_angle = [90 * math.pi / 180, 0, math.pi / 2]
+            )
+            sun_bobj.move_to(
+                start_time = 395.5,
+                end_time = 397,
+                new_angle = [math.pi / 2, 0, math.pi / 2]
+            )
+
+            labs = [g.x_label_bobject, g.y_label_bobject, g.z_label_bobject]
+            labs = labs + g.tick_labels_x + g.tick_labels_y + g.tick_labels_z
+            for lab in labs:
+                lab.move_to(
+                    start_time = 395.6,
+                    end_time = 397.1,
+                    new_angle = [0, math.pi / 2, 0]
+                )
+                if lab == g.z_label_bobject:
+                    lab.move_to(
+                        new_location = [0, 0, 11],
+                        start_time = 395.6,
+                        end_time = 397.1,
+                    )
+            #Prev avg speed = 1.87
+            #Avg speed = 10.3
+            prevg = tex_bobject.TexBobject(
+                '\\text{Previous average speed = } 1.87',
+                '\\text{Maximum sense = } 1.4',
+                location = [0, -11.6, 9.9],
+                rotation_euler = [90 * math.pi / 180, 0, math.pi / 2],
+                color = 'color2',
+            )
+            newvg = tex_bobject.TexBobject(
+                '\\text{New average speed = } 1.03',
+                '\\text{Minimum sense = } 0.6',
+                location = [0, -11.6, 8.6],
+                rotation_euler = [90 * math.pi / 180, 0, math.pi / 2],
+                color = 'color2'
+            )
+            prevg.add_to_blender(appear_time = 398)
+            newvg.add_to_blender(appear_time = 399)
+
+            prevg.disappear(disappear_time = 419)
+            newvg.disappear(disappear_time = 419)
+
+
+            max_sense = tex_bobject.TexBobject(
+                '\\text{Maximum sense = } 1.4',
+                location = [0, -11.6, 9.9],
+                rotation_euler = [90 * math.pi / 180, 0, math.pi / 2],
+                color = 'color2',
+            )
+            min_sense = tex_bobject.TexBobject(
+                '\\text{Minimum sense = } 0.6',
+                location = [0, -11.6, 8.6],
+                rotation_euler = [90 * math.pi / 180, 0, math.pi / 2],
+                color = 'color2'
+            )
+            avg_sense = tex_bobject.TexBobject(
+                    '\\text{Average sense = } 1.15',
+                    location = [0, -11.6, 7.3],
+                    rotation_euler = [90 * math.pi / 180, 0, math.pi / 2],
+                    color = 'color2'
+            )
+
+            max_sense.add_to_blender(appear_time = 431)
+            min_sense.add_to_blender(appear_time = 432)
+
+            avg_sense.add_to_blender(appear_time = 433)
+
+            cam_swivel.move_to(
+                start_time = 397,
+                end_time = 419.5,
+                new_angle = [90 * math.pi / 180, 0, 85 * math.pi / 180]
+            )
+            cam_swivel.move_to(
+                start_time = 419.5,
+                end_time = 442,
+                new_angle = [90 * math.pi / 180, 0, 90 * math.pi / 180]
+            )
+
+
+            max_sense.disappear(disappear_time = 441.9)
+            min_sense.disappear(disappear_time = 442)
+            avg_sense.disappear(disappear_time = 442.1)
+            cam_swivel.move_to(
+                start_time = 442,
+                end_time = 443,
+                new_angle = [74 * math.pi / 180, 0, 0]
+            )
+
+            g.move_to(
+                new_location = [8, 8, 0], #0 instead of 4 because it doesn't properly handle z centering
+                start_time = 442,
+                end_time = 443
+            )
+
+            for lab in labs:
+                lab.move_to(
+                    start_time = 442.1,
+                    end_time = 443.1,
+                    new_angle = [0, 0, 0]
+                )
+                if lab == g.z_label_bobject:
+                    lab.move_to(
+                        new_location = [0, 0, 10.5],
+                        start_time = 442.1,
+                        end_time = 443.1,
+                    )
+            sun_bobj.move_to(
+                start_time = 442,
+                end_time = 443,
+                new_angle = [math.pi / 2, 0, 0]
+            )
+
 
         draw_graph()
-        draw_sim()
+        #draw_sim()
         focus_on_graph()
 
     def sudden_famine(self):
         cues = self.subscenes['famine']
-        st = cues['start']
+        st = 443 #cues['start']
 
         cam_bobj, cam_swivel = cam_and_swivel(
-            cam_location = [34, 0, 0],
-            cam_rotation_euler = [math.pi / 2, 0, math.pi / 2],
+            cam_location = [0, 0, 34],
+            cam_rotation_euler = [0, 0, 0],
             cam_name = "Camera Bobject",
             swivel_location = [0, 0, 4],
-            swivel_rotation_euler = [0, -16 * math.pi / 180, -math.pi / 2],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
             swivel_name = 'Cam swivel',
-            control_sun = True
+            #control_sun = True
         )
-        cam_swivel.add_to_blender(appear_time = st - 1)
+        cam_swivel.add_to_blender(appear_time = 0)
+
 
         sim = natural_sim.DrawnNaturalSim(
             scale = 1.5,
@@ -1622,101 +1852,176 @@ class NaturalSelectionScene(Scene):
         )
 
         tex = tex_bobject.TexBobject(
-            '\\text{Reduced food}',
+            #'\\text{Reduced food}',
+            '\\text{Food count} =  100',
+            '\\text{Food count} =  10',
             scale = 2,
             location = [-6.5, 0, 8],
             rotation_euler = [74 * math.pi / 180, 0, 0],
             color = 'color2',
             centered = True
         )
-        tex.add_to_blender(appear_time = st + 1)
+        tex.add_to_blender(appear_time = 447)
+        tex.morph_figure(1, start_time = 448.5)
+
+
+
+        first_day = 20
+
+        #Set timing for first five days at 1 sec per day
+        total_animation_length = 5
+        uncorrected = 0
+        for record in sim.sim.date_records:
+            if record['date'] >= first_day:
+                durs = record['anim_durations']
+                uncorrected += sum(durs.values())
+
+        correction_factor = total_animation_length / uncorrected
+
+        for record in sim.sim.date_records:
+            if record['date'] >= first_day:
+                durs = record['anim_durations']
+                for key in durs:
+                    durs[key] *= correction_factor
+
+
+
+
+        first_day_start = 461
+        sim_appearance_time = 443
+
+        #Find proper duration for first morning pause to fill talking time
+        initial_day_durs = sim.sim.date_records[first_day]['anim_durations']
+        first_morning_dur = first_day_start - \
+                           sim_appearance_time - \
+                           initial_day_durs['dawn'] - \
+                           1 #For standard start_delay on drawn sims
+        initial_day_durs['morning'] = first_morning_dur
 
         def draw_sim():
             sim.add_to_blender(
-                appear_time = st + 1,
-                start_day = 22#7
+                appear_time = 443,
+                start_day = 20,#7
+                #end_day = 23
             )
 
         def draw_graph():
-            g.add_to_blender(appear_time = st + 2)
+            g.add_to_blender(appear_time = 0)
             #Graphs have many tex_bobjects, whose speed is sensitive to the number of object in
             #Blender at the moment, so it's good to add the graph to blender before the sim.
 
-            cres_with_points = []
-            cre_counts = []
-            records = sim.sim.date_records
-            time = 2 #start time
-            #graph_point_leftovers = []
+            def draw_sim_points():
+                cres_with_points = []
+                cre_counts = []
+                records = sim.sim.date_records
+                time = 444 #start time
+                #graph_point_leftovers = []
 
-            for date in range(len(records)):
-                print("Updating graph for day " + str(date))
+                #Assign points in start file
+                #print()
+                #print(g.ref_obj.name)
 
-                #Delete points for creatures the died
-                to_delete = []
-                for cre in cres_with_points:
-                    #print(' A creature has a point')
-                    if cre not in records[date]['creatures']:
-                        #print(' taking point from creature')
-                        cre.point.disappear(
-                            disappear_time = time,
-                            #Will need duration in actual scene
-                        )
-                        to_delete.append(cre)
-                for cre in to_delete:
-                    cres_with_points.remove(cre)
-                #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+                #I didn't foresee the fact that random additions to points would
+                #cause issues when I want to use the same graph in different scene.
+                #These ares the locs from final version of the previous scene
+                locs = [[1.19959557056427, 0.9703189134597778, 1.020974040031433], [1.204119086265564, 1.425511360168457, 1.1812005043029785], [1.3164743185043335, 1.273431658744812, 0.9055522680282593], [1.307760238647461, 0.9228394031524658, 0.9211083650588989], [1.408111572265625, 0.985110878944397, 0.5734765529632568], [1.2097967863082886, 1.229711651802063, 1.0113754272460938], [1.224846363067627, 0.7857423424720764, 0.7897409796714783], [1.0971119403839111, 1.1140503883361816, 1.1124258041381836], [1.4028091430664062, 1.4278273582458496, 1.0081310272216797], [1.2847728729248047, 0.7092758417129517, 0.6855748891830444], [1.3952150344848633, 1.1825109720230103, 1.39744234085083], [1.2872920036315918, 1.3270885944366455, 1.0866162776947021], [1.3044685125350952, 1.1224359273910522, 1.0855640172958374], [1.1864969730377197, 1.22417151927948, 1.018127202987671], [1.2000783681869507, 1.1753534078598022, 0.7902054786682129], [1.186108112335205, 1.2193348407745361, 0.973759114742279], [1.2765913009643555, 1.3089720010757446, 1.084298014640808], [1.381836175918579, 1.1962908506393433, 1.0080620050430298], [1.312105655670166, 1.2846379280090332, 1.317226767539978], [1.073990821838379, 1.270787000656128, 1.2949399948120117], [1.2163854837417603, 1.3743259906768799, 0.784053385257721], [1.1723737716674805, 1.2242356538772583, 1.2054738998413086], [1.3785524368286133, 1.4096506834030151, 1.0257009267807007], [1.3737915754318237, 1.1826667785644531, 1.1710566282272339], [1.2928353548049927, 1.0707526206970215, 1.0756503343582153], [1.518924355506897, 1.0998060703277588, 1.1059123277664185], [1.2993005514144897, 0.8921331763267517, 0.9004638195037842], [1.412189245223999, 1.3891831636428833, 0.9803748726844788], [1.3948076963424683, 0.8170769810676575, 0.999501645565033], [1.3286423683166504, 0.9115564823150635, 0.8868694305419922], [0.9770519137382507, 0.9861668348312378, 0.9863671660423279], [1.4861751794815063, 1.3047313690185547, 0.8939758539199829], [1.1809210777282715, 0.6025184392929077, 0.7883769869804382], [1.2902082204818726, 1.1014775037765503, 1.3050527572631836], [1.3762340545654297, 1.2019294500350952, 0.9961966276168823], [1.3036876916885376, 1.3040571212768555, 1.1132107973098755], [1.0829590559005737, 1.3129061460494995, 0.7106703519821167], [1.371167540550232, 1.4151160717010498, 0.9832428097724915], [1.410250186920166, 1.381046175956726, 1.3889288902282715], [1.2838892936706543, 1.1257176399230957, 1.3212934732437134], [1.5253435373306274, 1.0960781574249268, 1.1296186447143555], [1.3709173202514648, 0.973776638507843, 1.027558445930481], [1.4139313697814941, 1.014811396598816, 1.1736400127410889]]
+                #points = [x for x in g.ref_obj.children if 'sphere' in x.name and x.hide == False]
+                #for point in points:
+                #    point.creature = None
 
-                #Add points for new creatures
-                for cre in records[date]['creatures']:
-                    #print(" There's a cre")
-                    if cre not in cres_with_points:
-                        #print(' Giving a point')
-                        point = g.add_point_at_coord(
-                            coord = [
-                                cre.size + uniform(-0.03, 0.03),
-                                cre.sense + uniform(-0.03, 0.03),
-                                cre.speed + uniform(-0.03, 0.03),
-                            ],
-                            appear_time = time,
-                            #Will need duration in actual scene
-                        )
-                        '''apply_material(
-                            point.ref_obj.children[0],
-                            cre.bobject.ref_obj.children[0].children[0].active_material
-                        )'''
-                        dummy = natural_sim.Creature()
-                        dummy.apply_material_by_speed(
-                            bobj = point,
-                            spd = cre.speed,
-                        )
-                        cre.point = point
-                        cres_with_points.append(cre)
-                        #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+                #print(points)
 
-                #Add time after day
-                time += records[date]['anim_durations']['dawn'] + \
-                        records[date]['anim_durations']['morning'] + \
-                        records[date]['anim_durations']['day'] + \
-                        records[date]['anim_durations']['evening'] + \
-                        records[date]['anim_durations']['night']
+                for cre in records[19]['creatures']:
+                    for loc in locs:
+                        if abs(loc[0] - cre.size) <= 0.3 and \
+                           abs(loc[1] - cre.sense) <= 0.3 and \
+                           abs(loc[2] - cre.speed) <= 0.3:
+
+                            point = g.add_point_at_coord(
+                                coord = loc,
+                                appear_time = 0,
+                                #Will need duration in actual scene
+                            )
+                            dummy = natural_sim.Creature()
+                            dummy.apply_material_by_speed(
+                                bobj = point,
+                                spd = cre.speed,
+                            )
+                            cre.point = point
+                            cres_with_points.append(cre)
+                            locs.remove(loc)
+                            break
+
+                for date in range(20, len(records)):
+                    print("Updating graph for day " + str(date))
+
+                    #Delete points for creatures the died
+                    to_delete = []
+                    for cre in cres_with_points:
+                        #print(' A creature has a point')
+                        if cre not in records[date]['creatures']:
+                            #print(' taking point from creature')
+                            cre.point.disappear(
+                                disappear_time = time + 0.5,
+                                #Will need duration in actual scene
+                            )
+                            to_delete.append(cre)
+                    for cre in to_delete:
+                        cres_with_points.remove(cre)
+                    #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+
+                    #Add points for new creatures
+                    for cre in records[date]['creatures']:
+                        #print(" There's a cre")
+                        if cre not in cres_with_points:
+                            #print(' Giving a point')
+                            point = g.add_point_at_coord(
+                                coord = [
+                                    cre.size + uniform(-0.03, 0.03),
+                                    cre.sense + uniform(-0.03, 0.03),
+                                    cre.speed + uniform(-0.03, 0.03),
+                                ],
+                                appear_time = time,
+
+                                #Will need duration in actual scene
+                            )
+                            dummy = natural_sim.Creature()
+                            dummy.apply_material_by_speed(
+                                bobj = point,
+                                spd = cre.speed,
+                            )
+                            cre.point = point
+                            cres_with_points.append(cre)
+                            #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+
+                    #Add time after day
+                    time += records[date]['anim_durations']['dawn'] + \
+                            records[date]['anim_durations']['morning'] + \
+                            records[date]['anim_durations']['day'] + \
+                            records[date]['anim_durations']['evening'] + \
+                            records[date]['anim_durations']['night']
+
+            draw_sim_points()
+
+
 
         draw_graph()
         draw_sim()
 
     def gradual_famine(self):
-        cues = self.subscenes['gradual']
-        st = cues['start']
+        #cues = self.subscenes['gradual']
+        #st = cues['start']
 
         cam_bobj, cam_swivel = cam_and_swivel(
-            cam_location = [34, 0, 0],
-            cam_rotation_euler = [math.pi / 2, 0, math.pi / 2],
+            cam_location = [0, 0, 34],
+            cam_rotation_euler = [0, 0, 0],
             cam_name = "Camera Bobject",
             swivel_location = [0, 0, 4],
-            swivel_rotation_euler = [0, -16 * math.pi / 180, -math.pi / 2],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
             swivel_name = 'Cam swivel',
-            control_sun = True
+            #control_sun = True
         )
-        cam_swivel.add_to_blender(appear_time = st - 1)
+        cam_swivel.add_to_blender(appear_time = 0)
 
         sim = natural_sim.DrawnNaturalSim(
             scale = 1.5,
@@ -1741,8 +2046,8 @@ class NaturalSelectionScene(Scene):
             tick_step = 0.5
         )
 
-        tex = tex_bobject.TexBobject(
-            '\\text{Reduced food}',
+        '''tex = tex_bobject.TexBobject(
+            '\\text{Food count} = 100',
             '\\substack {\\text{Gradually} \\\\ \\text{reduced food}}',
             scale = 2,
             location = [-6.5, 0, 8],
@@ -1750,93 +2055,388 @@ class NaturalSelectionScene(Scene):
             color = 'color2',
             centered = True
         )
-        tex.add_to_blender(appear_time = st + 1)
+        tex.add_to_blender(appear_time = 400)
 
-        tex.morph_figure(1, start_time = st + 20)
+        tex.morph_figure(1, start_time = 494)
         tex.move_to(
             new_scale = 2.8,
-            start_time = st + 20
-        )
+            start_time = 494
+        )'''
+
+        first_day = 20
+
+        #Set timing for first five days at 1 sec per day
+        total_animation_length = 15
+        uncorrected = 0
+        for record in sim.sim.date_records:
+            if record['date'] >= first_day and record['date'] <= 196:
+                durs = record['anim_durations']
+                uncorrected += sum(durs.values())
+
+        correction_factor = total_animation_length / uncorrected
+
+        for record in sim.sim.date_records:
+            if record['date'] >= first_day:
+                durs = record['anim_durations']
+                for key in durs:
+                    durs[key] *= correction_factor
+
+
+
+
+        first_day_start = 497.5
+        sim_appearance_time = 400
+
+        #Find proper duration for first morning pause to fill talking time
+        initial_day_durs = sim.sim.date_records[first_day]['anim_durations']
+        first_morning_dur = first_day_start - \
+                           sim_appearance_time - \
+                           initial_day_durs['dawn'] - \
+                           1 #For standard start_delay on drawn sims
+        initial_day_durs['morning'] = first_morning_dur
 
         def draw_sim():
             sim.add_to_blender(
-                appear_time = st + 1,
-                start_day = 180,#7
-                end_day = 180
+                appear_time = 400,
+                start_day = 20,#7
+                end_day = 196
             )
 
         def draw_graph():
-            g.add_to_blender(appear_time = st + 2)
+            g.add_to_blender(appear_time = 0)
             #Graphs have many tex_bobjects, whose speed is sensitive to the number of object in
             #Blender at the moment, so it's good to add the graph to blender before the sim.
 
-            cres_with_points = []
-            cre_counts = []
-            records = sim.sim.date_records
-            time = 2 #start time
-            #graph_point_leftovers = []
+            def draw_sim_points():
+                cres_with_points = []
+                cre_counts = []
+                records = sim.sim.date_records
+                time = 401 #start time
+                #graph_point_leftovers = []
 
-            for date in range(len(records)):
-                break
-                print("Updating graph for day " + str(date))
+                #Assign points in start file
+                #print()
+                #print(g.ref_obj.name)
 
-                #Delete points for creatures the died
-                to_delete = []
-                for cre in cres_with_points:
-                    #print(' A creature has a point')
-                    if cre not in records[date]['creatures']:
-                        #print(' taking point from creature')
-                        cre.point.disappear(
-                            disappear_time = time,
-                            #Will need duration in actual scene
-                        )
-                        to_delete.append(cre)
-                for cre in to_delete:
-                    cres_with_points.remove(cre)
-                #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+                #I didn't foresee the fact that random additions to points would
+                #cause issues when I want to use the same graph in different scene.
+                #These ares the locs from final version of the previous scene
+                locs = [[1.204119086265564, 1.425511360168457, 1.1812005043029785], [1.408111572265625, 0.985110878944397, 0.5734765529632568], [1.2097967863082886, 1.229711651802063, 1.0113754272460938], [1.3952150344848633, 1.1825109720230103, 1.39744234085083], [1.2872920036315918, 1.3270885944366455, 1.0866162776947021], [1.3044685125350952, 1.1224359273910522, 1.0855640172958374], [1.1864969730377197, 1.22417151927948, 1.018127202987671], [1.2000783681869507, 1.1753534078598022, 0.7902054786682129], [1.186108112335205, 1.2193348407745361, 0.973759114742279], [1.381836175918579, 1.1962908506393433, 1.0080620050430298], [1.312105655670166, 1.2846379280090332, 1.317226767539978], [1.073990821838379, 1.270787000656128, 1.2949399948120117], [1.2163854837417603, 1.3743259906768799, 0.784053385257721], [1.1723737716674805, 1.2242356538772583, 1.2054738998413086], [1.3737915754318237, 1.1826667785644531, 1.1710566282272339], [1.518924355506897, 1.0998060703277588, 1.1059123277664185], [1.2993005514144897, 0.8921331763267517, 0.9004638195037842], [1.412189245223999, 1.3891831636428833, 0.9803748726844788], [1.3948076963424683, 0.8170769810676575, 0.999501645565033], [1.2902082204818726, 1.1014775037765503, 1.3050527572631836], [1.410250186920166, 1.381046175956726, 1.3889288902282715], [1.2838892936706543, 1.1257176399230957, 1.3212934732437134], [1.5253435373306274, 1.0960781574249268, 1.1296186447143555], [1.3709173202514648, 0.973776638507843, 1.027558445930481], [1.4139313697814941, 1.014811396598816, 1.1736400127410889], [1.0888365507125854, 1.2763532400131226, 1.294913411140442], [1.2983753681182861, 1.2767884731292725, 1.1173202991485596], [1.4969432353973389, 1.2728290557861328, 1.3119254112243652], [1.2206954956054688, 1.0020447969436646, 1.0112260580062866], [1.328333854675293, 1.3055939674377441, 1.1210356950759888], [1.3007124662399292, 1.098942756652832, 0.8850259184837341], [1.3089516162872314, 1.272914171218872, 0.908165693283081], [1.1822603940963745, 1.1883777379989624, 1.1888587474822998], [1.1719539165496826, 1.3896856307983398, 1.2201716899871826], [1.1192811727523804, 1.322360873222351, 0.8819512128829956], [1.2908812761306763, 1.0768579244613647, 1.110305905342102], [1.4058194160461426, 0.9724385142326355, 1.193057656288147], [1.4283770322799683, 0.973495602607727, 0.9739724397659302], [1.2854950428009033, 1.2989557981491089, 0.900986909866333], [1.4875723123550415, 0.899839460849762, 0.9164788126945496], [1.4079073667526245, 1.0063056945800781, 1.1976863145828247], [1.2819401025772095, 1.4956700801849365, 1.3281666040420532], [1.6245044469833374, 1.1967015266418457, 1.0003347396850586], [1.2701953649520874, 0.9278050661087036, 1.102436900138855], [1.5068249702453613, 0.8796652555465698, 1.0868481397628784]]
+                #points = [x for x in g.ref_obj.children if 'sphere' in x.name and x.hide == False]
+                #for point in points:
+                #    point.creature = None
 
-                #Add points for new creatures
-                for cre in records[date]['creatures']:
-                    #print(" There's a cre")
-                    if cre not in cres_with_points:
-                        #print(' Giving a point')
-                        point = g.add_point_at_coord(
-                            coord = [
-                                cre.size + uniform(-0.03, 0.03),
-                                cre.sense + uniform(-0.03, 0.03),
-                                cre.speed + uniform(-0.03, 0.03),
-                            ],
-                            appear_time = time,
-                            #Will need duration in actual scene
-                        )
-                        '''apply_material(
-                            point.ref_obj.children[0],
-                            cre.bobject.ref_obj.children[0].children[0].active_material
-                        )'''
-                        dummy = natural_sim.Creature()
-                        dummy.apply_material_by_speed(
-                            bobj = point,
-                            spd = cre.speed,
-                        )
-                        cre.point = point
-                        cres_with_points.append(cre)
-                        #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+                #print(points)
 
-                #Add time after day
-                time += records[date]['anim_durations']['dawn'] + \
-                        records[date]['anim_durations']['morning'] + \
-                        records[date]['anim_durations']['day'] + \
-                        records[date]['anim_durations']['evening'] + \
-                        records[date]['anim_durations']['night']
+                for cre in records[20]['creatures']:
+                    for loc in locs:
+                        if abs(loc[0] - cre.size) <= 0.3 and \
+                           abs(loc[1] - cre.sense) <= 0.3 and \
+                           abs(loc[2] - cre.speed) <= 0.3:
 
+                            point = g.add_point_at_coord(
+                                coord = loc,
+                                appear_time = 0,
+                                #Will need duration in actual scene
+                            )
+                            dummy = natural_sim.Creature()
+                            dummy.apply_material_by_speed(
+                                bobj = point,
+                                spd = cre.speed,
+                            )
+                            cre.point = point
+                            cres_with_points.append(cre)
+                            locs.remove(loc)
+                            break
 
+                time += records[20]['anim_durations']['dawn'] + \
+                        records[20]['anim_durations']['morning'] + \
+                        records[20]['anim_durations']['day'] + \
+                        records[20]['anim_durations']['evening'] + \
+                        records[20]['anim_durations']['night']
+
+                for date in range(196, 197):
+                    print("Updating graph for day " + str(date))
+
+                    durs = records[date]['anim_durations']
+                    full_day_time = sum(durs.values())
+
+                    #Delete points for creatures the died
+                    to_delete = []
+                    for cre in cres_with_points:
+                        #print(' A creature has a point')
+                        if cre not in records[date]['creatures']:
+                            #print(' taking point from creature')
+                            cre.point.disappear(
+                                disappear_time = time + full_day_time / 2,
+                                duration_frames = (full_day_time / 2) * FRAME_RATE
+                                #Will need duration in actual scene
+                            )
+                            to_delete.append(cre)
+                    for cre in to_delete:
+                        cres_with_points.remove(cre)
+                    #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+
+                    #Add points for new creatures
+                    for cre in records[date]['creatures']:
+                        #print(" There's a cre")
+                        if cre not in cres_with_points:
+                            #print(' Giving a point')
+                            point = g.add_point_at_coord(
+                                coord = [
+                                    cre.size + uniform(-0.03, 0.03),
+                                    cre.sense + uniform(-0.03, 0.03),
+                                    cre.speed + uniform(-0.03, 0.03),
+                                ],
+                                appear_time = time,
+                                duration = (full_day_time / 2) * FRAME_RATE
+                                #Will need duration in actual scene
+                            )
+                            dummy = natural_sim.Creature()
+                            dummy.apply_material_by_speed(
+                                bobj = point,
+                                spd = cre.speed,
+                            )
+                            cre.point = point
+                            cres_with_points.append(cre)
+                            #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+
+                    #Add time after day
+                    time += full_day_time
+
+            draw_sim_points()
+
+        #sim.disappear(disappear_time = 513)
+        #tex.disappear(disappear_time = 513)
+        g.move_to(
+            start_time = 513,
+            new_location = [0, 8, 0]
+        )
 
         draw_graph()
-        draw_sim()
+        #draw_sim()
+
+        def post_look():
+
+            cam_swivel.move_to(
+                new_angle = [74 * math.pi / 180, 0, 10 * math.pi / 180],
+                start_time = 514,
+                end_time = 522
+            )
+
+            cam_swivel.move_to(
+                new_angle = [math.pi / 2, 0, 0],
+                start_time = 522,
+                end_time = 524
+            )
+
+
+            cam_swivel.move_to(
+                new_angle = [math.pi / 2, 0, math.pi / 2],
+                start_time = 529.5,
+                end_time = 532.5,
+            )
+            sun = bpy.data.objects['Sun']
+            sun_bobj = bobject.Bobject(objects = [sun])
+            sun_bobj.add_to_blender(appear_time = 0)
+            sun_bobj.move_to(
+                start_time = 0,
+                new_angle = [math.pi / 2, 0, 0]
+            )
+
+
+            labs = [g.x_label_bobject, g.y_label_bobject, g.z_label_bobject]
+            labs = labs + g.tick_labels_x + g.tick_labels_y + g.tick_labels_z
+
+            for lab in labs:
+                lab.move_to(
+                    start_time = 529.5,
+                    end_time = 532.5,
+                    new_angle = [0, math.pi / 2, 0]
+                )
+                if lab == g.z_label_bobject:
+                    lab.move_to(
+                        new_location = [0, 0, 11],
+                        start_time = 529.5,
+                        end_time = 532.5,
+                    )
+            sun_bobj.move_to(
+                start_time = 529.5,
+                end_time = 532.5,
+                new_angle = [math.pi / 2, 0, math.pi / 2]
+            )
+
+
+
+
+
+            cam_swivel.move_to(
+                new_angle = [74 * math.pi / 180, 0, 0],
+                start_time = 541,
+                end_time = 554,
+            )
+
+
+            labs = [g.x_label_bobject, g.y_label_bobject, g.z_label_bobject]
+            labs = labs + g.tick_labels_x + g.tick_labels_y + g.tick_labels_z
+
+            for lab in labs:
+                lab.move_to(
+                    new_angle = [0, 0, 0],
+                    start_time = 541,
+                    end_time = 554,
+                )
+                if lab == g.z_label_bobject:
+                    lab.move_to(
+                        new_location = [0, 0, 10.5],
+                        start_time = 541,
+                        end_time = 554,
+                    )
+            sun_bobj.move_to(
+                new_angle = [math.pi / 2, 0, 0],
+                start_time = 541,
+                end_time = 554,
+            )
+
+            def make_g2():
+                sim2 = natural_sim.DrawnNaturalSim(
+                    scale = 1.5,
+                    sim = 'gradual_f10_[True, True, True]_201',
+                    location = [-6.5, 0, 0],
+                    day_length_style = 'fixed_length'
+                )
+
+                g2 = graph_bobject.GraphBobject3D(
+                    x_range = [0, 2],
+                    y_range = [0, 2],
+                    z_range = [0, 2],
+                    x_label = '\\text{Size}',
+                    y_label = '\\text{Sense}',
+                    z_label = '\\text{Speed}',
+                    width = 10,
+                    height = 10,
+                    depth = 10,
+                    location = [8, 8, 4],
+                    rotation_euler = [math.pi / 2, 0, 0],
+                    centered = True,
+                    tick_step = 0.5
+                )
+
+                cres_with_points = []
+                cre_counts = []
+                time = 0 #start time
+                records = sim2.sim.date_records
+                for date in range(19, 20):
+                    print("Updating graph for day " + str(date))
+
+                    durs = records[date]['anim_durations']
+                    full_day_time = sum(durs.values())
+
+                    #Delete points for creatures the died
+                    to_delete = []
+                    for cre in cres_with_points:
+                        #print(' A creature has a point')
+                        if cre not in records[date]['creatures']:
+                            #print(' taking point from creature')
+                            cre.point.disappear(
+                                disappear_time = time + full_day_time / 2,
+                                duration_frames = (full_day_time / 2) * FRAME_RATE
+                                #Will need duration in actual scene
+                            )
+                            to_delete.append(cre)
+                    for cre in to_delete:
+                        cres_with_points.remove(cre)
+                    #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+
+                    #Add points for new creatures
+                    for cre in records[date]['creatures']:
+                        #print(" There's a cre")
+                        if cre not in cres_with_points:
+                            #print(' Giving a point')
+                            point = g2.add_point_at_coord(
+                                coord = [
+                                    cre.size + uniform(-0.03, 0.03),
+                                    cre.sense + uniform(-0.03, 0.03),
+                                    cre.speed + uniform(-0.03, 0.03),
+                                ],
+                                appear_time = time,
+                                duration = (full_day_time / 2) * FRAME_RATE
+                                #Will need duration in actual scene
+                            )
+                            dummy = natural_sim.Creature()
+                            dummy.apply_material_by_speed(
+                                bobj = point,
+                                spd = cre.speed,
+                            )
+                            cre.point = point
+                            cres_with_points.append(cre)
+                            #print(' Now ' + str(len(cres_with_points)) + " cres have points")
+
+                    #Add time after day
+                    time += full_day_time
+
+                g2.add_to_blender(
+                    appear_time = 555
+                )
+                g.move_to(
+                    new_location = [-6.5, 8, 0],
+                    start_time = 555
+                )
+
+                ten = tex_bobject.TexBobject(
+                    '10 \\text{ food}',
+                    location = [2, 4, 8],
+                    rotation_euler = [math.pi / 2, 0, 0],
+                    scale = 1.5,
+                    centered = True,
+                    color = 'color2'
+                )
+                hund = tex_bobject.TexBobject(
+                    '100 \\text{ food}',
+                    location = [9.5, 4, 8],
+                    rotation_euler = [math.pi / 2, 0, 0],
+                    centered = True,
+                    scale = 1.5,
+                    color = 'color2'
+                )
+                ten.add_to_blender(appear_time = 555)
+                ten.move_to(new_location = [-4.5, 4, 8], start_time = 555)
+                hund.add_to_blender(appear_time = 555)
+
+                g.disappear(disappear_time = 559)
+                g2.disappear(disappear_time = 559)
+                ten.disappear(disappear_time = 559)
+                hund.disappear(disappear_time = 559)
+
+
+            make_g2()
+
+            cam_swivel.move_to(
+                new_angle = [74 * math.pi / 180, 0, -10 * math.pi / 180],
+                start_time = 555,
+                end_time = 559,
+            )
+
+        post_look()
+
+    def evolution_diagram(self):
+        evo = svg_bobject.SVGBobject(
+            'human_evolution_scheme',
+            scale = 0.4,
+            location = [-2.5, -1.25, 0],
+            centered = True,
+            color = 'color2'
+        )
+        f = 30
+        evo.add_to_blender(
+            appear_time = 0,
+            subbobject_timing = [5*f, 4*f, 3*f, f, 2*f, 6*f]
+        )
+        evo.disappear(disappear_time = 4)
 
     def recap(self):
-        cues = self.subscenes['wws']
-        st = cues['start']
+        #cues = self.subscenes['wws']
+        #st = cues['start']
 
         wws = tex_bobject.TexBobject(
             '\\text{What we saw}',
@@ -1844,16 +2444,16 @@ class NaturalSelectionScene(Scene):
             scale = 2.5,
             color = 'color2'
         )
-        wws.add_to_blender(appear_time = st)
+        wws.add_to_blender(appear_time = 604)
 
         blob = import_object(
             'boerd_blob', 'creatures',
-            location = [11.5, 0, 0],
+            location = [11.5, -1, 0],
             rotation_euler = [0, - math.pi / 4, 0],
             wiggle = True,
             scale = 2
         )
-        blob.add_to_blender(appear_time = st + 0.5)
+        blob.add_to_blender(appear_time = 604.5)
         apply_material(blob.ref_obj.children[0].children[0], 'creature_color3')
 
         start_height = 3
@@ -1911,33 +2511,33 @@ class NaturalSelectionScene(Scene):
             tex7,
         ]
 
-        delay = 1
+        delay = 0
         time_spacing = 1
         for tex in tex_things:
-            tex.add_to_blender(appear_time = st + delay)
+            tex.add_to_blender(appear_time = 605 + delay)
             delay += time_spacing
 
         to_disappear = [wws, blob] + tex_things
         for i, thing in enumerate(to_disappear):
-            thing.disappear(disappear_time = st + 10 - (len(to_disappear) - 1 - i) * 0.05)
+            thing.disappear(disappear_time = 615 - (len(to_disappear) - 1 - i) * 0.05)
 
         altruism = tex_bobject.TexBobject(
             '\\text{Altruism?}',
-            location = [0, 4, 0],
+            location = [0, -3, 0],
             scale = 3,
             color = 'color2',
             centered = True
         )
         sex = tex_bobject.TexBobject(
             '\\text{Sexual reproduction?}',
-            location = [0, -4, 0],
+            location = [0, 3, 0],
             scale = 3,
             color = 'color2',
             centered = True
         )
-        altruism.add_to_blender(appear_time = st + 12)
-        sex.add_to_blender(appear_time = st + 13)
+        altruism.add_to_blender(appear_time = 618.5)
+        sex.add_to_blender(appear_time = 617)
 
-        to_disappear = [altruism, sex]
+        to_disappear = [sex, altruism]
         for i, thing in enumerate(to_disappear):
-            thing.disappear(disappear_time = st + 15 - (len(to_disappear) - 1 - i) * 0.05)
+            thing.disappear(disappear_time = 621.5 - (len(to_disappear) - 1 - i) * 0.05)

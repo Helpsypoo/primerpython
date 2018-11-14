@@ -528,7 +528,7 @@ def nat_sim_test():
         scale = 1,
         food_count = 30,
         #initial_creatures = 0,
-        sim = 'gradual_f10_[True, True, True]_201',
+        sim = 'all_mut_f100_[True, True, True]_19',
         #sim = 'all_mut_f100_[True, True, True]_19',
         location = [-6.5, 0, 0],
         #day_length_style = 'fixed_speed',
@@ -582,15 +582,15 @@ def nat_sim_test():
         centered = True,
         tick_step = 0.5
     )
-    g.add_to_blender(appear_time = 1)
+    #g.add_to_blender(appear_time = 1)
     #Graphs have many tex_bobjects, whose speed is sensitive to the number of object in
     #Blender at the moment, so it's good to add the graph to blender before the sim.
 
-    sim.add_to_blender(
+    '''sim.add_to_blender(
         appear_time = 1,
         start_day = 199,
         end_day = 199
-    )
+    )'''
 
     cres_with_points = []
     cre_counts = []
@@ -609,10 +609,16 @@ def nat_sim_test():
         tot_size = 0
         tot_spd = 0
         tot_sense = 0
+        max_sense = -math.inf
+        min_sense = math.inf
         for cre in records[date]['creatures']:
             tot_size += cre.size
             tot_spd += cre.speed
             tot_sense += cre.sense
+            if cre.sense > max_sense:
+                max_sense = cre.sense
+            if cre.sense < min_sense:
+                min_sense = cre.sense
         if tot_size > 0: #Avoid error on extinction
             avg_size = tot_size / len(records[date]['creatures'])
             avg_spd = tot_spd / len(records[date]['creatures'])
@@ -622,9 +628,12 @@ def nat_sim_test():
                         str(round(avg_spd, 2)) + ' ' + \
                         str(round(avg_sense, 2))
                  )
+        if date == 19:
+            print( 'Max sense: ' + str(max_sense))
+            print( 'Min sense: ' + str(min_sense))
 
     graph_point_leftovers = []
-
+    '''
     for date in range(len(records)):
         if date == len(records) - 1:
             #print()
@@ -666,10 +675,10 @@ def nat_sim_test():
                         appear_time = time,
                         #Will need duration in actual scene
                     )
-                    '''apply_material(
+                    apply_material(
                         point.ref_obj.children[0],
                         cre.bobject.ref_obj.children[0].children[0].active_material
-                    )'''
+                    )
                     cre.point = point
                     cres_with_points.append(cre)
                     #print(' Now ' + str(len(cres_with_points)) + " cres have points")
@@ -680,7 +689,7 @@ def nat_sim_test():
                     records[date]['anim_durations']['day'] + \
                     records[date]['anim_durations']['evening'] + \
                     records[date]['anim_durations']['night']
-
+    '''
 
     #print(cre_counts)
     """

@@ -982,7 +982,8 @@ class GraphBobject(Bobject):
         appear_frame = None,
         coord = [0, 0, 0],
         track_curve = None,
-        axis_projections = False
+        axis_projections = False,
+        duration = OBJECT_APPEARANCE_TIME / FRAME_RATE
     ):
         if appear_time != None:
             if appear_frame != None:
@@ -1018,7 +1019,7 @@ class GraphBobject(Bobject):
             )
             point.ref_obj.location[1] = point.coord[1] * self.range_scale_factor
         apply_material(point.ref_obj.children[0], 'color4')
-        point.add_to_blender(appear_frame = appear_frame)
+        point.add_to_blender(appear_frame = appear_frame, transition_time = duration)
         self.add_subbobject(point)
 
         if axis_projections == True:
@@ -1038,9 +1039,9 @@ class GraphBobject(Bobject):
             ref.children[0].rotation_euler = (0, - math.pi / 2, 0)
             ref.children[0].scale = (AXIS_DEPTH / 4, AXIS_DEPTH / 4, ref.location[0] / 2)
 
-            x_tracker.add_to_blender(appear_frame = appear_frame)
+            x_tracker.add_to_blender(appear_frame = appear_frame, transition_time = duration)
             self.add_subbobject(x_tracker)
-            y_tracker.add_to_blender(appear_frame = appear_frame)
+            y_tracker.add_to_blender(appear_frame = appear_frame, transition_time = duration)
             self.add_subbobject(y_tracker)
             point.axis_projections = [x_tracker, y_tracker]
 
