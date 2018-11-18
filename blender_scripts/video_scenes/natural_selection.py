@@ -27,6 +27,7 @@ from helpers import *
 class NaturalSelectionScene(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
+            ('card', {'duration': 14}),
             ('intro', {'duration': 14}),
             ('env', {'duration': 31}),
             ('base_sim', {'duration': 31}),
@@ -58,8 +59,10 @@ class NaturalSelectionScene(Scene):
         #self.all_traits()
         #self.sudden_famine()
         #self.gradual_famine()
-        self.evolution_diagram()
+        #self.evolution_diagram()
         #self.recap()
+        #self.end_card()
+        self.thumbnail()
 
     def intro(self):
         cues = self.subscenes['intro']
@@ -2541,3 +2544,188 @@ class NaturalSelectionScene(Scene):
         to_disappear = [sex, altruism]
         for i, thing in enumerate(to_disappear):
             thing.disappear(disappear_time = 621.5 - (len(to_disappear) - 1 - i) * 0.05)
+
+    def end_card(self):
+        cues = self.subscenes
+        scene_end = self.duration
+
+        '''bpy.ops.mesh.primitive_plane_add()
+        play_bar = bpy.context.object
+        play_bar.scale[0] = 15
+        play_bar.scale[1] = 90 / 720 * 8.4
+        play_bar.location = [0, -8.4 + play_bar.scale[1], -0.01]
+
+        bpy.ops.mesh.primitive_plane_add()
+        vid_rec = bpy.context.object
+        vid_rec.scale[0] = 410 / 1280 * 15
+        vid_rec.scale[1] = 230 / 720 * 8.4
+        vid_rec.location = [9, -3, -0.01]
+
+        bpy.ops.mesh.primitive_cylinder_add()
+        sub_cir = bpy.context.object
+        sub_cir.scale = [98 / 1280 * 30, 98 / 1280 * 30, 0]
+        sub_cir.location = [-11.5, -2.8, -0.01]
+
+        #Whole end area
+        bpy.ops.mesh.primitive_plane_add()
+        end_area = bpy.context.object
+        end_area.scale[0] = 1225 / 1280 * 15
+        end_area.scale[1] = 518 / 720 * 8.4
+        end_area.location = [0, 0.2, -0.05]'''
+
+
+
+
+        logo = svg_bobject.SVGBobject(
+            "Layer",
+            #file_name = "PrimerLogoWhite",
+            location = (-9.2, -3, 0),
+            scale = 1.4
+        )
+        for bobj in logo.rendered_curve_bobjects:
+            apply_material(bobj.ref_obj.children[0], 'color2')
+        stroke = logo.rendered_curve_bobjects[0]
+        apply_material(stroke.ref_obj.children[0], 'color3')
+        logo.morph_chains[0][0].ref_obj.location[2] = -1
+        logo.add_to_blender(
+            appear_time = cues['card']['start'],
+            #subbobject_timing = [90, 30, 40, 50, 60, 70, 80],
+            subbobject_timing = [42, 30, 33, 36, 39, 42, 45],
+            animate = True
+        )
+
+
+        reddit = import_object(
+            'reddit', 'svgblend',
+            scale = 2.297,
+            location = (5, 4 - 0.5, 0)
+        )
+        reddit.add_to_blender(appear_time = 0)
+        disc = tex_bobject.TexBobject(
+            '\\text{/r/primerlearning}',
+            location = [6.5, 2.5 - 0.5, 0],
+            color = 'color2',
+            scale = 0.8
+        )
+        disc.add_to_blender(appear_time = 0)
+
+        patreon = import_object(
+            'patreon', 'svgblend',
+            scale = 2.297,
+            location = (-11.5, 4 - 0.5, 0)
+        )
+        patreon.add_to_blender(appear_time = 0)
+        thanks = tex_bobject.TexBobject(
+            '\\text{Special thanks:}',
+            location = [-8.8, 5.1, 0],
+            color = 'color2'
+        )
+        thanks.add_to_blender(appear_time = 0)
+        js = tex_bobject.TexBobject(
+            '\\text{Jordan Scales}',
+            location = [-8.3, 3.5, 0],
+            color = 'color2',
+            scale = 1.4
+        )
+        js.add_to_blender(appear_time = 1)
+
+        '''cp = svg_bobject.SVGBobject(
+            'chinese_patron',
+            location = [-8.55, 3.1 - 0.5, 0],
+            color = 'color2',
+            scale = 0.085
+        )
+        cp.add_to_blender(appear_time = 1)'''
+
+        links = tex_bobject.TexBobject(
+            '\\text{(Links in the description)}',
+            location = [0, 7.3, 0],
+            centered = True,
+            scale = 1,
+        )
+        links.add_to_blender(appear_time = 0)
+
+        remaining = [reddit, disc, logo, patreon, thanks, js, links]
+        for thing in remaining:
+            thing.disappear(disappear_time = 2.5)
+
+    def thumbnail(self):
+        '''evo = svg_bobject.SVGBobject(
+            'human_evolution_scheme',
+            scale = 0.4,
+            location = [-2.5, 3, 0],
+            centered = True,
+            color = 'color2'
+        )
+        evo.add_to_blender(appear_time = 0)'''
+
+        '''blob = import_object(
+            'boerd_blob', 'creatures',
+            location = [9.2, 2.75, 0],
+            scale = 3,
+            wiggle = True
+        )
+        apply_material(blob.ref_obj.children[0].children[0], 'creature_color3')
+        blob.blob_wave(
+            start_time = 0,
+            duration = 20
+        )
+        blob.add_to_blender(appear_time = 0)'''
+
+        tex = tex_bobject.TexBobject(
+            '\\text{Natural Selection} \\phantom{o}',
+            location = [0, 8, -9.35],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            scale = 2.8,
+            centered = True,
+            color = 'color2'
+        )
+        tex.add_to_blender(appear_time = 0)
+        tex2 = tex_bobject.TexBobject(
+            '\\text{Simulating} \\phantom{o}',
+            location = [0, 8, 3.25],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            scale = 2.8,
+            centered = True,
+            color = 'color2'
+        )
+        tex2.add_to_blender(appear_time = 0)
+
+
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 34],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 0],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = 0)
+
+        sim = natural_sim.DrawnNaturalSim(
+            scale = 2,
+            sim = 'all_mut_f100_[True, True, True]_19',
+            #initial_creatures = 3,
+            location = [0, 0, 0],
+            #day_length_style = 'fixed_speed',
+            day_length_style = 'fixed_length'
+            #mutation_switches = [False, False, False]
+        )
+        sim.add_to_blender(
+            appear_time = 29,
+            start_day = 15,
+            end_day = 15
+        )
+        cam_bobj.move_to(
+            new_location = [0, 0, 25],
+            #new_angle = [0, 0, 0],
+            #new_angle = [math.pi / 2, 0, math.pi / 2],
+            start_time = 29.5
+        )
+        cam_swivel.move_to(
+            new_angle = [74 * math.pi / 180, 0, 0],
+            #new_angle = [0, -16 * math.pi / 180, -math.pi / 2],
+            start_time = 29.5
+        )
+        sim.disappear(disappear_time = 37.5)

@@ -36,7 +36,7 @@ class SVGBobject(Bobject):
         if 'color' in kwargs:
             self.default_color = kwargs['color']
         else:
-            self.default_color = 'color5'
+            self.default_color = 'color2'
 
         if RENDER_QUALITY == 'medium' or RENDER_QUALITY == 'high':
             default_transition_type = 'morph'
