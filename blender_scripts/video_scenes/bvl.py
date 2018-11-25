@@ -35,12 +35,12 @@ class TextScene(Scene):
         #bpy.ops.wm.revert_mainfile()
 
         #These don't really need to be object methods ¯\_(ツ)_/¯
-        self.intro_card()
-        #self.acronym_breakdown()
+        #self.title_card()
+        self.intro()
         #self.transition_card()
-        self.end_card()
+        #self.end_card()
 
-    def intro_card(self):
+    def title_card(self):
         logo = svg_bobject.SVGBobject(
             "UCSF_logo_signature",
             #location = (-5, 3.75, 0), #Centered position
@@ -57,19 +57,21 @@ class TextScene(Scene):
             color = 'color2',
             centered = True
         )
-        vest = svg_bobject.SVGBobject(
-            'vestibular_videos_garamond',
+        vest = tex_bobject.TexBobject(
+            '\\text{Vestibular Videos:}',
             location = [0, 4.5, 0],
             scale = 2,
             color = 'color2',
-            centered = True
+            centered = True,
+            typeface = 'garamond'
         )
-        intro = svg_bobject.SVGBobject(
-            'IntroToBPPV_Garamond',
+        title = tex_bobject.TexBobject(
+            '\\text{Bilateral Vestibular Loss}',
             location = [0, 1.5, 0],
             scale = 3.14,
             color = 'color2',
-            centered = True
+            centered = True,
+            typeface = 'garamond'
         )
         vert = tex_bobject.TexBobject(
             '|',
@@ -82,7 +84,7 @@ class TextScene(Scene):
         logo.add_to_blender(appear_time = -1, animate = False)
         baf.add_to_blender(appear_time = -1, animate = False)
         vest.add_to_blender(appear_time = -1, animate = False)
-        intro.add_to_blender(appear_time = -1, animate = False)
+        title.add_to_blender(appear_time = -1, animate = False)
         vert.add_to_blender(appear_time = -1, animate = False)
 
         for bobj in [logo, baf, vest, vert]:
@@ -99,7 +101,7 @@ class TextScene(Scene):
                     )
                 except:
                     pass
-        for bobj in [intro]:
+        for bobj in [title]:
             for handle in bobj.ref_obj.children:
                 print(handle.name)
                 print(handle.children[0].name)
@@ -114,162 +116,89 @@ class TextScene(Scene):
                 except:
                     pass
 
-    def acronym_breakdown(self):
-        b = tex_bobject.TexBobject(
-            '\\text{B}',
-            '\\text{Benign}',
-            color = 'color2'
-        )
-        pa = tex_bobject.TexBobject(
-            '\\text{P}',
-            '\\text{Paroxysmal}',
-            color = 'color2'
-        )
-        po = tex_bobject.TexBobject(
-            '\\text{P}',
-            '\\text{Positional}',
-            color = 'color2'
-        )
-        v = tex_bobject.TexBobject(
-            '\\text{V}',
-            '\\text{Vertigo}',
-            color = 'color2'
-        )
-        """baf = svg_bobject.SVGBobject(
-            'B_Arial',
-            'BaFC_Arial',
+    def intro(self):
+        bvl = tex_bobject.TexBobject(
+            "\\text{Bilateral Vestibular Loss}",
             location = [0, 0, 0],
-            #scale = 1.85,
-            color = 'color2'
-        )"""
-        """gaf = svg_bobject.SVGBobject(
-            'BaFC_Arial',
-            location = [0, 0, 0],
-            #scale = 1.85,
-            color = 'color2'
-        )"""
-        bppv = tex_complex.TexComplex(
-            b, pa, po, v,
-            scale = 6,
-            location = [-6.8, 0, 0]
+            centered = True,
+            typeface = 'arial',
+            scale = 2.4
+        )
+        bvl.add_to_blender(
+            appear_time = 0,
+            subbobject_timing = [30] * 9 + [75] * 10 + [120] * 4
         )
 
-        bppv.add_to_blender(
-            appear_frame = 0,
-            animate = False,
-            subbobject_timing = [0, 24, 48, 72]
-        )
-
-        bppv.move_to(
-            new_location = [-12.5, 4, 0],
-            new_scale = 4,
+        bvl.move_to(
+            new_location = [0, 3.5, 0],
             start_time = 2.5
         )
+
         acronym = tex_bobject.TexBobject(
-            '\\bullet\\text{Break down the acronym}',
-            color = 'color2'
+            '\\bullet\\text{Vestibular system overview}',
+            color = 'color2',
+            typeface = 'arial'
         )
         cause = tex_bobject.TexBobject(
-            '\\bullet\\text{Understand the cause}',
-            color = 'color2'
+            '\\bullet\\text{Symptoms}',
+            color = 'color2',
+            typeface = 'arial'
         )
         treat = tex_bobject.TexBobject(
-            '\\bullet\\text{Look at diagnosis and treatment}',
-            color = 'color2'
+            '\\bullet\\text{Causes and treatment}',
+            color = 'color2',
+            typeface = 'arial'
         )
         contents = tex_complex.TexComplex(
             acronym, cause, treat,
-            location = [-11, 0, 0],
-            scale = 1.75,
+            location = [-10.1, 0.5, 0],
+            scale = 1.5,
             multiline = True
         )
         contents.add_to_blender(
             appear_time = 4,
-            subbobject_timing = [0, 30, 60]
+            subbobject_timing = [0, 35, 70]
         )
-        contents.disappear(disappear_time = 6)
+        contents.disappear(disappear_time = 7)
+        #bvl.disappear(disappear_time = 7)
 
-
-
-
-        bppv.multiline = True
-        bppv.arrange_tex_bobjects(
-            start_time = 7,
-            end_time = 7.5
-        )
-        bppv.move_to(
-            start_time = 7,
-            new_scale = 3,
-            new_location = [-12.5, 5.5, 0]
+        bvl.move_to(
+            new_location = [0, 5.5, 0],
+            start_time = 6.5
         )
 
-        b.morph_figure(1, start_time = 8)
-        pa.morph_figure(1, start_time = 9)
-        po.morph_figure(1, start_time = 10)
-        v.morph_figure(1, start_time = 11)
-
-        for char in b.subbobjects:
+        l = []
+        for i in range(19, 23):
+            l.append(bvl.lookup_table[0][i])
+        for char in l:
             char.color_shift(
                 color = COLORS_SCALED[2],
-                start_time = 12,
-                duration_time = 2,
-            )
-        for char in pa.subbobjects:
-            char.color_shift(
-                color = COLORS_SCALED[2],
-                start_time = 15,
-                duration_time = 2,
-            )
-        for char in po.subbobjects:
-            char.color_shift(
-                color = COLORS_SCALED[2],
-                start_time = 18,
-                duration_time = 2,
-            )
-        for char in v.subbobjects:
-            char.color_shift(
-                color = COLORS_SCALED[2],
-                start_time = 21,
+                start_time = 8,
                 duration_time = 2,
             )
 
-        #"You get BPPV"
-        for i, word in enumerate(bppv.subbobjects):
-            char = word.lookup_table[1][0] #second figure, first char
-            char.pulse(
-                start_time = 24 + 0.25 * i,
-                duration_time = 0.5,
-                attack = 0.2 * FRAME_RATE,
-                decay = 0.2 * FRAME_RATE
+        v = []
+        for i in range(9, 19):
+            v.append(bvl.lookup_table[0][i])
+        for char in v:
+            char.color_shift(
+                color = COLORS_SCALED[2],
+                start_time = 10.5,
+                duration_time = 2,
             )
 
-        for thing in bppv.subbobjects:
-            thing.disappear(disappear_time = 27)
+        b = []
+        for i in range(0, 9):
+            b.append(bvl.lookup_table[0][i])
+        for char in b:
+            char.color_shift(
+                color = COLORS_SCALED[2],
+                start_time = 13,
+                duration_time = 2,
+            )
 
+        bvl.disappear(disappear_time = 16)
 
-        """b_note_loc = [2.5, 5.4, 0]
-        gest_scale = 1.6
-        b_gest = gesture.Gesture(
-            gesture_series = [
-                {
-                    'type': 'arrow',
-                    'points': {
-                        'tail': ((b_note_loc[0] - 1)/gest_scale, b_note_loc[1]/gest_scale, 0),
-                        'head': (-3.4/gest_scale, 5.3/gest_scale, 0)
-                    }
-                }
-            ],
-            scale = gest_scale,
-            color = 'color2'
-        )
-        b_note = tex_bobject.TexBobject(
-            '\\text{Not life-threatening}',
-            location = b_note_loc,
-            scale = 1.5,
-            color = 'color2'
-        )
-        b_gest.add_to_blender(appear_time = 13)
-        b_note.add_to_blender(appear_time = 13)"""
 
     def transition_card(self):
         text = tex_bobject.TexBobject(
@@ -278,7 +207,8 @@ class TextScene(Scene):
             location = [0, 0, 0],
             scale = 2.5,
             color = 'color2',
-            centered = True
+            centered = True,
+            typeface = 'arial'
         )
         text.add_to_blender(appear_time = -1, animate = False)
 
@@ -296,104 +226,6 @@ class TextScene(Scene):
                     )
                 except:
                     pass
-
-    def end_card(self):
-        logo = svg_bobject.SVGBobject(
-            "UCSF_logo",
-            #location = (-5, 3.75, 0), #Centered position
-            #scale = 0.26, #Centered scale
-            location = [0, 0, 0],
-            scale = 0.121,
-            color = 'color2',
-            #centered = True,
-        )
-        baf = svg_bobject.SVGBobject(
-            'BaFC_Arial',
-            location = [5.2257280349731445, -0.26257357001304626, 0.0],
-            scale = 2.23,
-            color = 'color2',
-            #centered = True,
-        )
-        logobaf = bobject.Bobject(
-            logo, baf,
-            location = [-11.57, 2.5, 0],
-            #location = [0, 1.5, Z0],
-            scale = 0.852,
-            #centered = True
-        )
-        logobaf.add_to_blender(
-            appear_time = 0,
-            animate = False,
-        )
-        url = tex_bobject.TexBobject(
-            '\\text{ohns.ucsf.edu/otology-neurotology/balance-and-falls}',
-            location = [0, 0.8, 0],
-            color = 'color2',
-            name = 'url',
-            typeface = 'arial',
-            scale = 0.8,
-            centered = True
-        )
-        url.add_to_blender(appear_time = 0)
-
-        mpb_loc = [1, -4.25, 0]
-        mpb = tex_bobject.TexBobject(
-            '\\text{Made possible by:}',
-            location = mpb_loc,
-            color = 'color2',
-            name = 'mpb',
-            typeface = 'arial'
-        )
-        mzhf = tex_bobject.TexBobject(
-            '\\text{Mount Zion Health Fund}',
-            color = 'color2',
-            scale = 1.2,
-            location = [
-                mpb_loc[0] + 0.5,
-                mpb_loc[1] - 1.4,
-                mpb_loc[2]
-            ],
-            name = 'mzhf',
-            typeface = 'arial'
-        )
-        vpb_loc = [-13, -4.25, 0]
-        vpb = tex_bobject.TexBobject(
-            '\\text{Video produced by:}',
-            color = 'color2',
-            location = vpb_loc,
-            name = 'vpb',
-            typeface = 'arial'
-        )
-        jh = tex_bobject.TexBobject(
-            '\\text{Justin Helps}',
-            location = [
-                vpb_loc[0] + 0.5,
-                vpb_loc[1] - 1.4,
-                vpb_loc[2]
-            ],
-            scale = 1.2,
-            color = 'color2',
-            name = 'jh',
-            typeface = 'arial'
-        )
-        jds = tex_bobject.TexBobject(
-            '\\text{Jeffrey D. Sharon, MD}',
-            location = [
-                vpb_loc[0] + 0.5,
-                vpb_loc[1] - 2.8,
-                vpb_loc[2]
-            ],
-            scale = 1.2,
-            color = 'color2',
-            name = 'jds',
-            typeface = 'arial'
-        )
-
-        for bobj in [mpb, mzhf, vpb, jh, jds]:
-            bobj.add_to_blender(
-                appear_time = 0,
-                animate = False
-            )
 
 
 

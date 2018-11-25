@@ -965,6 +965,130 @@ def make_animations_linear(thing_with_animation_data):
             kp.handle_right_type = 'VECTOR'
 
 '''
+Anatomy video helpers
+'''
+def fade(
+    object = None,
+    start_time = 0,
+    duration_time = 1,
+    fade_out = True,
+    extent = 1
+):
+    start_frame = start_time * FRAME_RATE
+    end_frame = start_frame + duration_time * FRAME_RATE
+    if object == None:
+        raise Warning('Need object to fade')
+
+    print(object.name)
+
+    for slot in object.material_slots:
+        mat = slot.material
+        mat_copy = mat.copy()
+        slot.material = mat = mat_copy
+        #print(mat)
+        tree = mat.node_tree
+
+        try: #Grab mix shader. This assumes it's
+            mix = tree.nodes['Mix Shader'] #Assumes there is only one
+        except:
+            mat_out = tree.nodes['Material Output'].inputs[0]
+            for link in tree.links:
+                if link.to_socket == mat_out:
+                    old_link = link
+                    old_out = link.from_socket
+                    break
+            tree.links.remove(old_link)
+
+            mix = tree.nodes.new(type = 'ShaderNodeMixShader')
+            trans = tree.nodes.new(type = 'ShaderNodeBsdfTransparent')
+            tree.links.new(old_out, mix.inputs[1])
+            tree.links.new(trans.outputs[0], mix.inputs[2])
+            tree.links.new(mix.outputs[0], mat_out)
+
+        #Kind of non-intuitive to people used to 'alpha', but transparency 1 is
+        #completely clear, while transparency 0 is opaque. I did it this way
+        #because some materials I got from UCSF were set up this way.
+        transparency = mix.inputs[0]
+        if fade_out == True:
+            transparency.keyframe_insert(data_path = 'default_value', frame = start_frame)
+            transparency.default_value = 1
+            if RENDER_QUALITY == 'high':
+                transparency.default_value = extent
+            transparency.keyframe_insert(data_path = 'default_value', frame = end_frame)
+            if transparency.default_value == 1:
+                object.keyframe_insert(data_path = 'hide', frame = end_frame - 1)
+                object.keyframe_insert(data_path = 'hide_render', frame = end_frame - 1)
+                object.hide = True
+                object.hide_render = True
+                object.keyframe_insert(data_path = 'hide', frame = end_frame)
+                object.keyframe_insert(data_path = 'hide_render', frame = end_frame)
+        else:
+            transparency.default_value = 1
+            transparency.keyframe_insert(data_path = 'default_value', frame = start_frame)
+            transparency.default_value = 0
+            transparency.keyframe_insert(data_path = 'default_value', frame = end_frame)
+
+def highlight_object(
+    object = None,
+    start_time = 0,
+    duration_time = 1
+):
+    start_frame = start_time * FRAME_RATE
+    #end_frame = start_frame + duration_time * FRAME_RATE
+    if object == None:
+        raise Warning('Need object to fade')
+
+    for slot in object.material_slots:
+        mat = slot.material
+        mat_copy = mat.copy()
+        slot.material = mat = mat_copy
+        #print(mat)
+        shader = mat.node_tree.nodes['Principled BSDF'] #Assumes there is only one
+
+        color = shader.inputs[0]
+        color.keyframe_insert(data_path = 'default_value', frame = start_frame)
+        original_color = list(color.default_value)
+        color.default_value = [1, 0, 0, 1]
+        color.keyframe_insert(data_path = 'default_value', frame = start_frame + duration_time / 4 * FRAME_RATE)
+        color.keyframe_insert(data_path = 'default_value', frame = start_frame + 3 * duration_time / 4 * FRAME_RATE)
+        color.default_value = original_color
+        color.keyframe_insert(data_path = 'default_value', frame = start_frame + duration_time * FRAME_RATE)
+
+def end_rigid_body(
+    obj = None,
+    end_frame = None
+):
+    print(obj.name)
+    print(obj.rigid_body)
+    #This might not be necessary, but it seems to help avoid context errors for
+    #the bpy.ops operators
+    bpy.context.scene.objects.active = None
+    for object in bpy.data.objects:
+        object.select = False
+
+    bpy.context.scene.frame_set(end_frame - 1)
+
+    bpy.context.scene.objects.active = obj
+    obj.select = True
+    print()
+    print(obj.name)
+    print(obj.rigid_body)
+
+    #Keframe position based on sim result
+    obj.keyframe_insert(data_path = 'location', frame = end_frame - 1)
+    bpy.ops.object.visual_transform_apply()
+    obj.keyframe_insert(data_path = 'location', frame = end_frame)
+
+    #Keyframe 'animated' property in physics settings
+    obj.rigid_body.kinematic = False
+    obj.rigid_body.keyframe_insert(data_path = 'kinematic', frame = end_frame - 1)
+    obj.rigid_body.kinematic = True
+    obj.rigid_body.keyframe_insert(data_path = 'kinematic', frame = end_frame)
+
+    bpy.context.scene.objects.active = None
+    obj.select = False
+
+'''
 Time measurement
 '''
 TIME_LIST = []

@@ -47,7 +47,7 @@ else:
 '''
 Colorssssss
 '''
-color_scheme = 2
+color_scheme = 4
 if color_scheme == 1:
     #Coolors Exported Palette - https://coolors.co/393e41-f3f2f0-3e7ea0-ff9400-e7e247
     COLORS = [
@@ -94,11 +94,11 @@ elif color_scheme == 3:
 elif color_scheme == 4: #UCSF
     #https://identity.ucsf.edu/print-digital/digital-colors
     COLORS = [
-        [47, 51, 54, 1], #Two darker than first video
-        [80, 99, 128, 1], #Light Navy
-        [255, 255, 255, 1], #White
         [5, 32, 73, 1], #Dark blue
+        [255, 255, 255, 1], #White
         [255, 221, 0, 1], #Yellow
+        [80, 99, 128, 1], #Light Navy
+        [47, 51, 54, 1], #Two darker than first video
         [0, 0, 0, 1], #Black
         [113, 111, 178, 1], #Light purple
         [180, 185, 191, 1], #Dark gray

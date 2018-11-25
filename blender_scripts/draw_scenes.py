@@ -62,13 +62,13 @@ import fecal_transplant
 imp.reload(fecal_transplant)
 from fecal_transplant import *
 
-import bppv
-imp.reload(bppv)
-from bppv import *
-
 import natural_selection
 imp.reload(natural_selection)
 from natural_selection import *
+
+import vn
+imp.reload(vn)
+from vn import *
 
 import population
 imp.reload(population)
@@ -730,7 +730,7 @@ def main():
 
     #nat_sim_test()
     #graph_test()
-    draw_scenes_from_file(natural_selection)
+    draw_scenes_from_file(vn, clear = False)
 
     print_time_report()
     finish_noise()
