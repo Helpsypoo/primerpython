@@ -26,6 +26,7 @@ MAX_TURN_SPEED = 0.07
 TURN_ACCELERATION = 0.005
 BASE_SENSE_DISTANCE = 25
 EAT_DISTANCE = 10
+MUTATION_CHANCE = 0.1
 MUTATION_VARIATION = 0.1
 STARTING_ENERGY = 800 #1800
 HOMEBOUND_RATIO = 2# 1.5
@@ -331,6 +332,8 @@ class Creature(Food):
         speed = 1,
         size = 1,
         sense = 1,
+        kin_radius = 0.3,
+        altruist = False,
         parent = None,
         world = None
     ):
@@ -338,6 +341,8 @@ class Creature(Food):
         self.speed = speed
         self.size = size
         self.sense = sense
+        self.kin_radius = kin_radius
+        self.altruist = altruist
         self.parent = parent
 
         self.days = []
@@ -473,6 +478,7 @@ class Creature(Food):
             day.d_headings.append(None)
             day.headings.append(None)
             day.locations.append(None)
+            self.world_location = None
             #day.has_eaten.append(None)
             day.has_eaten.append(copy(day.has_eaten[-1]))
             day.energies.append(None)
@@ -519,23 +525,68 @@ class Creature(Food):
             closest_food_dist = math.inf
             target_food = None
             food_objects = self.world.date_records[day.date]['food_objects']
+            remaining_food = [x for x in food_objects if x.is_eaten == False]
+            close_food = [x for x in remaining_food if vec_len(add_lists_by_element(x.world_location, day.locations[-1], subtract = True)) < EAT_DISTANCE + BASE_SENSE_DISTANCE * self.sense]
+
             creatures = self.world.date_records[day.date]['creatures']
-            uneaten = [x for x in food_objects if x.is_eaten == False] + \
-                      [x for x in creatures if x.is_eaten == False and \
-                       x.size * PREDATOR_SIZE_RATIO <= self.size and \
-                       x.days[-1].home_time == None] #You're safe when you're home
+            live_creatures = [x for x in creatures if x.days[-1].dead == False]
+            close_creatures = [x for x in live_creatures if vec_len(add_lists_by_element(x.world_location, day.locations[-1], subtract = True)) < EAT_DISTANCE + BASE_SENSE_DISTANCE * self.sense]
+
+            similar_creatures = [x for x in close_creatures if ((x.size - self.size) ** 2 + (x.speed - self.speed) ** 2 + \
+                    (x.sense - self.sense) ** 2) ** (1/2) > self.kin_radius]
+
+            #Forget about food that another slower-but-similar creature is going
+            #for, if you're not about to starve
+            if len(day.has_eaten[-1]) > 0:
+                for cre in similar_creatures:
+                    if cre.speed < self.speed:
+                        claimed_food = None
+                        claimed_food_dist = math.inf
+                        for food in close_food:
+                            dist = vec_len(add_lists_by_element(food.world_location, cre.days[-1].locations[-1], subtract = True))
+                            if dist < EAT_DISTANCE + BASE_SENSE_DISTANCE * cre.sense:
+                                if dist < claimed_food_dist:
+                                    claimed_food_dist = dist
+                                    claimed_food = food
+                        #print(" Leaving a food for that creature ")
+                        if claimed_food != None:
+                            close_food.remove(claimed_food)
+
+            edible_creatures = [x for x in close_creatures if x.is_eaten == False and \
+                                x.size * PREDATOR_SIZE_RATIO <= self.size and \
+                                x.days[-1].home_time == None] #You're safe when you're home
+            #Don't eat similar creatures if you're not about to starve
+            if len(day.has_eaten[-1]) > 0:
+                edible_creatures = [x for x in edible_creatures if x not in similar_creatures]
+
+            if self.altruist == True:
+                edible_creatures = [x for x in edible_creatures if self.is_ancestor(x) == False]
+
+            #if old > len(uneaten):
+            #    print("Decided not to eat " + str(old - len(uneaten)))
+
+
+            #Let slower creature get food if they see it
+
 
             #Use list comprehension to more quickly narrow down things to look
             #at, making this faster for cases with lots of food/creatures.
             #Seems to save little time, but some.
-            close_uneaten = [x for x in uneaten if vec_len(add_lists_by_element(x.world_location, day.locations[-1], subtract = True)) < EAT_DISTANCE + BASE_SENSE_DISTANCE * self.sense]
+            #close_uneaten = [x for x in uneaten if vec_len(add_lists_by_element(x.world_location, day.locations[-1], subtract = True)) < EAT_DISTANCE + BASE_SENSE_DISTANCE * self.sense]
 
-            for food in close_uneaten:
-                dist = vec_len(add_lists_by_element(
-                    food.world_location,
-                    day.locations[-1],
-                    subtract = True
-                ))
+
+            visible_food = edible_creatures + close_food
+
+            for food in visible_food:
+                try:
+                    dist = vec_len(add_lists_by_element(
+                        food.world_location,
+                        day.locations[-1],
+                        subtract = True
+                    ))
+                except:
+                    print(food.world_location)
+                    print(day.locations[-1])
                 if dist < EAT_DISTANCE and len(day.has_eaten[-1]) < 2:
                     if isinstance(food, Creature):
                         food.days[-1].dead = True
@@ -593,8 +644,8 @@ class Creature(Food):
             #Check for predators. If one is close, abandon foraging and flee
             closest_pred_dist = math.inf
             threat = None
-            creatures = self.world.date_records[day.date]['creatures']
-            predators = [x for x in creatures if x.is_eaten == False and \
+            #creatures = self.world.date_records[day.date]['creatures']
+            predators = [x for x in close_creatures if \
                        x.size >= self.size * PREDATOR_SIZE_RATIO]# and \
                        #x.days[-1].home_time == None
                        #Predators can't eat when home. BUT THEY CAN.
@@ -603,16 +654,19 @@ class Creature(Food):
                        #in the morning.
 
             for pred in predators:
-                dist = vec_len(
-                    add_lists_by_element(
-                        pred.world_location,
-                        day.locations[-1],
-                        subtract = True
+                try:
+                    dist = vec_len(
+                        add_lists_by_element(
+                            pred.days[-1].locations[-1],
+                            day.locations[-1],
+                            subtract = True
+                        )
                     )
-                )
-                if dist < EAT_DISTANCE + BASE_SENSE_DISTANCE * self.sense \
-                    and dist < closest_pred_dist:
-
+                except:
+                    print(pred.days[-1].locations[-1]),
+                    print(day.locations[-1])
+                    raise()
+                if dist < closest_pred_dist:
                     closest_pred_dist = dist
                     threat = pred
 
@@ -927,6 +981,14 @@ class Creature(Food):
                     print(corrected_rot)
                     raise()
 
+    def is_ancestor(self, creature):
+        x = creature
+        while x.parent != None:
+            if x.parent == self:
+                return True
+            x = x.parent
+        return False
+
 class NaturalSim(object):
     """docstring for NaturalSim."""
     def __init__(
@@ -935,7 +997,7 @@ class NaturalSim(object):
         dimensions = WORLD_DIMENSIONS,
         day_length = DEFAULT_DAY_LENGTH,
         initial_creatures = None,
-        mutation_switches = [True, True, True],
+        mutation_switches = [True, True, True, True],
         initial_energy = STARTING_ENERGY,
         **kwargs
     ):
@@ -955,9 +1017,9 @@ class NaturalSim(object):
             for i in range(initial_creatures):
                 self.initial_creatures.append(
                     Creature(
-                        size = 1,
-                        speed = 1,
-                        sense = 1
+                        size = 1 + randrange(-5, 6) * MUTATION_VARIATION,
+                        speed = 1 + randrange(-5, 6) * MUTATION_VARIATION,
+                        sense = 1 + randrange(-5, 6) * MUTATION_VARIATION
                     )
                 )
         elif initial_creatures == None:
@@ -965,9 +1027,9 @@ class NaturalSim(object):
             for i in range(num_creatures):
                 self.initial_creatures.append(
                     Creature(
-                        size = 1,
-                        speed = 1,
-                        sense = 1
+                        size = 1 + randrange(-5, 6) * MUTATION_VARIATION,
+                        speed = 1 + randrange(-5, 6) * MUTATION_VARIATION,
+                        sense = 1 + randrange(-5, 6) * MUTATION_VARIATION
                     )
                 )
 
@@ -1020,19 +1082,30 @@ class NaturalSim(object):
             if len(par.days[-1].has_eaten[-1]) > 1:
                 speed_addition = 0
                 if self.mutation_switches[0] == True:
-                    speed_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
+                    if random() < MUTATION_CHANCE:
+                        speed_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
                 size_addition = 0
                 if self.mutation_switches[1] == True:
-                    size_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
+                    if random() < MUTATION_CHANCE:
+                        size_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
                 sense_addition = 0
                 if self.mutation_switches[2] == True:
-                    sense_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
+                    if random() < MUTATION_CHANCE:
+                        sense_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
+                kin_addition = 0
+                if self.mutation_switches[3] == True:
+                    if random() < 1 * MUTATION_CHANCE:
+                        kin_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
+                        if par.kin_radius + kin_addition < 0:
+                            kin_addition = 0
                 baby = Creature(
                     parent = par,
                     world = par.world,
                     speed = par.speed + speed_addition,
                     size = par.size + size_addition,
                     sense = par.sense + sense_addition,
+                    kin_radius = par.kin_radius + kin_addition,
+                    altruist = par.altruist
                 )
                 babiiieeesss.append(baby)
 

@@ -66,9 +66,9 @@ import natural_selection
 imp.reload(natural_selection)
 from natural_selection import *
 
-import vn
-imp.reload(vn)
-from vn import *
+import scds
+imp.reload(scds)
+from scds import *
 
 import population
 imp.reload(population)
@@ -524,35 +524,59 @@ def marketing():
 def nat_sim_test():
     initialize_blender()
 
+    initial_creatures = []
+    for i in range(40):
+        altruist = False
+        if i % 5 == 0:
+            altruist = True
+        cre = natural_sim.Creature(altruist = altruist)
+        initial_creatures.append(cre)
+
     sim = natural_sim.DrawnNaturalSim(
         scale = 1,
-        food_count = 30,
-        #initial_creatures = 0,
-        sim = 'all_mut_f100_[True, True, True]_19',
-        #sim = 'all_mut_f100_[True, True, True]_19',
+        food_count = 50,
+        #initial_creatures = initial_creatures,
+        #sim = 'NAT20181126T094348',
         location = [-6.5, 0, 0],
-        #day_length_style = 'fixed_speed',
-        day_length_style = 'fixed_length'
-        #mutation_switches = [False, False, False]
+        day_length_style = 'fixed_speed',
+        #day_length_style = 'fixed_length'
+        #mutation_switches = [False, False, False, False]
     )
+
+    '''
+    Notes
+    - 30 food
+     - 0.1 mutation chance
+        - good, but takes 300+ gens
+        - a bit hit-and-miss when starting at 0 kin distance
+        - Distributed starting point
+     - 0.3 mutation chance
+        - Chaotic (two runs)
+     - 0.5 mutation chance
+        - Spiked past 1.2 and returned to 0.6-7
+        - A bit chaotic, not clearly adaptive
+     - 1.0 mutation chance - Went extinct twice
+    - 50 food
+     - 0.1 mutation chance - seems actually to not be adaptive over 300 gens
+    '''
 
     #sim.sim.mutation_switches = [True, True, True]
     #sim.sim.food_count = 10
 
-    sim_length = 0
+    sim_length = 500
     for i in range(sim_length):
         save = False
-        #filename = None
-        filename = 'f' + str(sim.sim.food_count) + '_' + \
-                    str(sim.sim.mutation_switches) + '_' + \
-                    str(len(sim.sim.date_records))
-        '''if i == sim_length - 1:
-            save = True'''
-        if (i+1) % 20 == 0:
+        filename = None
+        #filename = 'f' + str(sim.sim.food_count) + '_' + \
+        #            str(sim.sim.mutation_switches) + '_' + \
+        #            str(len(sim.sim.date_records))
+        if i == sim_length - 1:
             save = True
-            filename = 'f' + str(sim.sim.food_count) + '_' + \
-                        str(sim.sim.mutation_switches) + '_' + \
-                        str(len(sim.sim.date_records))
+            #if (i+1) % 50 == 0:
+            #save = True
+            #filename = 'f' + str(sim.sim.food_count) + '_' + \
+            #            str(sim.sim.mutation_switches) + '_' + \
+            #            str(len(sim.sim.date_records))
         if i == 10:
             #sim.sim.mutation_switches = [True, False, False]
             print()
@@ -598,6 +622,10 @@ def nat_sim_test():
     time = 2 #start time
     print(len(records))
     print()
+    avgs_size = []
+    avgs_kin = []
+    tots_alt = []
+    prop_alt = []
     for date in range(len(records)):
         #Add count at date to list, for the counter tex_bobject
         if date == 10:
@@ -609,28 +637,58 @@ def nat_sim_test():
         tot_size = 0
         tot_spd = 0
         tot_sense = 0
+        tot_kin = 0
+        tot_alt = 0
+        tot = 0
         max_sense = -math.inf
         min_sense = math.inf
         for cre in records[date]['creatures']:
             tot_size += cre.size
             tot_spd += cre.speed
             tot_sense += cre.sense
+            tot_kin += cre.kin_radius
+            tot_alt += cre.altruist
+            tot += 1
             if cre.sense > max_sense:
                 max_sense = cre.sense
             if cre.sense < min_sense:
                 min_sense = cre.sense
-        if tot_size > 0: #Avoid error on extinction
+        if tot > 0: #Avoid error on extinction
             avg_size = tot_size / len(records[date]['creatures'])
             avg_spd = tot_spd / len(records[date]['creatures'])
             avg_sense = tot_sense / len(records[date]['creatures'])
+            avg_kin = tot_kin / len(records[date]['creatures'])
             print(" Avgs for today are (size, speed, sense) " + \
                         str(round(avg_size, 2)) + ' ' + \
                         str(round(avg_spd, 2)) + ' ' + \
                         str(round(avg_sense, 2))
                  )
+            print(" Avg kin radius: " + str(avg_kin))
+            avgs_size.append(avg_size)
+            avgs_kin.append(avg_kin)
+            tots_alt.append(tot_alt)
+            prop_alt.append(tot_alt / tot)
         if date == 19:
             print( 'Max sense: ' + str(max_sense))
             print( 'Min sense: ' + str(min_sense))
+
+    kin_graph = graph_bobject.GraphBobject(
+        #prop_alt,
+        avgs_kin,
+        location = [0, 0, 0],
+        centered = True,
+        x_range = len(tots_alt),
+        y_range = 1,
+        width = 20,
+        height = 15,
+        tick_step = [20, 0.2],
+        #overlay_functions = True
+    )
+    kin_graph.add_to_blender(appear_time = 0)
+    #kin_graph.add_new_function_and_curve(
+    #    avgs_size,
+    #    color = 4
+    #)
 
     graph_point_leftovers = []
     '''
@@ -728,9 +786,10 @@ def main():
     #tex_test()
     """"""
 
-    #nat_sim_test()
+    nat_sim_test()
     #graph_test()
-    draw_scenes_from_file(vn, clear = False)
+    #draw_scenes_from_file(vn, clear = False)
+    #draw_scenes_from_file(scds)
 
     print_time_report()
     finish_noise()
