@@ -46,29 +46,9 @@ import why_things_exist
 imp.reload(why_things_exist)
 from why_things_exist import *
 
-import replication_only
-imp.reload(replication_only)
-from replication_only import *
-
-import mutations
-imp.reload(mutations)
-from mutations import *
-
-import logistic_growth
-imp.reload(logistic_growth)
-from logistic_growth import *
-
-import fecal_transplant
-imp.reload(fecal_transplant)
-from fecal_transplant import *
-
-import natural_selection
-imp.reload(natural_selection)
-from natural_selection import *
-
-import scds
-imp.reload(scds)
-from scds import *
+import selfish_gene
+imp.reload(selfish_gene)
+from selfish_gene import *
 
 import population
 imp.reload(population)
@@ -108,8 +88,10 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = 
     scn.render.tile_y = RENDER_TILE_SIZE
     #Apparentlly 16-bit color depth pngs don't convert well to mp4 in Blender.
     #It gets all dark. 8-bit it is.
-    #scn.render.image_settings.color_depth = '16'
-
+    #BUT WAIT. I can put stacks of pngs straight into premiere.
+    scn.render.image_settings.color_depth = '16'
+    scn.render.image_settings.color_mode = 'RGBA'
+    scn.cycles.film_transparent = True
 
     #Set to 60 fps
     bpy.ops.script.execute_preset(
@@ -334,7 +316,7 @@ def test_sim():
 def tex_test():
     initialize_blender(total_duration = 100)
 
-    message = tex_bobject.TexBobject(
+    '''message = tex_bobject.TexBobject(
         '\\text{You\'re}',
         '\\text{the}',
         '\\text{best!}',
@@ -348,7 +330,12 @@ def tex_test():
 
     message.morph_figure('next', start_time = 2)
 
-    message.disappear(disappear_time = 3.5)
+    message.disappear(disappear_time = 3.5)'''
+
+    t = tex_bobject.TexBobject(
+        '\\curvearrowleft'
+    )
+    t.add_to_blender(appear_time = 0)
 
     print_time_report()
 
@@ -451,16 +438,107 @@ def draw_scenes_from_file(script_file, clear = True):
     print_time_report()
 
 def test_molecule():
-    #initialize_blender()
-    make_parent_tree()
+    initialize_blender()
+    #make_parent_tree()
 
-    """rna = import_object(
-        'rna', 'biochem',
+    dna1_1 = import_object(
+        'dna_strand_1', 'biochem',
+        scale = 7
     )
-    rna.add_to_blender(
+    dna1_1.add_to_blender(
+        appear_time = 0,
+        animate = False,
+    )
+
+    dna2_1 = import_object(
+        'dna_strand_2', 'biochem',
+        scale = 7
+    )
+    dna2_1.add_to_blender(
         appear_time = 0,
         animate = False
-    )"""
+    )
+
+    dna1_1.de_explode(
+        start_time = 1,
+        duration = 1,
+    )
+
+    dna2_1.de_explode(
+        start_time = 2.5,
+        duration = 1,
+    )
+
+
+    dna1_1.move_to(
+        new_location = [-6, 0, 0],
+        start_time = 5
+    )
+    dna2_1.move_to(
+        new_location = [6, 0, 0],
+        start_time = 5
+    )
+
+    dna1_2 = import_object(
+        'dna_strand_1', 'biochem',
+        scale = 7,
+        location = [6, 0, 0]
+    )
+    dna1_2.add_to_blender(
+        appear_time = 0,
+        animate = False,
+    )
+    dna2_2 = import_object(
+        'dna_strand_2', 'biochem',
+        scale = 7,
+        location = [-6, 0, 0]
+    )
+    dna2_2.add_to_blender(
+        appear_time = 0,
+        animate = False
+    )
+
+    dna1_2.de_explode(
+        start_time = 6,
+        duration = 1,
+    )
+
+    dna2_2.de_explode(
+        start_time = 6,
+        duration = 1,
+    )
+
+
+    dna1_1.move_to(
+        new_angle = [0, math.pi * 5, 0],
+        start_time = 1,
+        end_time = 11
+    )
+    dna2_1.move_to(
+        new_angle = [0, math.pi * 5, 0],
+        start_time = 1,
+        end_time = 11
+    )
+    dna1_2.move_to(
+        new_angle = [0, math.pi * 5, 0],
+        start_time = 1,
+        end_time = 11
+    )
+    dna2_2.move_to(
+        new_angle = [0, math.pi * 5, 0],
+        start_time = 1,
+        end_time = 11
+    )
+
+    def tweak_colors_recursive(obj):
+        pass
+        color_to_primer_palette(obj)
+        for child in obj.children:
+            tweak_colors_recursive(child)
+
+    for strand in [dna1_1, dna1_2, dna2_1, dna2_2]:
+        for obj in strand.ref_obj.children:
+            tweak_colors_recursive(obj)
 
 def graph_test():
     initialize_blender(total_duration = 120)
@@ -534,9 +612,9 @@ def nat_sim_test():
 
     sim = natural_sim.DrawnNaturalSim(
         scale = 1,
-        food_count = 50,
+        food_count = 90,
         #initial_creatures = initial_creatures,
-        #sim = 'NAT20181126T094348',
+        #sim = 'NAT20181128T161228',
         location = [-6.5, 0, 0],
         day_length_style = 'fixed_speed',
         #day_length_style = 'fixed_length'
@@ -558,12 +636,14 @@ def nat_sim_test():
      - 1.0 mutation chance - Went extinct twice
     - 50 food
      - 0.1 mutation chance - seems actually to not be adaptive over 300 gens
+     - Nevermind. Works better with a larger starting value and when traits are
+       not identical between all creatures at the beginning.
     '''
 
     #sim.sim.mutation_switches = [True, True, True]
     #sim.sim.food_count = 10
 
-    sim_length = 500
+    sim_length = 1000
     for i in range(sim_length):
         save = False
         filename = None
@@ -626,11 +706,8 @@ def nat_sim_test():
     avgs_kin = []
     tots_alt = []
     prop_alt = []
+
     for date in range(len(records)):
-        #Add count at date to list, for the counter tex_bobject
-        if date == 10:
-            pass
-            #print()
 
         cre_counts.append(str(len(records[date]['creatures'])))
         print('Creatures on day ' + str(date) + ': ' + str(cre_counts[-1]))
@@ -681,7 +758,7 @@ def nat_sim_test():
         y_range = 1,
         width = 20,
         height = 15,
-        tick_step = [20, 0.2],
+        tick_step = [200, 0.2],
         #overlay_functions = True
     )
     kin_graph.add_to_blender(appear_time = 0)
@@ -689,6 +766,62 @@ def nat_sim_test():
     #    avgs_size,
     #    color = 4
     #)
+
+    #Calculate avg reproductions per creature
+    def rep_per_creature():
+        all_cres = []
+        for date_rec in records:
+            for cre in date_rec['creatures']:
+                if cre not in all_cres:
+                    all_cres.append(cre)
+        kin_trait_stats = {}
+        for cre in all_cres:
+            reproductions = 0
+            kin_rad = str(round(cre.kin_radius, 1))
+            if kin_rad not in kin_trait_stats.keys():
+                kin_trait_stats[kin_rad] = {
+                    'reproduction_counts' : []
+                }
+            for othercre in all_cres:
+                if othercre.parent == cre:
+                    reproductions += 1
+
+            kin_trait_stats[kin_rad]['reproduction_counts'].append(reproductions)
+
+        avg_fitness_by_kin_radius = []
+        max_radius = 0
+        max_avg = 0
+        for key, value in kin_trait_stats.items():
+            counts = value['reproduction_counts']
+            tot = sum(counts)
+            value['avg'] = tot / len(counts)
+
+            avg_fitness_by_kin_radius.append([float(key), value['avg']])
+
+            if float(key) > max_radius:
+                max_radius = float(key)
+
+            if value['avg'] > max_avg:
+                max_avg = value['avg']
+
+        print(avg_fitness_by_kin_radius)
+
+        fit_graph = graph_bobject.GraphBobject(
+            avg_fitness_by_kin_radius,
+            location = [0, 0, 0],
+            centered = True,
+            x_range = max_radius,
+            y_range = math.ceil(max_avg),
+            width = 20,
+            height = 15,
+            tick_step = [0.1, 0.2],
+            high_res_curve_indices = []
+            #overlay_functions = True
+        )
+        fit_graph.add_to_blender(appear_time = 0)
+
+
+    #rep_per_creature()
 
     graph_point_leftovers = []
     '''
@@ -786,10 +919,10 @@ def main():
     #tex_test()
     """"""
 
-    nat_sim_test()
-    #graph_test()
+    #nat_sim_test()
+    #test_molecule()
     #draw_scenes_from_file(vn, clear = False)
-    #draw_scenes_from_file(scds)
+    draw_scenes_from_file(selfish_gene)
 
     print_time_report()
     finish_noise()

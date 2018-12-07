@@ -24,7 +24,7 @@ Different from the Bobject class, which is actually just a python container for
 true Blender objects. Bobject is the class that uses these most, though.
 '''
 
-def apply_material(obj, mat, recursive = False, type_req = None):
+def apply_material(obj, mat, recursive = False, type_req = None, intensity = None):
     if obj.type not in ['EMPTY', 'ARMATURE']:
         if type_req == None or obj.type == type_req:
             if isinstance(mat, str):
@@ -35,6 +35,16 @@ def apply_material(obj, mat, recursive = False, type_req = None):
     if recursive:
         for child in obj.children:
             apply_material(child, mat, recursive = recursive, type_req = type_req)
+
+    if intensity != None and 'trans' in mat:
+        nodes = obj.active_material.node_tree.nodes
+
+        scat = nodes['Volume Scatter']
+        absorb = nodes['Volume Absorption']
+        emit = nodes['Emission']
+
+        for node in [scat, absorb, emit]:
+            node.inputs[1].default_value = intensity
 
 def define_materials():
     clear = bpy.data.materials.new(name = "clear")
@@ -372,6 +382,32 @@ def rgb_to_hsv(r, g, b):
     v = mx
     return [h, s, v]
 
+def color_to_primer_palette(obj):
+    #Only works for non-node materials
+    if len(obj.material_slots) == 0:
+        return
+
+    col = list(obj.material_slots[0].material.diffuse_color)
+
+    min_dist = math.inf
+    match_index = None
+    for j, color in enumerate(COLORS_SCALED):
+        dist = 0
+        for i in range(3):
+            dist += (abs(col[i] - color[i])) ** 2
+        if dist < min_dist:
+            min_dist = dist
+            match_index = j
+
+    mat_string = 'color' + str(match_index + 1)
+
+    apply_material(obj, mat_string)
+
+
+
+
+
+
 '''
 Geometry
 '''
@@ -451,7 +487,7 @@ def bmesh_check_intersect_objects(obj, obj2, location_as_proxy = True):
     if location_as_proxy == True:
         diff = obj2.location - obj.location
         dist = diff.length
-        if dist > 0.1:
+        if dist > 1:
             return False
 
     assert(obj != obj2)
@@ -508,9 +544,11 @@ def bmesh_check_intersect_objects(obj, obj2, location_as_proxy = True):
 def find_intersections(meshes):
     intersections = []
     for i in range(len(meshes)):
-        print('Checking for intersections with ' + meshes[i].name)
-        for j in range(i + 1, len(meshes)):
+        print(str(i + 1) + ' of ' + str(len(meshes)))
+        #print('Checking for intersections with ' + meshes[i].name)
+        for j in range(0, i):
             intersection = bmesh_check_intersect_objects(meshes[i], meshes[j])
+            #print(intersection)
             #Sometimes cylinders and spheres touch even though they shouldn't
             #be counted
             same_type = False
@@ -550,6 +588,9 @@ def get_centrality(mesh, intersection_checklist, depth):
 def establish_ancestors(mesh, intersections):
     #Kind of a weird name for this function
 
+    #print(mesh)
+    #print(mesh.name)
+
     for inter in intersections:
         if mesh in inter:
             for thing in inter:
@@ -575,23 +616,61 @@ def make_parent_tree():
             meshes.append(obj)
 
     intersections = find_intersections(meshes)
-
-    min_score = math.inf
-    central_mesh = None
-    for mesh in meshes:
-        intersection_checklist = []
-        for inter in intersections:
-            intersection_checklist.append([inter, False])
-        score = get_centrality(mesh, intersection_checklist, 0)
-        print(mesh.name, score)
-        if score < min_score:
-            min_score = score
-            central_mesh = mesh
-
+    print(intersections)
     print()
-    print(central_mesh.name, min_score)
 
-    establish_ancestors(central_mesh, intersections)
+    #Getting centrality identifies an atom near some definition of the middle of
+    #the molecule. Not actually necessary and takes a while for big molecules.
+    #Originally did this because I was going to manually uwnind RNA.
+    #Even then, not necessary.
+    print('Getting centrality')
+
+    while len(intersections) > 0:
+        #min_score = math.inf
+        max_score = -math.inf
+        central_mesh = None
+        for mesh in meshes:
+            intersection_checklist = []
+            for inter in intersections:
+                intersection_checklist.append([inter, False])
+            score = get_centrality(mesh, intersection_checklist, 0)
+            #print(mesh.name, score)
+            if len(mesh.children) == 0 and \
+               mesh.parent == None and \
+               'Cylinder' not in mesh.name and \
+               score > max_score:
+               #score < min_score:
+                #min_score = score
+                max_score = score
+                central_mesh = mesh
+        #print()
+        #print(central_mesh.name, min_score)
+        #print()
+
+        establish_ancestors(central_mesh, intersections)
+
+        remaining_intersections = []
+        for inter in intersections:
+            if inter[0] == central_mesh or inter[1] == central_mesh:
+                continue
+            if is_ancestor(inter[0], central_mesh):
+                continue
+            if is_ancestor(inter[1], central_mesh):
+                continue
+            remaining_intersections.append(inter)
+
+        intersections = remaining_intersections
+        print(intersections)
+
+def is_ancestor(mesh, candidate_ancestor):
+    if mesh.parent == candidate_ancestor:
+        #print(str(candidate_ancestor) + ' is ancestor of ' + str(mesh))
+        return True
+    if mesh.parent == None:
+        #print(str(candidate_ancestor) + ' is NOT ancestor of ' + str(mesh))
+        return False
+
+    return is_ancestor(mesh.parent, candidate_ancestor)
 
 '''
 Bobject helpers

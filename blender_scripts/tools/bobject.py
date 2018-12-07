@@ -323,7 +323,7 @@ class Bobject(object):
         if start_frame == None:
             raise Warning('Need start frame for spin function')
         if end_frame == None:
-            raise Warning('Need end frame for spin function')
+            end_frame = bpy.context.scene.frame_end
 
         obj = self.ref_obj
         obj.keyframe_insert(data_path="rotation_euler", frame = start_frame)
@@ -449,6 +449,13 @@ class Bobject(object):
 
             add_color_gradient_to_mat(mat_copy, color_gradient)
 
+    def tweak_colors_recursive(self, obj = None):
+        if obj == None:
+            obj = self.ref_obj
+        color_to_primer_palette(obj = obj)
+        for child in obj.children:
+            self.tweak_colors_recursive(obj = child)
+
     def blob_wave(
         self,
         start_time = 0,
@@ -560,11 +567,12 @@ class Bobject(object):
         self,
         start_time = 0,
         duration = 0,
+        top_pause_time = 0
     ):
         #This function only works for blob creatures. Maybe they deserve their
         #own subclass of bobject.
         start_frame = start_time * FRAME_RATE
-        duration_frames = duration * FRAME_RATE
+        duration_frames = (duration - top_pause_time) * FRAME_RATE
 
         l_arm_up_z = 1
         l_arm_down_z = -1
@@ -602,12 +610,16 @@ class Bobject(object):
             data_path = "rotation_quaternion",
             frame = start_frame + 2 * duration_frames / 3
         )
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + 2 * duration_frames / 3 + top_pause_time * FRAME_RATE
+        )
 
         #And back
         l_arm.rotation_quaternion = initial_angle
         l_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + duration_frames
+            frame = start_frame + duration_frames + top_pause_time * FRAME_RATE
         )
 
         #Right arm
@@ -624,8 +636,12 @@ class Bobject(object):
             frame = start_frame + duration_frames / 3
         )
 
-        #waves
+        #scoop
         r_arm.rotation_quaternion[3] = r_arm_up_z
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + 2 * duration_frames / 3
+        )
         r_arm.keyframe_insert(
             data_path = "rotation_quaternion",
             frame = start_frame + 2 * duration_frames / 3
@@ -635,7 +651,7 @@ class Bobject(object):
         r_arm.rotation_quaternion = initial_angle
         r_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + duration_frames
+            frame = start_frame + duration_frames + top_pause_time * FRAME_RATE
         )
 
     def eat_animation(self, start_frame = None, end_frame = None):
@@ -679,26 +695,41 @@ class Bobject(object):
     def de_explode(
         self,
         start_time = 0,
-        duration = 1,
-        delay = 0,
-        delay_step = 2
+        duration = 1
     ):
         #Works on a group of objects with a series of parent-child relationships
         #Spreads the objects out, then pulls them together based on family tree
         #structure
 
+        def find_longest_line(obj):
+            l_so_far = 0
+            for child in obj.children:
+                length = 1 + find_longest_line(child)
+                #Hax to make up for the delay at the Phosphorus atoms later on
+                if child.scale[0] > 0.5:
+                    length += 4
+                if length > l_so_far:
+                    l_so_far = length
+
+            return l_so_far
+        longest_line = find_longest_line(self.ref_obj)
+
+
+
         start_frame = start_time * FRAME_RATE
         duration_frames = duration * FRAME_RATE
 
-        seed = self.ref_obj
-        de_explode_children(seed, start_frame, duration_frames, delay, delay_step)
+        dur_per_child = duration_frames / longest_line
 
-def de_explode_children(obj, start_frame, duration_frames, delay, delay_step):
+        seed = self.ref_obj
+        de_explode_children(seed, start_frame, dur_per_child)
+
+def de_explode_children(obj, start_frame, duration_frames):
     for child in obj.children:
         #location
         final_loc = deepcopy(child.location)
         #if delay == 0: #First parent
-        spread_factor = 10
+        spread_factor = 3
         child.location = [
             spread_factor * uniform(-1, 1),
             spread_factor * uniform(-1, 1),
@@ -706,12 +737,12 @@ def de_explode_children(obj, start_frame, duration_frames, delay, delay_step):
         ]
         child.keyframe_insert(
             data_path = 'location',
-            frame = start_frame + delay
+            frame = start_frame
         )
         child.location = final_loc
         child.keyframe_insert(
             data_path = 'location',
-            frame = start_frame + duration_frames + delay
+            frame = start_frame + duration_frames * 6
         )
 
         final_scale = deepcopy(child.scale)
@@ -721,45 +752,43 @@ def de_explode_children(obj, start_frame, duration_frames, delay, delay_step):
             frame = start_frame
         )
         if 'Cylinder' in child.name:
+            #Cylinders appear once surrounding atoms are in place.
             child.keyframe_insert(
                 data_path = 'scale',
                 #Start to appear once in place
-                frame = start_frame + duration_frames + delay            )
+                frame = start_frame + duration_frames * 12
+            )
             child.scale = final_scale
             child.keyframe_insert(
                 data_path = 'scale',
-                frame = start_frame + duration_frames + delay + OBJECT_APPEARANCE_TIME
+                frame = start_frame + duration_frames * 16
             )
 
         else:
             child.keyframe_insert(
                 data_path = 'scale',
                 #2 sec before arriving, the atom begins to appear
-                frame = start_frame + duration_frames + delay - 120
+                frame = start_frame
             )
             child.scale = final_scale
             child.keyframe_insert(
                 data_path = 'scale',
                 #1 sec before arriving, the atom is full size
-                frame = start_frame + duration_frames + delay - 60
+                frame = start_frame + duration_frames
             )
 
         #Extra delay on recursion at Phosphorus
-        if child.scale[0] > 0.03:
+        if child.scale[0] > 0.5:
             de_explode_children(
                 child,
-                start_frame,
-                duration_frames,
-                delay + delay_step * 20,
-                delay_step
+                start_frame + duration_frames * 5,
+                duration_frames
             )
         else:
             de_explode_children(
                 child,
-                start_frame,
-                duration_frames,
-                delay + delay_step,
-                delay_step
+                start_frame + duration_frames,
+                duration_frames
             )
 
 class MeshMorphBobject(Bobject):

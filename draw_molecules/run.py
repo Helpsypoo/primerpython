@@ -107,8 +107,22 @@ def run():
     if args.join == 'colors':
         command.append('--join-colors')
     #print(command)
-    with open(os.devnull, 'w') as null:
-        subprocess.Popen(command, stdout=null, stderr=null)
+
+    if len(command) > 255:
+        pass
+
+    #command = ['//?/'] + command
+    print()
+    print()
+    print()
+    print()
+    #print(command)
+
+    print(len(command))
+
+    #with open(os.devnull, 'w') as null:
+    subprocess.Popen(command)
+    #, stdout=null, stderr=null)
 
 
 if __name__ == '__main__':

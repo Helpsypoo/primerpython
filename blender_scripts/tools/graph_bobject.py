@@ -916,22 +916,26 @@ class GraphBobject(Bobject):
         coords = []
         if isinstance(func, list) and func_index not in self.high_res_curve_indices:
             #Discrete functions will be made from bezier curves
-            #Assumes index can be treated as function input.
-            condensed_func = []
-            current_y = -math.inf
-            for x, y in enumerate(func):
-                if y != current_y:
-                    condensed_func.append([x, y])
-                    current_y = y
+            ordered_pairs = []
+            #For lists of numbers, interpret index function input.
+            if isinstance(func[0], int) or isinstance(func[0], float):
+                current_y = -math.inf
+                for x, y in enumerate(func):
+                    if y != current_y:
+                        ordered_pairs.append([x, y])
+                        current_y = y
+            else: #Assumes the only other case is ordered pairs
+                ordered_pairs = func
 
-            for i, (x, y) in enumerate(condensed_func):
+
+            for i, (x, y) in enumerate(ordered_pairs):
                 #For value changes other than the first, add a point at the
                 #previous y value to serve as base of the "step up" or the edge
                 #of the "step down"
                 if x != 0:
                     coords.append([
                         x * self.domain_scale_factor,
-                        condensed_func[i -1][1] * self.range_scale_factor,
+                        ordered_pairs[i -1][1] * self.range_scale_factor,
                         CURVE_Z_OFFSET
                     ])
                 coords.append([
@@ -940,7 +944,7 @@ class GraphBobject(Bobject):
                     CURVE_Z_OFFSET
                 ])
                 #Add final point at end of domain
-                if i == len(condensed_func) - 1 and x < len(func) - 1:
+                if i == len(ordered_pairs) - 1 and x < len(func) - 1:
                     coords.append([
                         (len(func) - 1) * self.domain_scale_factor,
                         y * self.range_scale_factor,

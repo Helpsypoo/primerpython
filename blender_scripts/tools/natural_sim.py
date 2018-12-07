@@ -332,7 +332,7 @@ class Creature(Food):
         speed = 1,
         size = 1,
         sense = 1,
-        kin_radius = 0.3,
+        kin_radius = 0,
         altruist = False,
         parent = None,
         world = None
@@ -537,7 +537,7 @@ class Creature(Food):
 
             #Forget about food that another slower-but-similar creature is going
             #for, if you're not about to starve
-            if len(day.has_eaten[-1]) > 0:
+            if len(day.has_eaten[-1]) > -1:
                 for cre in similar_creatures:
                     if cre.speed < self.speed:
                         claimed_food = None
@@ -556,7 +556,7 @@ class Creature(Food):
                                 x.size * PREDATOR_SIZE_RATIO <= self.size and \
                                 x.days[-1].home_time == None] #You're safe when you're home
             #Don't eat similar creatures if you're not about to starve
-            if len(day.has_eaten[-1]) > 0:
+            if len(day.has_eaten[-1]) > -1:
                 edible_creatures = [x for x in edible_creatures if x not in similar_creatures]
 
             if self.altruist == True:
@@ -1094,7 +1094,7 @@ class NaturalSim(object):
                         sense_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
                 kin_addition = 0
                 if self.mutation_switches[3] == True:
-                    if random() < 1 * MUTATION_CHANCE:
+                    if random() < 3 * MUTATION_CHANCE:
                         kin_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
                         if par.kin_radius + kin_addition < 0:
                             kin_addition = 0
