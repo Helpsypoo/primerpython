@@ -919,9 +919,9 @@ class SVGBobject(Bobject):
                 char = char.objects[0]
                 for spline in char.data.splines:
                     for point in spline.bezier_points:
-                        candidate = char.matrix_local.translation[0] + \
-                            char.parent.matrix_local.translation[0] + \
-                            point.co[0] * char.scale[0]
+                        candidate = char.matrix_local.translation[1] + \
+                            char.parent.matrix_local.translation[1] + \
+                            point.co[1] * char.scale[1]
                         if top_most_y < candidate:
                             top_most_y = candidate
 
@@ -930,9 +930,9 @@ class SVGBobject(Bobject):
                 char = char.objects[0]
                 for spline in char.data.splines:
                     for point in spline.bezier_points:
-                        candidate = char.matrix_local.translation[0] + \
-                            char.parent.matrix_local.translation[0] + \
-                            point.co[0] * char.scale[0]
+                        candidate = char.matrix_local.translation[1] + \
+                            char.parent.matrix_local.translation[1] + \
+                            point.co[1] * char.scale[1]
                         if bottom_most_y > candidate:
                             bottom_most_y = candidate
 

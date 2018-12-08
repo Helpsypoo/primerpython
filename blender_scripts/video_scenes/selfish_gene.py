@@ -20,6 +20,8 @@ import graph_bobject
 imp.reload(graph_bobject)
 import natural_sim
 imp.reload(natural_sim)
+import table_bobject
+imp.reload(table_bobject)
 
 import helpers
 imp.reload(helpers)
@@ -917,7 +919,7 @@ class SelfishGene(Scene):
 
 
         cyl.move_to(
-            new_scale = [0.05, 0.05, 0.6],
+            new_scale = [0.05, 0.05, 1],
             start_time = 3,
             end_time = 4
         )
@@ -1392,12 +1394,167 @@ class SelfishGene(Scene):
 
     def strategies(self):
 
+        gene = import_object(
+            'dna_two_strand', 'biochem',
+            scale = 6,
+            location = [0, -0.5, 0]
+        )
+        gene.add_to_blender(appear_time = 0)
 
-        strats = tex_bobject.TexBobject(
-            '\\text{Strategies}'
+        def make_clear_recursive(obj):
+            apply_material(obj, 'trans_color2', intensity = 3)
+            for child in obj.children:
+                make_clear_recursive(child)
+        gene.spin(start_time = 0, spin_rate = 0.1)
+        make_clear_recursive(gene.ref_obj.children[0])
+        ghost_home = [-9, 3, 0]
+        ghost_scale = 3.6
+        gene.move_to(
+            start_time = 3,
+            new_location = ghost_home,
+            new_scale = ghost_scale
         )
 
-        table = bobject.Bobject()
+        strats = tex_bobject.TexBobject(
+            '\\text{Strategies}',
+            centered = True
+        )
+        carriers = tex_bobject.TexBobject(
+            '\\begin{array}{@{}c@{}}\\text{Effect on} \\\\ \\text{carrier creatures} \\end{array}',
+            centered = True
+        )
+        oc = tex_bobject.TexBobject(
+            '\\begin{array}{@{}c@{}}\\text{Effect on} \\\\ \\text{other creatures} \\end{array}',
+            centered = True
+        )
+        cf = tex_bobject.TexBobject(
+            '\\text{Carrier-focused}',
+            centered = True
+        )
+        cfp = tex_bobject.TexBobject(
+            '\\boldsymbol{+}',
+            centered = True,
+            color = 'color7',
+            scale = 2
+        )
+        cfm = tex_bobject.TexBobject(
+            '\\boldsymbol{-}',
+            centered = True,
+            color = 'color6',
+            scale = 2
+        )
+        ww = tex_bobject.TexBobject(
+            '\\text{Win-win}',
+            centered = True
+        )
+        wwp1 = tex_bobject.TexBobject(
+            '\\boldsymbol{+}',
+            centered = True,
+            color = 'color7',
+            scale = 2
+        )
+        wwp2 = tex_bobject.TexBobject(
+            '\\boldsymbol{+}',
+            centered = True,
+            color = 'color7',
+            scale = 2
+        )
+        a = tex_bobject.TexBobject(
+            '\\text{Altruistic}',
+            centered = True
+        )
+        am = tex_bobject.TexBobject(
+            '\\boldsymbol{-}',
+            centered = True,
+            color = 'color6',
+            scale = 2
+        )
+        ap = tex_bobject.TexBobject(
+            '\\boldsymbol{+}',
+            centered = True,
+            color = 'color7',
+            scale = 2
+        )
+
+        em = [
+            [strats, carriers, oc],
+            [cf, cfp, cfm],
+            [ww, wwp1, wwp2],
+            [a, am, ap],
+        ]
+
+        table = table_bobject.TableBobject(
+            location = [-3, 6.5, 0],
+            width = 14.7,
+            element_matrix = em
+        )
+
+        table.add_to_blender(
+            appear_time = 5,
+            subbobject_timing = [
+                30, 60, 120,
+                150, 180, 210,
+                240, 270, 300,
+                330, 360, 390,
+                0, 0
+            ]
+        )
+
+        cf_time = 20
+
+        copy1 = import_object(
+            'dna_two_strand_low_res', 'biochem',
+            location = ghost_home,
+            scale = ghost_scale
+        )
+        copy1.spin(start_time = 0, spin_rate = 0.1)
+        copy1.add_to_blender(appear_time = 0)
+        copy1.de_explode(
+            start_time = cf_time,
+            duration = 1
+        )
+        copy1.move_to(
+            new_location = [-4.5, -6, 0],
+            new_scale = 1,
+            start_time = cf_time + 1
+        )
+
+
+        #Evil blob
+        eblob = import_object(
+            'boerd_blob', 'creatures',
+            scale = 5
+            #wiggle = True
+        )
+        eblob.add_to_blender(appear_time = 0)
+        def fade_blob_in(blob):
+
+            meta = blob.ref_obj.children[0].children[0]
+            apply_material(meta, 'creature_color7')
+
+            mat_copy = meta.material_slots[0].material.copy()
+            meta.active_material = mat_copy
+            node_tree = mat_copy.node_tree
+            out = node_tree.nodes['Material Output']
+            princ = node_tree.nodes['Principled BSDF']
+            trans = node_tree.nodes.new(type = 'ShaderNodeBsdfTransparent')
+            mix = node_tree.nodes.new(type = 'ShaderNodeMixShader')
+
+            node_tree.links.new(mix.outputs[0], out.inputs[0])
+            node_tree.links.new(princ.outputs[0], mix.inputs[1])
+            node_tree.links.new(trans.outputs[0], mix.inputs[2])
+
+            mix.inputs[0].default_value = 1
+            mix.inputs[0].keyframe_insert(data_path = 'default_value', frame = (cf_time + 2) * FRAME_RATE)
+            mix.inputs[0].default_value = 0
+            mix.inputs[0].keyframe_insert(data_path = 'default_value', frame = (cf_time + 2.5) * FRAME_RATE)
+
+        fade_blob_in(eblob)
+
+        eblob.evil_pose(
+            start_time = cf_time + 4,
+            end_time = cf_time + 8
+        )
 
 
     def end_card(self):

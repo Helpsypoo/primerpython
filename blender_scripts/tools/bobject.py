@@ -654,15 +654,212 @@ class Bobject(object):
             frame = start_frame + duration_frames + top_pause_time * FRAME_RATE
         )
 
-    def eat_animation(self, start_frame = None, end_frame = None):
-        #I parented the mouth in a pretty ridicukous way, but it works.
+    def evil_pose(
+        self,
+        start_time = None,
+        end_time = None,
+        attack = None,
+        decay = None
+    ):
+        if start_time == None:
+            raise Warning('Need start time for evil pose')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        if attack == None:
+            if end_time == None:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+
+        #Blob's left arm up = [1, -2.5, -8.1, -1.5]
+        #Blob's right arm up = [1, 0.4, -36.6, -9]
+
+        #These labels are from the point of view of the blob, which is opposite
+        #from how they're labeled in the template .blend file. Huzzah.
+        l_arm = self.ref_obj.children[0].pose.bones[1]
+        r_arm = self.ref_obj.children[0].pose.bones[2]
+
+        #Left arm up
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        initial_angle = list(l_arm.rotation_quaternion)
+        l_arm.rotation_quaternion = [1, -2.5, -8.1, -1.5]
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + attack_frames
+        )
+
+        #Shakes?
+
+        #And back
+        if end_frame != None:
+            l_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = end_frame - decay_frames
+            )
+            l_arm.rotation_quaternion = initial_angle
+            l_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = end_frame
+            )
+
+        #Right arm up
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        initial_angle = list(r_arm.rotation_quaternion)
+        r_arm.rotation_quaternion = [1, -2.5, -8.1, -1.5]
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + attack_frames
+        )
+
+        #And back
+        if end_frame != None:
+            r_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = end_frame - decay_frames
+            )
+            r_arm.rotation_quaternion = initial_angle
+            r_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = end_frame
+            )
+
+
+        #Head
+        head = self.ref_obj.children[0].pose.bones[3]
+        initial = list(head.rotation_quaternion)
+
+        head_back = [1, -0.1, 0, 0.1]
+        head_back_left = [1, -0.1, 0.1, 0.1]
+        head_back_right = [1, -0.1, -0.1, 0.1]
+
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        head.rotation_quaternion = head_back
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + attack_frames
+        )
+
+
+        #Shakes
+        still_time = end_frame - start_frame - attack_frames - decay_frames
+        if still_time >= 5 * OBJECT_APPEARANCE_TIME:
+            still_time = still_time - 2 * OBJECT_APPEARANCE_TIME
+
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + still_time / 3
+            )
+            head.rotation_quaternion = head_back_left
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + still_time / 3 + OBJECT_APPEARANCE_TIME
+            )
+
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + 2 * still_time / 3 + 1 * OBJECT_APPEARANCE_TIME
+            )
+            head.rotation_quaternion = head_back_right
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + 2 * still_time / 3 + 2 * OBJECT_APPEARANCE_TIME
+            )
+
+
+
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = end_frame - decay_frames
+        )
+        head.rotation_quaternion = initial
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = end_frame
+        )
+
+        #Eyes
+        eyes = [
+            self.ref_obj.children[0].children[-2],
+            self.ref_obj.children[0].children[-3],
+        ]
+        for eye in eyes:
+                key = eye.data.shape_keys.key_blocks['Key 1']
+                key.keyframe_insert(data_path = 'value', frame = start_frame)
+                key.value = 1
+                key.keyframe_insert(data_path = 'value', frame = start_frame + attack_frames)
+                if end_frame != None:
+                    key.keyframe_insert(data_path = 'value', frame = end_frame - attack_frames)
+                    key.value = 0
+                    key.keyframe_insert(data_path = 'value', frame = end_frame)
+
+        #Mouth
+        self.eat_animation(
+            start_frame = start_frame,
+            end_frame = end_frame,
+            attack_frames = attack_frames,
+            decay_frames = decay_frames
+        )
+
+
+
+    def eat_animation(
+        self,
+        start_frame = None,
+        end_frame = None,
+        attack_frames = None,
+        decay_frames = None
+    ):
+        if start_frame == None:
+            raise Warning('Need start frame for eat animation')
+
+        if attack_frames == None:
+            if end_frame == None:
+                attack_frames = OBJECT_APPEARANCE_TIME
+            else:
+                attack_frames = (end_frame - start_frame) / 2
+
+        if decay_frames == None:
+            if end_frame == None:
+                decay_frames = OBJECT_APPEARANCE_TIME
+            else:
+                decay_frames = (end_frame - start_frame) / 2
+
+
+        #I parented the mouth in a pretty ridiculous way, but it works.
         for child in self.ref_obj.children[0].children:
             if 'Mouth' in child.name:
                 mouth = child
+                break
 
-        o_loc = copy(mouth.location)
-        o_rot = copy(mouth.rotation_euler)
-        o_scale = copy(mouth.scale)
+        o_loc = list(mouth.location)
+        o_rot = list(mouth.rotation_euler)
+        o_scale = list(mouth.scale)
 
         mouth.keyframe_insert(data_path = 'location', frame = start_frame)
         mouth.keyframe_insert(data_path = 'rotation_euler', frame = start_frame)
@@ -680,9 +877,13 @@ class Bobject(object):
             0.889
         ]
 
-        mouth.keyframe_insert(data_path = 'location', frame = (start_frame + end_frame) / 2)
-        mouth.keyframe_insert(data_path = 'rotation_euler', frame = (start_frame + end_frame) / 2)
-        mouth.keyframe_insert(data_path = 'scale', frame = (start_frame + end_frame) / 2)
+        mouth.keyframe_insert(data_path = 'location', frame = start_frame + attack_frames)
+        mouth.keyframe_insert(data_path = 'rotation_euler', frame = start_frame + attack_frames)
+        mouth.keyframe_insert(data_path = 'scale', frame = start_frame + attack_frames)
+
+        mouth.keyframe_insert(data_path = 'location', frame = end_frame - decay_frames)
+        mouth.keyframe_insert(data_path = 'rotation_euler', frame = end_frame - decay_frames)
+        mouth.keyframe_insert(data_path = 'scale', frame = end_frame - decay_frames)
 
         mouth.location = o_loc
         mouth.rotation_euler = o_rot

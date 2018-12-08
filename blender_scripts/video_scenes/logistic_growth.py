@@ -1024,7 +1024,7 @@ class LogisticGrowth(Scene):
         ref.children[0].scale = [
             AXIS_DEPTH / 4,
             AXIS_DEPTH / 4,
-            nt_graph1.x_range[1] * nt_graph1.domain_scale_factor / 2,
+            nt_graph1.x_range[1] * nt_graph1.domain_scale_factor,
         ]
         ref.parent = nt_graph1.ref_obj
 

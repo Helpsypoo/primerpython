@@ -105,7 +105,7 @@ class GraphBobject(Bobject):
         ref = cyl_bobj.ref_obj
         ref.location = (self.x_range[0] * self.domain_scale_factor - GRAPH_PADDING, 0, 0)
         ref.children[0].rotation_euler = (0, math.pi / 2, 0)
-        ref.children[0].scale = (AXIS_DEPTH, AXIS_WIDTH, self.width / 2 + GRAPH_PADDING)
+        ref.children[0].scale = (AXIS_DEPTH, AXIS_WIDTH, self.width + 2 * GRAPH_PADDING)
 
         if self.arrows == 'positive' or self.arrows == True:
             con_bobj = import_object('arrow_head', name = 'arrow_ref')
@@ -146,7 +146,7 @@ class GraphBobject(Bobject):
             ref = cyl_bobj.ref_obj
             ref.location = (0, self.y_range[0] * self.range_scale_factor - GRAPH_PADDING, 0)
             ref.children[0].rotation_euler = (-math.pi / 2, 0, 0)
-            ref.children[0].scale = (AXIS_WIDTH, AXIS_DEPTH, self.height / 2 + GRAPH_PADDING)
+            ref.children[0].scale = (AXIS_WIDTH, AXIS_DEPTH, self.height + 2 * GRAPH_PADDING)
 
             if self.arrows == 'positive' or self.arrows == True:
                 con_bobj = import_object('arrow_head', name = 'arrow_ref')
@@ -1033,7 +1033,7 @@ class GraphBobject(Bobject):
             point_ref = point.ref_obj
             ref.location = point_ref.location
             ref.children[0].rotation_euler = (math.pi / 2, 0, 0)
-            ref.children[0].scale = (AXIS_DEPTH / 4, AXIS_DEPTH / 4, ref.location[1] / 2)
+            ref.children[0].scale = (AXIS_DEPTH / 4, AXIS_DEPTH / 4, ref.location[1])
 
             y_tracker = import_object('one_side_cylinder', 'primitives', name = 'y_tracker')
             apply_material(y_tracker.objects[0], 'color2')
@@ -1041,7 +1041,7 @@ class GraphBobject(Bobject):
             point_ref = point.ref_obj
             ref.location = point_ref.location
             ref.children[0].rotation_euler = (0, - math.pi / 2, 0)
-            ref.children[0].scale = (AXIS_DEPTH / 4, AXIS_DEPTH / 4, ref.location[0] / 2)
+            ref.children[0].scale = (AXIS_DEPTH / 4, AXIS_DEPTH / 4, ref.location[0])
 
             x_tracker.add_to_blender(appear_frame = appear_frame, transition_time = duration)
             self.add_subbobject(x_tracker)
@@ -1495,7 +1495,7 @@ class GraphBobject3D(GraphBobject):
         ref = cyl_bobj.ref_obj
         ref.location = (0, 0, self.z_range[0] * self.z_scale_factor - GRAPH_PADDING)
         ref.children[0].rotation_euler = (0, 0, 0)
-        ref.children[0].scale = (AXIS_DEPTH, AXIS_WIDTH, self.width / 2 + GRAPH_PADDING)
+        ref.children[0].scale = (AXIS_DEPTH, AXIS_WIDTH, self.width + 2 * GRAPH_PADDING)
 
         if self.arrows == 'positive' or self.arrows == True:
             con_bobj = import_object('arrow_head', name = 'arrow_ref')
