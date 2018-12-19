@@ -101,7 +101,7 @@ class TexComplex(Bobject):
 
         else:
             #Align y
-            if self.align_y == 'centered':
+            if self.align_y == 'center':
                 num_newlines = len(t_bobjs) - 1
                 vert_disp = num_newlines * self.line_height / 2
             elif self.align_y == 'top': vert_disp = 0

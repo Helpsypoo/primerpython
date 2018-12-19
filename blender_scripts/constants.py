@@ -6,7 +6,7 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'medium'
+RENDER_QUALITY = 'final'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
@@ -20,7 +20,7 @@ else:
     RESOLUTION_PERCENTAGE = 30
     LIGHT_SAMPLING_THRESHOLD = 0.0 #For my scenes, it seems there's so little
                                    #ray bouncing that the cutoff test actually
-                                   #takes longer than lsetting the light keep going
+                                   #takes longer than letting the light keep going
     SAMPLE_COUNT = 64
     RENDER_TILE_SIZE = 256
 

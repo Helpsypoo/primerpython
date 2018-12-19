@@ -42,13 +42,10 @@ imp.reload(natural_sim)
 from natural_sim import *
 
 sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts\\video_scenes')
-import why_things_exist
-imp.reload(why_things_exist)
-from why_things_exist import *
 
-import selfish_gene
-imp.reload(selfish_gene)
-from selfish_gene import *
+import recurring_assets
+imp.reload(recurring_assets)
+from recurring_assets import *
 
 import population
 imp.reload(population)
@@ -61,6 +58,9 @@ from gesture import *
 import tex_complex
 imp.reload(tex_complex)
 from tex_complex import TexComplex
+
+import centipede
+imp.reload(centipede)
 
 from helpers import *
 
@@ -98,8 +98,15 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = 
         filepath="C:\\Program Files\\Blender Foundation\\Blender\\2.79\\scripts\\presets\\framerate\\60.py",
         menu_idname="RENDER_MT_framerate_presets"
     )
+
+    #Idfk how to do manipulate the context
+    '''for area in bpy.context.screen.areas:
+        if area.type == 'TIMELINE':
+            bpy.context.area = area
+            bpy.context.space_data.show_seconds = True'''
+
     #The line below makes it so Blender doesn't apply gamma correction. For some
-    #reason, Blender handles colors differently from how every other programe
+    #reason, Blender handles colors differently from how every other program
     #does, and it's terrible. Why.
     #But this fixes it. Also, the RGB values you see in Blender
     #will be wrong, because the gamma correction is still applied when the color
@@ -277,17 +284,24 @@ def draw_scenes_from_file(script_file, clear = True):
 def test():
     initialize_blender(total_duration = 100)
 
-    blob = import_object(
+    '''blob = import_object(
         'boerd_blob', 'creatures',
-        scale = 5
-        #wiggle = True
+        scale = 5,
     )
-    blob.add_to_blender(appear_time = 1)
+    blob.add_to_blender(appear_time = 1)'''
 
-    blob.evil_pose(
+    '''blob.wince(
         start_time = 3,
-        end_time = 7
+        end_time = 10
+    )'''
+
+    a = tex_bobject.TexBobject(
+        "\\text{Give peas a chance}",
+        centered = True,
+        scale = 3,
+        typeface = 'garamond'
     )
+    a.add_to_blender(appear_time = 0)
 
 def marketing():
     scene_end = 12
@@ -330,7 +344,6 @@ def marketing():
     )
     comp.add_to_blender(appear_time = 0)
 
-
 def main():
     """Use this as a test scene"""
     #tex_test()
@@ -339,7 +352,7 @@ def main():
     #test()
 
     #draw_scenes_from_file(vn, clear = False)
-    draw_scenes_from_file(selfish_gene)
+    draw_scenes_from_file(recurring_assets)
 
     print_time_report()
     finish_noise()
