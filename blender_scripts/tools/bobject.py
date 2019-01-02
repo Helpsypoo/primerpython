@@ -73,7 +73,8 @@ class Bobject(object):
         animate = True,
         subbobject_timing = 'start',
         transition_time = OBJECT_APPEARANCE_TIME,
-        is_creature = False
+        is_creature = False,
+        unhide = True
     ):
         if appear_time != None:
             if appear_frame != None:
@@ -94,30 +95,30 @@ class Bobject(object):
 
         self.appear_frame = appear_frame
 
+        if unhide == True:
+            main_obj.hide = True
+            main_obj.hide_render = True
+            main_obj.keyframe_insert(data_path="hide", frame = appear_frame - 1)
+            main_obj.keyframe_insert(data_path="hide_render", frame = appear_frame - 1)
+            main_obj.hide = False
+            main_obj.keyframe_insert(data_path="hide", frame = appear_frame)
 
-        main_obj.hide = True
-        main_obj.hide_render = True
-        main_obj.keyframe_insert(data_path="hide", frame = appear_frame - 1)
-        main_obj.keyframe_insert(data_path="hide_render", frame = appear_frame - 1)
-        main_obj.hide = False
-        main_obj.keyframe_insert(data_path="hide", frame = appear_frame)
 
-
-        for obj in self.objects:
-            if obj.name not in bpy.context.scene.objects:
-                bpy.context.scene.objects.link(obj)
-            link_descendants(obj) #Useful for multi-part imports from .blend files
-            hide_self_and_descendants(
-                obj,
-                keyframes = True,
-                frame = appear_frame - 1
-            )
-            hide_self_and_descendants(
-                obj,
-                hide = False, #Unhide objects
-                keyframes = True,
-                frame = appear_frame
-            )
+            for obj in self.objects:
+                if obj.name not in bpy.context.scene.objects:
+                    bpy.context.scene.objects.link(obj)
+                link_descendants(obj) #Useful for multi-part imports from .blend files
+                hide_self_and_descendants(
+                    obj,
+                    keyframes = True,
+                    frame = appear_frame - 1
+                )
+                hide_self_and_descendants(
+                    obj,
+                    hide = False, #Unhide objects
+                    keyframes = True,
+                    frame = appear_frame
+                )
 
         if animate == False:
             if self.superbobject == None:

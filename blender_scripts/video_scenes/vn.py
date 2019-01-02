@@ -36,7 +36,9 @@ class TextScene(Scene):
 
         #These don't really need to be object methods ¯\_(ツ)_/¯
         #self.intro_card()
-        self.outline()
+        #self.outline()
+        #self.inner_ear_intro()
+        self.asymmetrical_inputs()
         #self.transition_card()
         #self.end_card()
 
@@ -197,6 +199,306 @@ class TextScene(Scene):
             )
 
         vn.disappear(disappear_time = 16)
+
+    def inner_ear_intro(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 5],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 0.25],
+            swivel_rotation_euler = [math.pi / 2, 0, 0],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1)
+        cam_bobj.ref_obj.children[0].data.clip_end = 200
+
+        turn_green_time = 16.5
+
+        zoom_out_time = 20.5
+
+        turn_red_time = 22.5
+
+        r_inner_ear = bpy.data.objects['inner ear_from microCT']
+        brain = bpy.data.objects['Brain']
+        v_nerve = bpy.data.objects['Vestibular nerve origin']
+        to_keep = [r_inner_ear]
+        for obj in bpy.data.objects:
+            if obj not in to_keep:
+                obj.hide = True
+                obj.hide_render = True
+
+        slots = r_inner_ear.material_slots
+        v_sys_mats = [
+            slots[1].material,
+            slots[2].material,
+            slots[3].material,
+            slots[4].material
+        ]
+        coch_mat = slots[0].material
+
+        for mat in v_sys_mats + [coch_mat]:
+            print(mat)
+            nodes = mat.node_tree.nodes
+            mix = nodes['Mix Shader']
+            mix.inputs[0].default_value = 0
+            princ = nodes['Principled BSDF']
+            color = princ.inputs[0]
+
+            if mat != coch_mat:
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = turn_green_time * FRAME_RATE
+                )
+                color.default_value = [0, 1, 0, 1]
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = turn_green_time * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+        #Zoom out
+        for thing in [brain, v_nerve]:
+            thing.hide = True
+            thing.hide_render = True
+            thing.keyframe_insert(
+                data_path = 'hide',
+                frame = zoom_out_time * FRAME_RATE - 1
+            )
+            thing.hide = False
+            thing.hide_render = False
+            thing.keyframe_insert(
+                data_path = 'hide',
+                frame = zoom_out_time * FRAME_RATE
+            )
+
+            full_scale = list(thing.scale)
+            thing.scale = [0, 0, 0]
+            thing.keyframe_insert(
+                data_path = 'scale',
+                frame = zoom_out_time * FRAME_RATE - 1
+            )
+            thing.scale = full_scale
+            thing.keyframe_insert(
+                data_path = 'scale',
+                frame = zoom_out_time * FRAME_RATE
+            )
+
+            nodes = thing.material_slots[0].material.node_tree.nodes
+            mix = nodes['Mix Shader'].inputs[0]
+            mix.default_value = 1
+            mix.keyframe_insert(
+                data_path = 'default_value',
+                frame = (zoom_out_time + 1) * FRAME_RATE
+            )
+            mix.default_value = 0
+            mix.keyframe_insert(
+                data_path = 'default_value',
+                frame = (zoom_out_time + 1) * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+            )
+            if thing == v_nerve:
+                mix2 = nodes['Mix Shader.001'].inputs[0]
+                mix2.default_value = 0
+                mix2.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = turn_red_time * FRAME_RATE
+                )
+                mix2.default_value = 1
+                mix2.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = turn_red_time * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+                )
+
+                em = nodes['Emission']
+                color = em.inputs[0]
+                color.default_value = [1, 1, 1, 1]
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = turn_red_time * FRAME_RATE
+                )
+                color.default_value = [1, 0, 0, 1]
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = turn_red_time * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+                )
+
+
+        cam_swivel.move_to(
+            new_location = [0, 5.1, 4.5],
+            start_time = zoom_out_time,
+            end_time = zoom_out_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+
+        cam_swivel.move_to(
+            new_angle = [math.pi / 2, 0, 70 * math.pi / 180],
+            start_time = 14,
+            end_time = 25
+        )
+        '''cam_swivel.move_to(
+            new_angle = [math.pi / 2, 0, 0],
+            start_time = turn_red_time,
+            end_time = turn_red_time + turn_red_time - turn_green_time
+        )'''
+        cam_bobj.move_to(
+            new_location = [0, 0, 35],
+            start_time = zoom_out_time,
+            end_time = zoom_out_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+
+    def asymmetrical_inputs(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 100],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 5.1, -2],
+            swivel_rotation_euler = [75 * math.pi / 180, 0, 135 * math.pi / 180],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1)
+        cam_bobj.ref_obj.children[0].data.clip_end = 200
+
+        rot_start = 78
+
+        l_green_time = 80.5
+        l_back_time = 85.5
+        spin_time_1 = 83
+        spins_1 = 5
+        spin_duration_1 = 3
+
+        r_red_time = 90.5
+        r_back_time = 102.5
+        spin_time_2 = 100
+        spins_2 = 5
+        spin_duration_2 = 3
+
+
+        skin = bpy.data.objects['robertot']
+        r_inner_ear = bpy.data.objects['inner ear_from microCT']
+        l_inner_ear = bpy.data.objects['inner ear_from microCT.001']
+        to_keep = [skin, r_inner_ear, l_inner_ear]
+        for obj in bpy.data.objects:
+            if obj not in to_keep:
+                obj.hide = True
+                obj.hide_render = True
+
+        mix = skin.material_slots[0].material.node_tree.nodes['Mix Shader'].inputs[0]
+        mix.default_value = 0.9
+
+
+        #Prep inner ear materials
+        slots = r_inner_ear.material_slots
+        v_sys_mats = [
+            slots[0].material,
+            slots[1].material,
+            slots[2].material,
+            slots[3].material,
+            slots[4].material
+        ]
+        #Set initial state for inner ear materials
+        for mat in v_sys_mats:
+            nodes = mat.node_tree.nodes
+            mix = nodes['Mix Shader']
+            mix.inputs[0].default_value = 0
+            #princ = nodes['Principled BSDF']
+            #color = princ.inputs[0]
+            #color.default_value = [0, 1, 0, 1]
+
+        #Make separate materials for left inner ear to animate separately
+        for slot in l_inner_ear.material_slots:
+            mat_copy = slot.material.copy()
+            slot.material = mat_copy
+
+        #Turn left inner ear green and back
+        for slot in l_inner_ear.material_slots:
+            nodes = slot.material.node_tree.nodes
+            color = nodes['Principled BSDF'].inputs[0]
+            initial_color = list(color.default_value)
+
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = l_green_time * FRAME_RATE
+            )
+            color.default_value = [0, 1, 0, 1]
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = l_green_time * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+            )
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = l_back_time * FRAME_RATE
+            )
+            color.default_value = initial_color
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = l_back_time * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+            )
+
+
+
+        #Turn right inner ear red and back
+        for mat in v_sys_mats:
+            nodes = mat.node_tree.nodes
+            color = nodes['Principled BSDF'].inputs[0]
+            initial_color = list(color.default_value)
+
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = r_red_time * FRAME_RATE
+            )
+            color.default_value = [1, 0, 0, 1]
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = r_red_time * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+            )
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = r_back_time * FRAME_RATE
+            )
+            color.default_value = initial_color
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = r_back_time * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+            )
+
+        #Spins
+        skull = bpy.data.objects['Skull_Top']
+        skull_bobj = bobject.Bobject(objects = [skull])
+        skull_bobj.add_to_blender(appear_time = 0, unhide = False)
+        skull_bobj.move_to(
+            new_angle = [0, 0, spins_1 * 2 * math.pi],
+            start_time = spin_time_1,
+            end_time = spin_time_1 + spin_duration_1
+        )
+
+        skull_bobj.move_to(
+            new_angle = [
+                skull_bobj.ref_obj.rotation_euler[0],
+                skull_bobj.ref_obj.rotation_euler[1],
+                skull_bobj.ref_obj.rotation_euler[2] + spins_2 * 2 * math.pi,
+            ],
+            start_time = spin_time_2,
+            end_time = spin_time_2 + spin_duration_2
+        )
+
+
+
+        cam_swivel.move_to(
+            new_angle = [75 * math.pi / 180, 0, 45 * math.pi / 180],
+            start_time = rot_start,
+            end_time = r_red_time
+        )
+        cam_swivel.move_to(
+            new_angle = [75 * math.pi / 180, 0, 135 * math.pi / 180],
+            start_time = r_red_time,
+            end_time = spin_time_2 + spin_duration_2
+        )
+
+        '''rate = 0.025
+        cam_swivel.spin(
+            axis = 2,
+            spin_rate = rate,
+            start_time = zoom_out_time - 1 / rate * 0.125
+        )'''
 
     def transition_card(self):
         text = tex_bobject.TexBobject(

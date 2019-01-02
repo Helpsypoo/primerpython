@@ -397,7 +397,7 @@ class TextScene(Scene):
 
 
 
-'''
+
 class AnatomyScene(Scene):
     def __init__(self):
         bpy.context.scene.cycles.caustics_reflective = False
@@ -839,5 +839,3 @@ class AnatomyScene(Scene):
             constant_rate = True,
             spin_rate = 1/20,
         )
-
-'''

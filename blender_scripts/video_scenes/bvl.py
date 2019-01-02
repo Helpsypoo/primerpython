@@ -36,7 +36,11 @@ class TextScene(Scene):
 
         #These don't really need to be object methods ¯\_(ツ)_/¯
         #self.title_card()
-        self.intro()
+        #self.intro()
+        #self.inner_ear_intro()
+        #self.head_move_eyes_locked()
+        #self.asymmetrical_inputs()
+        self.common_causes()
         #self.transition_card()
         #self.end_card()
 
@@ -199,6 +203,359 @@ class TextScene(Scene):
 
         bvl.disappear(disappear_time = 16)
 
+    def inner_ear_intro(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 5],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 0.25],
+            swivel_rotation_euler = [math.pi / 2, 0, 0],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1)
+        cam_bobj.ref_obj.children[0].data.clip_end = 200
+
+        turn_green_time = 18.5
+
+        zoom_out_time = 24
+
+        skin = bpy.data.objects['robertot']
+        r_inner_ear = bpy.data.objects['inner ear_from microCT']
+        l_inner_ear = bpy.data.objects['inner ear_from microCT.001']
+        to_keep = [r_inner_ear]
+        to_hide = []
+        for obj in bpy.data.objects:
+            if obj not in to_keep:
+                to_hide.append(obj)
+
+        for thing in to_hide:
+            thing.hide = True
+            thing.hide_render = True
+
+        slots = r_inner_ear.material_slots
+        v_sys_mats = [
+            slots[1].material,
+            slots[2].material,
+            slots[3].material,
+            slots[4].material
+        ]
+        coch_mat = slots[0].material
+
+        for mat in v_sys_mats:
+            print(mat)
+            nodes = mat.node_tree.nodes
+            mix = nodes['Mix Shader']
+            mix.inputs[0].default_value = 0
+            princ = nodes['Principled BSDF']
+            color = princ.inputs[0]
+
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = turn_green_time * FRAME_RATE
+            )
+            color.default_value = [0, 1, 0, 1]
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = turn_green_time * FRAME_RATE + OBJECT_APPEARANCE_TIME
+            )
+
+        #Zoom out
+        mat = coch_mat
+        nodes = mat.node_tree.nodes
+        princ = nodes['Principled BSDF']
+        color = princ.inputs[0]
+        mix = nodes['Mix Shader']
+        mix.inputs[0].default_value = 0
+
+        color.keyframe_insert(
+            data_path = 'default_value',
+            frame = zoom_out_time * FRAME_RATE
+        )
+        color.default_value = [0, 1, 0, 1]
+        color.keyframe_insert(
+            data_path = 'default_value',
+            frame = zoom_out_time * FRAME_RATE + OBJECT_APPEARANCE_TIME
+        )
+
+        for thing in [skin, l_inner_ear]:
+            thing.hide = True
+            thing.hide_render = True
+            thing.keyframe_insert(
+                data_path = 'hide',
+                frame = zoom_out_time * FRAME_RATE - 1
+            )
+            thing.hide = False
+            thing.hide_render = False
+            thing.keyframe_insert(
+                data_path = 'hide',
+                frame = zoom_out_time * FRAME_RATE
+            )
+
+            full_scale = list(thing.scale)
+            thing.scale = [0, 0, 0]
+            thing.keyframe_insert(
+                data_path = 'scale',
+                frame = zoom_out_time * FRAME_RATE - 1
+            )
+            thing.scale = full_scale
+            thing.keyframe_insert(
+                data_path = 'scale',
+                frame = zoom_out_time * FRAME_RATE
+            )
+
+        mix = skin.material_slots[0].material.node_tree.nodes['Mix Shader'].inputs[0]
+        mix.default_value = 1
+        mix.keyframe_insert(
+            data_path = 'default_value',
+            frame = (zoom_out_time + 1) * FRAME_RATE
+        )
+        mix.default_value = 0.9
+        mix.keyframe_insert(
+            data_path = 'default_value',
+            frame = (zoom_out_time + 1) * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+        )
+
+        cam_swivel.move_to(
+            new_location = [0, 5.1, -2],
+            start_time = zoom_out_time,
+            end_time = zoom_out_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+        rate = 0.025
+        cam_swivel.spin(
+            axis = 2,
+            spin_rate = rate,
+            start_time = zoom_out_time - 1 / rate * 0.125
+        )
+        cam_bobj.move_to(
+            new_location = [0, 0, 90],
+            start_time = zoom_out_time,
+            end_time = zoom_out_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+
+    def head_move_eyes_locked(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 90],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, -2],
+            swivel_rotation_euler = [math.pi / 2, 0, math.pi / 2],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1)
+
+
+        skull = bpy.data.objects['Skull_Top']
+        skull_bobj = bobject.Bobject(objects = [skull])
+        skull_bobj.add_to_blender(appear_time = 0, animate = False)
+
+        eye_l = bpy.data.objects['eye_l']
+        eye_l_initial_angle = list(eye_l.rotation_euler)
+        eye_r = bpy.data.objects['eye_r']
+        eye_r_initial_angle = list(eye_r.rotation_euler)
+
+        angles = [
+            [0, 0, 15 * math.pi / 180],
+            [0, 0, -15 * math.pi / 180],
+            [0, 0, 15 * math.pi / 180],
+            [0, 0, -15 * math.pi / 180],
+            [0, 0, -15 * math.pi / 180],
+            [0, 10 * math.pi / 180, 0],
+            [0, -5 * math.pi / 180, 0],
+            [0, 0, 15 * math.pi / 180],
+            [0, 10 * math.pi / 180, 0],
+            [0, 0, 0]
+        ]
+
+        rot_start_time = 49.5
+
+        for i, angle in enumerate(angles):
+            time = i / 2
+            skull_bobj.move_to(
+                new_angle = angle,
+                start_time = time + rot_start_time
+            )
+
+            #Eyes aren't set up to work well as bobjects since I currently don't
+            #plan to reuse them a bunch. Probably poor foresight. /shrug
+            #They are also rotated in the z-direction with xyz euler angles, so
+            #the corrections need to accound for this.
+            eye_l.keyframe_insert(data_path = 'rotation_euler', frame = (time + rot_start_time) * FRAME_RATE)
+            eye_l.rotation_euler = [
+                eye_l_initial_angle[0] - angle[1],
+                eye_l_initial_angle[1] + angle[0],
+                eye_l_initial_angle[2] - angle[2]
+            ]
+            eye_l.keyframe_insert(data_path = 'rotation_euler', frame = (time + rot_start_time + 0.5) * FRAME_RATE)
+
+            eye_r.keyframe_insert(data_path = 'rotation_euler', frame = (time + rot_start_time) * FRAME_RATE)
+            eye_r.rotation_euler = [
+                eye_r_initial_angle[0] - angle[1],
+                eye_r_initial_angle[1] + angle[0],
+                eye_r_initial_angle[2] - angle[2]
+            ]
+            eye_r.keyframe_insert(data_path = 'rotation_euler', frame = (time + rot_start_time + 0.5) * FRAME_RATE)
+
+    def asymmetrical_inputs(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 100],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 5.1, -2],
+            swivel_rotation_euler = [75 * math.pi / 180, 0, 135 * math.pi / 180],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1)
+        cam_bobj.ref_obj.children[0].data.clip_end = 200
+
+
+        l_red_time = 115
+        spin_time = 117.5
+        spins = 6
+        spin_duration = 6
+        r_red_time = 122.5
+
+
+        skin = bpy.data.objects['robertot']
+        r_inner_ear = bpy.data.objects['inner ear_from microCT']
+        l_inner_ear = bpy.data.objects['inner ear_from microCT.001']
+        to_keep = [skin, r_inner_ear, l_inner_ear]
+        for obj in bpy.data.objects:
+            if obj not in to_keep:
+                obj.hide = True
+                obj.hide_render = True
+
+        mix = skin.material_slots[0].material.node_tree.nodes['Mix Shader'].inputs[0]
+        mix.default_value = 0.9
+
+        slots = r_inner_ear.material_slots
+        v_sys_mats = [
+            slots[0].material,
+            slots[1].material,
+            slots[2].material,
+            slots[3].material,
+            slots[4].material
+        ]
+        #Set initial state for inner ear materials
+        for mat in v_sys_mats:
+            nodes = mat.node_tree.nodes
+            mix = nodes['Mix Shader']
+            mix.inputs[0].default_value = 0
+            princ = nodes['Principled BSDF']
+            color = princ.inputs[0]
+            color.default_value = [0, 1, 0, 1]
+
+        #Make separate materials for left inner ear to animate separately
+        for slot in l_inner_ear.material_slots:
+            mat_copy = slot.material.copy()
+            slot.material = mat_copy
+
+
+        for mat in v_sys_mats:
+            nodes = mat.node_tree.nodes
+            princ = nodes['Principled BSDF']
+            color = princ.inputs[0]
+
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = l_red_time * FRAME_RATE
+            )
+            color.default_value = [1, 0, 0, 1]
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = l_red_time * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+            )
+
+        skull = bpy.data.objects['Skull_Top']
+        skull_bobj = bobject.Bobject(objects = [skull])
+        skull_bobj.add_to_blender(appear_time = 0, unhide = False)
+        skull_bobj.move_to(
+            new_angle = [0, 0, spins * 2 * math.pi],
+            start_time = spin_time,
+            end_time = spin_time + spin_duration
+        )
+
+        for slot in l_inner_ear.material_slots:
+            nodes = slot.material.node_tree.nodes
+            color = nodes['Principled BSDF'].inputs[0]
+
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = r_red_time * FRAME_RATE
+            )
+            color.default_value = [1, 0, 0, 1]
+            color.keyframe_insert(
+                data_path = 'default_value',
+                frame = r_red_time * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+            )
+
+        cam_swivel.move_to(
+            new_angle = [75 * math.pi / 180, 0, 45 * math.pi / 180],
+            start_time = 110,
+            end_time = 127
+        )
+
+        '''rate = 0.025
+        cam_swivel.spin(
+            axis = 2,
+            spin_rate = rate,
+            start_time = zoom_out_time - 1 / rate * 0.125
+        )'''
+
+    def common_causes(self):
+        cc = tex_bobject.TexBobject(
+            "\\text{Possible causes:}",
+            location = [-11, 4.75, 0],
+            #centered = True,
+            typeface = 'arial',
+            scale = 2.4
+        )
+        cc.add_to_blender(appear_time = 0)
+
+        nd = tex_bobject.TexBobject(
+            '\\bullet\\text{Neurologic diseases}',
+            color = 'color2',
+            typeface = 'arial'
+        )
+        bt = tex_bobject.TexBobject(
+            '\\bullet\\text{Brain tumors}',
+            color = 'color2',
+            typeface = 'arial'
+        )
+        ad = tex_bobject.TexBobject(
+            '\\bullet\\text{Autoimmune diseases}',
+            color = 'color2',
+            typeface = 'arial'
+        )
+        ab = tex_bobject.TexBobject(
+            '\\bullet\\text{Aminoglycoside antibiotics}',
+            color = 'color2',
+            typeface = 'arial'
+        )
+        ex = tex_bobject.TexBobject(
+            '\\bullet\\text{Heavy metals and jet fuel}',
+            color = 'color2',
+            typeface = 'arial'
+        )
+        cause_list = tex_complex.TexComplex(
+            nd, bt, ad, ab, ex,
+            location = [-8, 2, 0],
+            scale = 1.5,
+            multiline = True
+        )
+        cause_list.add_to_blender(
+            appear_time = 1,
+            subbobject_timing = [0, 45, 90, 135, 180]
+        )
+        #cause_list.disappear(disappear_time = 8)
+        #bvl.disappear(disappear_time = 7)
+        to_disappear = [
+            cc, nd, bt, ad, ab, ex
+        ]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = 6 - (len(to_disappear) - 1 - i) * 0.05)
 
     def transition_card(self):
         text = tex_bobject.TexBobject(

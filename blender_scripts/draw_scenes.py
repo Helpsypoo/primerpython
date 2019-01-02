@@ -59,8 +59,8 @@ import tex_complex
 imp.reload(tex_complex)
 from tex_complex import TexComplex
 
-import centipede
-imp.reload(centipede)
+import bvl
+imp.reload(bvl)
 
 from helpers import *
 
@@ -352,15 +352,15 @@ def main():
     #test()
 
     #draw_scenes_from_file(vn, clear = False)
-    #draw_scenes_from_file(recurring_assets)
+    draw_scenes_from_file(bvl)
 
-    tournament = centipede.Tournament(
-        initial_players = 'untrusters',
-        mutation_chance = 1
+    '''tournament = centipede.Tournament(
+        initial_players = 'spread',
+        mutation_chance = 0
     )
     for i in range(5000):
         tournament.play_round()
-    tournament.print_stats()
+    tournament.print_stats()'''
 
     print_time_report()
     finish_noise()

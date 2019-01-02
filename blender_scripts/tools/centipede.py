@@ -16,9 +16,9 @@ class Player(object):
 class Tournament(object):
     def __init__(
         self,
-        max_game_length = 100,
+        max_game_length = 10,
         initial_players = None,
-        num_player_target = 100,
+        num_player_target = 1000,
         mutation_chance = 0
     ):
         self.max_game_length = max_game_length
@@ -26,14 +26,16 @@ class Tournament(object):
 
         #Default initial player set is one of each possible strategy
         if initial_players == None or initial_players == 'spread':
+
+
             num_kinds = round(math.sqrt(num_player_target))
-            spacing = round(self.max_game_length / (num_kinds - 1))
+            spacing = self.max_game_length / (num_kinds - 1)
             initial_players = []
             for i in range(num_kinds):
                 for j in range(num_kinds):
                     player = Player(
-                        first_num_passes = i * spacing,
-                        second_num_passes = j * spacing
+                        first_num_passes = round(i * spacing),
+                        second_num_passes = round(j * spacing)
                     )
                     initial_players.append(player)
 
@@ -59,6 +61,7 @@ class Tournament(object):
 
         #Ensure num_player_target is set. Sometimes redundant.
         self.num_player_target = len(initial_players)
+        print(self.num_player_target)
 
         self.round_log = [initial_players]
 
@@ -143,6 +146,7 @@ class Tournament(object):
                 str(round(avg_fnp, 1)) + ', ' + \
                 str(round(std_dev_fnp, 1)) + ', ' + \
                 str(round(avg_snp, 1)) + ', ' + \
-                str(round(std_dev_snp, 1))
+                str(round(std_dev_snp, 1)) + ', ' + \
+                str(len(rou))
             )
             #print()
