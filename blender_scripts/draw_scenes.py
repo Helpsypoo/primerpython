@@ -59,6 +59,10 @@ import tex_complex
 imp.reload(tex_complex)
 from tex_complex import TexComplex
 
+import blobject
+imp.reload(blobject)
+from blobject import Blobject
+
 import inclusive_fitness
 imp.reload(inclusive_fitness)
 
@@ -288,26 +292,15 @@ def draw_scenes_from_file(script_file, clear = True):
     print_time_report()
 
 def test():
-    initialize_blender(total_duration = 100)
+    initialize_blender()
 
-    '''blob = import_object(
-        'boerd_blob', 'creatures',
-        scale = 5,
-    )
-    blob.add_to_blender(appear_time = 1)'''
-
-    '''blob.wince(
-        start_time = 3,
-        end_time = 10
-    )'''
-
-    a = tex_bobject.TexBobject(
-        "\\text{Give peas a chance}",
-        centered = True,
-        scale = 3,
-        typeface = 'garamond'
-    )
-    a.add_to_blender(appear_time = 0)
+    for i in range(2):
+        for j in range(2):
+            blob = Blobject(
+                scale = 2,
+                location = [-10 + 5 * i, -6 + 6 * j, 0]
+            )
+            blob.add_to_blender(appear_time = -1)
 
 def marketing():
     scene_end = 12
@@ -355,9 +348,9 @@ def main():
     #tex_test()
     """"""
 
-    #test()
+    test()
     #draw_scenes_from_file(vn, clear = False)
-    draw_scenes_from_file(inclusive_fitness)
+    #draw_scenes_from_file(inclusive_fitness)
     '''tournament = centipede.Tournament(
         initial_players = 'spread',
         mutation_chance = 0

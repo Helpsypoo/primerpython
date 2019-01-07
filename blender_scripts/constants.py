@@ -157,7 +157,7 @@ Sim motion constants
 CREATURE_BUBBLE_WIDTH = 0.1
 BOUNCE_DAMP_FACTOR = 0.8
 FLOOR_PADDING = 1
-BLINK_CHANCE = 0.0025
+BLINK_CHANCE = 0.005
 BLINK_LENGTH = 11
 BLINK_CYCLE_LENGTH = 1200
 #Could make a constant for the velocity parameters

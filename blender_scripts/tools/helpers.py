@@ -751,7 +751,15 @@ def import_object(filename, *folders, **kwargs):
             cycle_length = BLINK_CYCLE_LENGTH
         else:
             cycle_length = kwargs['cycle_length']
-        while t < cycle_length:
+
+        leye.keyframe_insert(data_path = 'scale', frame = 0)
+        leye.keyframe_insert(data_path = 'scale', frame = BLINK_CYCLE_LENGTH)
+        reye.keyframe_insert(data_path = 'scale', frame = 0)
+        reye.keyframe_insert(data_path = 'scale', frame = BLINK_CYCLE_LENGTH)
+
+
+        num_blinks = 0
+        while t < cycle_length - BLINK_LENGTH:
             blink_roll = random()
             if blink_roll < BLINK_CHANCE:
                 leye.keyframe_insert(data_path = 'scale', frame = t)
@@ -773,8 +781,11 @@ def import_object(filename, *folders, **kwargs):
                 reye.keyframe_insert(data_path = 'scale', frame = t + BLINK_LENGTH)
 
                 t += BLINK_LENGTH
+
+                num_blinks += 1
             else:
                 t += 1
+        print(num_blinks)
         #Make blinks cyclical
         try:
             leye_fcurve = ref_obj.children[0].animation_data.action.fcurves.find(
@@ -782,16 +793,14 @@ def import_object(filename, *folders, **kwargs):
                 index = 1
             )
             l_cycle = leye_fcurve.modifiers.new(type = 'CYCLES')
-            l_cycle.frame_start = 0
-            l_cycle.frame_end = BLINK_CYCLE_LENGTH
+            #l_cycle.blend_out = BLINK_CYCLE_LENGTH
 
             reye_fcurve = ref_obj.children[0].animation_data.action.fcurves.find(
                 'pose.bones["brd_bone_eye.r"].scale',
                 index = 1
             )
             r_cycle = reye_fcurve.modifiers.new(type = 'CYCLES')
-            r_cycle.frame_start = 0
-            r_cycle.frame_end = BLINK_CYCLE_LENGTH
+            #r_cycle.blend_out = BLINK_CYCLE_LENGTH
         except:
             #Sometimes a creature goes the whole cycle length without blinking,
             #in which case, there's no fcurve, so the above block throws an

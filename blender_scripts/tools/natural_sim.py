@@ -16,7 +16,8 @@ from helpers import *
 
 #Sim constants
 WORLD_DIMENSIONS = [150, 150]
-DEFAULT_DAY_LENGTH = 400
+SIM_RESOLUTION = 0.1
+DEFAULT_DAY_LENGTH = 600 * SIM_RESOLUTION
 PREDATOR_SIZE_RATIO = 1.2 #Vals close to 1 apply strong pressure toward bigness,
                           #since it becomes possible to eat recent ancestors.
 SPEED_ADJUST_FACTOR = 1.0 #Scale speed to keep creature speeds in the 0-2 range
@@ -24,14 +25,16 @@ SPEED_ADJUST_FACTOR = 1.0 #Scale speed to keep creature speeds in the 0-2 range
                           #easier than adjusting all the distances.
 SIZE_ADJUST_FACTOR = 1.0
 HEADING_TARGET_VARIATION = 0.4 #Range for random heading target changes, radians
-MAX_TURN_SPEED = 0.07
-TURN_ACCELERATION = 0.005
+MAX_TURN_SPEED = 0.07 / SIM_RESOLUTION
+TURN_ACCELERATION = 0.005 / SIM_RESOLUTION
 BASE_SENSE_DISTANCE = 25
 EAT_DISTANCE = 10
 MUTATION_CHANCE = 0.1
 MUTATION_VARIATION = 0.1
 STARTING_ENERGY = 800 #1800
 HOMEBOUND_RATIO = 2# 1.5
+
+
 
 #Visual constants
 DEFAULT_DAY_ANIM_DURATION = 8 #seconds
@@ -176,11 +179,12 @@ class Food(object):
         #Make sure these are on frames
         #start_time = round(start_time * 60) / 60
         start_frame = math.floor(start_time * 60)
-        duration = 50 * time_step #50 is duration of eat animation in world time
-                                  #Should really be a constant
-        duration = max(math.floor(duration * 60), 3)
+        duration = 50 * time_step * SIM_RESOLUTION
+            #50 is duration of eat animation in world time
+            #Should really be a constant
+        duration_frames = max(math.floor(duration * 60), 3)
         #end_time = start_time + duration
-        end_frame = start_frame + duration
+        end_frame = start_frame + duration_frames
 
         if drawn_world == None:
             raise Warning('Need to define drawn_world for git_ate')
@@ -271,7 +275,7 @@ class Food(object):
         #Move in front of creature
         self.bobject.move_to(
             start_frame = start_frame + 1,
-            end_frame = start_frame + math.floor(duration / 2),
+            end_frame = start_frame + math.floor(duration_frames / 2),
             new_location = [
                 - eater.bobject.ref_obj.parent.location[0] / eater.bobject.ref_obj.parent.scale[0] + eater.bobject.ref_obj.scale[2],
                 - eater.bobject.ref_obj.parent.location[1] / eater.bobject.ref_obj.parent.scale[1],
@@ -280,7 +284,7 @@ class Food(object):
         )
         #Move into creature and shrink
         self.bobject.move_to(
-            start_frame = start_frame + math.ceil(duration / 2),
+            start_frame = start_frame + math.ceil(duration_frames / 2),
             end_frame = end_frame,
             new_location = [
                 - eater.bobject.ref_obj.parent.location[0] / eater.bobject.ref_obj.parent.scale[0],
@@ -291,7 +295,7 @@ class Food(object):
         )
 
         eater.eat_animation(start_time = start_time, time_step = time_step)
-        eater.bobject.blob_scoop(start_time = start_time, duration = time_step * 50)
+        eater.bobject.blob_scoop(start_time = start_time, duration = duration)
         #I don't remember why I'm multiplying things by 50, tbh, but it works.
         #I'm good at coding.
 
@@ -356,7 +360,7 @@ class Creature(Food):
         cost += (self.size * SIZE_ADJUST_FACTOR) ** 3 * (self.speed * SPEED_ADJUST_FACTOR) ** 2 #* 2
         cost += (self.size * SIZE_ADJUST_FACTOR) ** 3 / 2
         cost += self.sense / 2
-        self.energy_cost = cost
+        self.energy_cost = cost / SIM_RESOLUTION
 
     def new_day(self, date = 0, parent = None):
         new_day = CreatureDay(creature = self, date = date)
@@ -627,11 +631,12 @@ class Creature(Food):
                 ht_norm = get_unit_vec(heading_target_vec)
                 dot = dot_product(out, ht_norm)
                 cross = cross_product(out, ht_norm)
-                closeness = vec_len(day.locations[-1]) / \
-                                        dot_product(out, self.world.dimensions + [0])
+
                 #Add inward bias so creatures don't just skim walls.
                 inward = 0
                 if dot > 0: #Overall heading out
+                    closeness = vec_len(day.locations[-1]) / \
+                                        dot_product(out, self.world.dimensions + [0])
                     if vec_len(cross) > 0:
                         #Positive angle change
                         #Full size at the barrier and when heading straight out
@@ -721,8 +726,10 @@ class Creature(Food):
             if heading_discrepancy == 0:
                 d_d_heading = 0
             else:
-                d_d_heading = heading_discrepancy / abs(heading_discrepancy) * TURN_ACCELERATION
+                d_d_heading = heading_discrepancy / abs(heading_discrepancy) \
+                        * TURN_ACCELERATION
             day.d_headings.append(day.d_headings[-1] + d_d_heading)
+
             #Speed limit
             if day.d_headings[-1] > MAX_TURN_SPEED:
                 day.d_headings[-1] = MAX_TURN_SPEED
@@ -746,8 +753,8 @@ class Creature(Food):
                 (1 - pow(abs(day.d_headings[-1]) / MAX_TURN_SPEED, 2) / 2)
             #If outside world, just stop
             heading_vec = [math.cos(day.headings[-1]), math.sin(day.headings[-1]), 0]
-            if (abs(day.locations[-1][0]) > self.world.dimensions[0] or \
-               abs(day.locations[-1][1]) > self.world.dimensions[1]) and \
+            if (abs(day.locations[-1][0]) >= self.world.dimensions[0] or \
+               abs(day.locations[-1][1]) >= self.world.dimensions[1]) and \
                dot_product(heading_vec, day.locations[-1]) > 0:
                effective_speed = 0
                if day.home_time == None and len(day.has_eaten[-1]) > 0:
@@ -756,14 +763,31 @@ class Creature(Food):
             if has_energy == False:
                 effective_speed = 0
             day.locations.append([
-                day.locations[-1][0] + math.cos(day.headings[-1]) * effective_speed,
-                day.locations[-1][1] + math.sin(day.headings[-1]) * effective_speed,
+                day.locations[-1][0] + math.cos(day.headings[-1]) * effective_speed / SIM_RESOLUTION,
+                day.locations[-1][1] + math.sin(day.headings[-1]) * effective_speed / SIM_RESOLUTION,
                 day.locations[-1][2]
             ])
+            #prevent overshoot
+            x_overshoot = abs(day.locations[-1][0]) - self.world.dimensions[0]
+            if x_overshoot > 0:
+                if day.locations[-1][0] > 0:
+                    day.locations[-1][0] -= x_overshoot
+                else:
+                    day.locations[-1][0] += x_overshoot
+            y_overshoot = abs(day.locations[-1][1]) - self.world.dimensions[1]
+            if y_overshoot > 0:
+                if day.locations[-1][1] > 0:
+                    day.locations[-1][1] -= y_overshoot
+                else:
+                    day.locations[-1][1] += y_overshoot
+
+
+
+
             self.world_location = day.locations[-1]
 
             #Update energy
-
+            day.energies.append(day.energies[-1] - self.energy_cost)
 
             """
             Plan
@@ -808,7 +832,7 @@ class Creature(Food):
                 - 300 food - Size 1.3-1.4 average after 30. Speed is higher.
 
             """
-            day.energies.append(day.energies[-1] - self.energy_cost)
+
 
     def eat_animation(self, start_time = None, end_time = None, time_step = 0.3):
         if start_time == None:
@@ -817,7 +841,7 @@ class Creature(Food):
             end_time = start_time + 0.3 #Should make this a constant
 
         start_time = round(start_time * 60) / 60
-        duration = 50 * time_step
+        duration = 50 * time_step * SIM_RESOLUTION
         duration = max(round(duration * 60) / 60, 1/30)
         end_time = start_time + duration
 
@@ -1425,7 +1449,7 @@ class DrawnNaturalSim(Bobject):
             #print(date_record['day_length'])
             def step_through_day():
                 if self.day_length_style == 'fixed_speed':
-                    time_step = 1 / DEFAULT_DAY_LENGTH * DEFAULT_DAY_ANIM_DURATION
+                    time_step = DEFAULT_DAY_ANIM_DURATION / DEFAULT_DAY_LENGTH
                 elif self.day_length_style == 'fixed_length':
                     if date_record['day_length'] == 0:
                         self.elapsed_time += date_record['anim_durations']['day']

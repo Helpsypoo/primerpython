@@ -55,26 +55,44 @@ class InclusiveFitness(Scene):
             thing.disappear(disappear_time = 6.5 - (len(to_disappear) - 1 - i) * 0.05)
 
     def sim_rules(self):
-        sim = natural_sim.DrawnNaturalSim(
-            scale = 4,
-            #food_count = 10,
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 34],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 0],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1, animate = False)
+
+        world = natural_sim.DrawnNaturalSim(
+            scale = 2.8,
+            food_count = 50,
             #initial_energy = 1500,
             #dimensions = [75, 75],
-            sim = 'ns_env_intro_4',
+            #sim = 'ns_env_intro_4',
             #initial_creatures = 3,
             location = [0, 0, 0],
-            #day_length_style = 'fixed_speed',
-            day_length_style = 'fixed_length'
+            day_length_style = 'fixed_speed',
+            #day_length_style = 'fixed_length'
             #mutation_switches = [False, False, False]
         )
-        sim.sim.date_records[0]['anim_durations'] = {
+        num_days = 1
+        for i in range(num_days):
+            save = False
+            if i == num_days - 1:
+                save = True
+            world.sim.sim_next_day(save = save)
+
+        world.sim.date_records[0]['anim_durations'] = {
             'dawn' : 1, #Put out food and creatures
             'morning' : 0.5, #pause after setup
-            'day' : 4, #creatures go at it
+            'day' : 2, #creatures go at it
             'evening' : 0.5, #pause before reset
             'night' : 0.5 #reset
         }
-        sim.add_to_blender(appear_time = 1, start_delay = 2)
+        world.add_to_blender(appear_time = 0, start_delay = 0)
 
 
 
