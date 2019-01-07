@@ -59,8 +59,8 @@ import tex_complex
 imp.reload(tex_complex)
 from tex_complex import TexComplex
 
-import bvl
-imp.reload(bvl)
+import inclusive_fitness
+imp.reload(inclusive_fitness)
 
 from helpers import *
 
@@ -163,13 +163,19 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = 
             break
 
 def is_scene(obj):
-   if not inspect.isclass(obj):
-      return False
-   if not issubclass(obj, Scene):
-      return False
-   if obj == Scene:
-      return False
-   return True
+    #print('checking scene')
+    #if "TextScene" in str(obj):
+    #print(obj)
+    if not inspect.isclass(obj):
+        #print('not class')
+        return False
+    if not issubclass(obj, Scene):
+        #print('not subclass of scene')
+        return False
+    if obj == Scene:
+        #print('is scene class itself')
+        return False
+    return True
 
 def get_total_duration(scenes):
     #scenes is a list of (name, object) pairs
@@ -350,10 +356,8 @@ def main():
     """"""
 
     #test()
-
     #draw_scenes_from_file(vn, clear = False)
-    draw_scenes_from_file(bvl)
-
+    draw_scenes_from_file(inclusive_fitness)
     '''tournament = centipede.Tournament(
         initial_players = 'spread',
         mutation_chance = 0

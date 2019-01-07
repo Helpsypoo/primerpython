@@ -457,7 +457,7 @@ class Bobject(object):
         for child in obj.children:
             self.tweak_colors_recursive(obj = child)
 
-    def blob_wave(
+    """def blob_wave(
         self,
         start_time = 0,
         duration = 0,
@@ -1260,7 +1260,7 @@ class Bobject(object):
 
         mouth.keyframe_insert(data_path = 'location', frame = end_frame)
         mouth.keyframe_insert(data_path = 'rotation_euler', frame = end_frame)
-        mouth.keyframe_insert(data_path = 'scale', frame = end_frame)
+        mouth.keyframe_insert(data_path = 'scale', frame = end_frame)"""
 
     def de_explode(
         self,

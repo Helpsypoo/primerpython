@@ -4,8 +4,6 @@ from random import random, uniform, randrange
 import bpy
 
 import imp
-import scene
-imp.reload(scene)
 from scene import Scene
 
 import svg_bobject
@@ -40,7 +38,7 @@ class SelfishGene(Scene):
         super().play()
 
         #self.intro()
-        #self.quote()
+        self.quote()
         #self.replicating_creatures()
         #self.dna()
         #self.sexual_reproduction()
@@ -50,7 +48,7 @@ class SelfishGene(Scene):
         #self.strategies()
         #self.end_card()
         #self.thumbnail()
-        self.banner_angled()
+        #self.banner_angled()
 
     def intro(self):
         sg = svg_bobject.SVGBobject(

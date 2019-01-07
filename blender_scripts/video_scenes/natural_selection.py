@@ -3,8 +3,8 @@ import math
 import bpy
 
 import imp
-import scene
-imp.reload(scene)
+#import scene
+#imp.reload(scene)
 from scene import Scene
 
 import svg_bobject
