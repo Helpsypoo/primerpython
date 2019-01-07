@@ -43,7 +43,8 @@ class InclusiveFitness(Scene):
         super().play()
 
         #self.intro()
-        self.green_beard()
+        self.sim_rules()
+        #self.green_beard()
         #self.end_card()
         #self.thumbnail()
 
@@ -54,7 +55,29 @@ class InclusiveFitness(Scene):
             thing.disappear(disappear_time = 6.5 - (len(to_disappear) - 1 - i) * 0.05)
 
     def sim_rules(self):
-        pass
+        sim = natural_sim.DrawnNaturalSim(
+            scale = 4,
+            #food_count = 10,
+            #initial_energy = 1500,
+            #dimensions = [75, 75],
+            sim = 'ns_env_intro_4',
+            #initial_creatures = 3,
+            location = [0, 0, 0],
+            #day_length_style = 'fixed_speed',
+            day_length_style = 'fixed_length'
+            #mutation_switches = [False, False, False]
+        )
+        sim.sim.date_records[0]['anim_durations'] = {
+            'dawn' : 1, #Put out food and creatures
+            'morning' : 0.5, #pause after setup
+            'day' : 4, #creatures go at it
+            'evening' : 0.5, #pause before reset
+            'night' : 0.5 #reset
+        }
+        sim.add_to_blender(appear_time = 1, start_delay = 2)
+
+
+
 
     def green_beard(self):
 

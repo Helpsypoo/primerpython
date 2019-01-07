@@ -8,6 +8,8 @@ import bobject
 imp.reload(bobject)
 from bobject import *
 
+import blobject
+
 import helpers
 imp.reload(helpers)
 from helpers import *
@@ -831,8 +833,7 @@ class Creature(Food):
         if world == None:
             raise Warning("Must define world to add creature to Blender")
 
-        cre_bobj = import_object(
-            'boerd_blob', 'creatures',
+        cre_bobj = blobject.Blobject(
             location = scalar_mult_vec(
                 self.days[0].locations[0],
                 world.blender_units_per_world_unit
