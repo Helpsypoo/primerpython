@@ -294,13 +294,20 @@ def draw_scenes_from_file(script_file, clear = True):
 def test():
     initialize_blender()
 
-    for i in range(2):
-        for j in range(2):
-            blob = Blobject(
-                scale = 2,
-                location = [-10 + 5 * i, -6 + 6 * j, 0]
-            )
-            blob.add_to_blender(appear_time = -1)
+    sim = natural_sim.DrawnNaturalSim(
+        mutation_switches = [True, True, True, True, False],
+        scale = 2.2,
+        initial_creatures = 1,
+        food_count = 1,
+        initial_energy = 50000,
+        #sim = 'altruism_test',
+        location = [0, 0, 0],
+        day_length_style = 'fixed_speed'
+    )
+
+    sim.sim.sim_next_day()
+
+    sim.add_to_blender(appear_time = 0)
 
 def marketing():
     scene_end = 12

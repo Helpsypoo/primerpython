@@ -38,6 +38,9 @@ class TexBobject(SVGBobject):
         if 'vert_align_centers' not in kwargs:
             kwargs['vert_align_centers'] = True
 
+        if 'name' not in kwargs:
+            kwargs['name'] = 'tex'
+
         #paths = get_svg_file_paths(expressions)
         super().__init__(*expressions, **kwargs)
         #self.active_expression_path = self.paths[0]

@@ -32,6 +32,7 @@ class GraphBobject(Bobject):
         centered = False,
         high_res_curve_indices = [0], #by default, make the first curve high res
         include_y = True,
+        padding = GRAPH_PADDING,
         **kwargs
     ):
         print('Initializing graph bobject')
@@ -55,8 +56,9 @@ class GraphBobject(Bobject):
         self.y_label_pos = y_label_pos
         self.y_label_rot = y_label_rot
 
-        self.width = width - 2 * GRAPH_PADDING
-        self.height = height - 2 * GRAPH_PADDING
+        self.padding = padding
+        self.width = width - 2 * self.padding
+        self.height = height - 2 * self.padding
         self.tick_step = tick_step #Either 'auto' or a list
         self.tick_labels_x = []
         self.tick_bobjs_x = []
@@ -103,9 +105,9 @@ class GraphBobject(Bobject):
         apply_material(cyl_bobj.objects[0], 'color2')
         self.add_subbobject(cyl_bobj)
         ref = cyl_bobj.ref_obj
-        ref.location = (self.x_range[0] * self.domain_scale_factor - GRAPH_PADDING, 0, 0)
+        ref.location = (self.x_range[0] * self.domain_scale_factor - self.padding, 0, 0)
         ref.children[0].rotation_euler = (0, math.pi / 2, 0)
-        ref.children[0].scale = (AXIS_DEPTH, AXIS_WIDTH, self.width + 2 * GRAPH_PADDING)
+        ref.children[0].scale = (AXIS_DEPTH, AXIS_WIDTH, self.width / 2 + self.padding)
 
         if self.arrows == 'positive' or self.arrows == True:
             con_bobj = import_object('arrow_head', name = 'arrow_ref')
@@ -113,7 +115,7 @@ class GraphBobject(Bobject):
             self.add_subbobject(con_bobj)
             ref = con_bobj.ref_obj
             #con.parent = self.ref_obj
-            ref.location = (self.x_range[1] * self.domain_scale_factor + GRAPH_PADDING, 0, 0)
+            ref.location = (self.x_range[1] * self.domain_scale_factor + self.padding, 0, 0)
             ref.children[0].rotation_euler = (0, math.pi / 2, 0)
             ref.children[0].scale = ARROW_SCALE
 
@@ -122,17 +124,22 @@ class GraphBobject(Bobject):
                 apply_material(con_bobj.objects[0], 'color2')
                 self.add_subbobject(con_bobj)
                 ref = con_bobj.ref_obj
-                ref.location = (self.x_range[0] * self.domain_scale_factor - GRAPH_PADDING, 0, 0)
+                ref.location = (self.x_range[0] * self.domain_scale_factor - self.padding, 0, 0)
                 ref.children[0].rotation_euler = (0, -math.pi / 2, 0)
                 ref.children[0].scale = ARROW_SCALE
 
         #x axis label
-        x_lab = tex_bobject.TexBobject(self.x_label, name = 'x_lab', centered = True)
+        x_lab = tex_bobject.TexBobject(
+            self.x_label,
+            name = 'x_lab',
+            centered = True,
+            color = 'color5'
+        )
         #x_lab_container = tex_complex.TexComplex(x_lab, centered = True, name = 'x_lab_container')
         if self.x_label_pos == 'along':
             x_lab.ref_obj.location = ((self.x_range[1] + self.x_range[0]) * self.domain_scale_factor / 2, -2, 0)
         elif self.x_label_pos == 'end':
-            x_lab.ref_obj.location = (self.x_range[1] * self.domain_scale_factor + GRAPH_PADDING + 1.5, 0, 0)
+            x_lab.ref_obj.location = (self.x_range[1] * self.domain_scale_factor + self.padding + 1.5, 0, 0)
             x_lab.centered = False
         self.add_subbobject(x_lab)
         self.x_label_bobject = x_lab
@@ -144,16 +151,16 @@ class GraphBobject(Bobject):
             #cyl_bobj.ref_obj.parent = self.ref_obj
             self.add_subbobject(cyl_bobj)
             ref = cyl_bobj.ref_obj
-            ref.location = (0, self.y_range[0] * self.range_scale_factor - GRAPH_PADDING, 0)
+            ref.location = (0, self.y_range[0] * self.range_scale_factor - self.padding, 0)
             ref.children[0].rotation_euler = (-math.pi / 2, 0, 0)
-            ref.children[0].scale = (AXIS_WIDTH, AXIS_DEPTH, self.height + 2 * GRAPH_PADDING)
+            ref.children[0].scale = (AXIS_WIDTH, AXIS_DEPTH, self.height/2 + self.padding)
 
             if self.arrows == 'positive' or self.arrows == True:
                 con_bobj = import_object('arrow_head', name = 'arrow_ref')
                 apply_material(con_bobj.objects[0], 'color2')
                 self.add_subbobject(con_bobj)
                 ref = con_bobj.ref_obj
-                ref.location = (0, self.y_range[1] * self.range_scale_factor + GRAPH_PADDING, 0)
+                ref.location = (0, self.y_range[1] * self.range_scale_factor + self.padding, 0)
                 ref.children[0].rotation_euler = (-math.pi / 2, 0, 0)
                 ref.children[0].scale = ARROW_SCALE
 
@@ -162,17 +169,22 @@ class GraphBobject(Bobject):
                     apply_material(con_bobj.objects[0], 'color2')
                     self.add_subbobject(con_bobj)
                     ref = con_bobj.ref_obj
-                    ref.location = (0, self.y_range[0] * self.range_scale_factor - GRAPH_PADDING, 0)
+                    ref.location = (0, self.y_range[0] * self.range_scale_factor - self.padding, 0)
                     ref.rotation_euler = (math.pi / 2, 0, 0)
                     ref.children[0].scale = ARROW_SCALE
 
             #y axis label
-            y_lab = tex_bobject.TexBobject(self.y_label, name = 'y_lab', centered = True)
+            y_lab = tex_bobject.TexBobject(
+                self.y_label,
+                name = 'y_lab',
+                centered = True,
+                color = 'color5'
+            )
             #y_lab_container = tex_complex.TexComplex(y_lab, centered = True, name = 'y_lab_container')
             if self.y_label_pos == 'along':
                 y_lab.ref_obj.location = ( -2, self.y_range[1] * self.range_scale_factor / 2, 0)
             elif self.y_label_pos == 'end':
-                y_lab.ref_obj.location = (0, self.y_range[1] * self.range_scale_factor + GRAPH_PADDING + 1.5, 0)
+                y_lab.ref_obj.location = (0, self.y_range[1] * self.range_scale_factor + self.padding + 1.5, 0)
             if self.y_label_rot == True:
                 y_lab.ref_obj.rotation_euler = (0, 0, math.pi / 2)
             self.add_subbobject(y_lab)
@@ -252,7 +264,8 @@ class GraphBobject(Bobject):
             ),
             centered = True,
             scale = label_scale,
-            name = 'x_tick_label ' + str(value)
+            name = 'x_tick_label ' + str(value),
+            color = 'color5'
         )
         self.add_subbobject(label)
         self.tick_labels_x.append(label)
@@ -282,7 +295,8 @@ class GraphBobject(Bobject):
             ),
             centered = 'right',
             scale = label_scale,
-            name = 'y_tick_label ' + str(value)
+            name = 'y_tick_label ' + str(value),
+            color = 'color5'
         )
         self.add_subbobject(label)
         self.tick_labels_y.append(label)
@@ -1434,7 +1448,7 @@ class GraphBobject(Bobject):
     ):
         if 'new_location' in kwargs and self.centered == True:
             #Likely more complicated than it needs to be, but currently, the
-            #ref_obj is situated in a way doesn't take padding into account.
+            #ref_obj is situated in a way doesn't take self.padding into account.
 
             if 'new_scale' in kwargs:
                 scale = kwargs['new_scale']
@@ -1474,7 +1488,7 @@ class GraphBobject3D(GraphBobject):
         self.z_label = z_label
         self.z_label_pos = z_label_pos
 
-        self.depth = depth - 2 * GRAPH_PADDING
+        self.depth = depth - 2 * self.padding
         self.tick_labels_z = []
         self.tick_bobjs_z = []
 
@@ -1493,9 +1507,9 @@ class GraphBobject3D(GraphBobject):
         apply_material(cyl_bobj.objects[0], 'color2')
         self.add_subbobject(cyl_bobj)
         ref = cyl_bobj.ref_obj
-        ref.location = (0, 0, self.z_range[0] * self.z_scale_factor - GRAPH_PADDING)
+        ref.location = (0, 0, self.z_range[0] * self.z_scale_factor - self.padding)
         ref.children[0].rotation_euler = (0, 0, 0)
-        ref.children[0].scale = (AXIS_DEPTH, AXIS_WIDTH, self.width + 2 * GRAPH_PADDING)
+        ref.children[0].scale = (AXIS_DEPTH, AXIS_WIDTH, self.width + 2 * self.padding)
 
         if self.arrows == 'positive' or self.arrows == True:
             con_bobj = import_object('arrow_head', name = 'arrow_ref')
@@ -1503,7 +1517,7 @@ class GraphBobject3D(GraphBobject):
             self.add_subbobject(con_bobj)
             ref = con_bobj.ref_obj
             #con.parent = self.ref_obj
-            ref.location = (0, 0, self.z_range[1] * self.z_scale_factor + GRAPH_PADDING)
+            ref.location = (0, 0, self.z_range[1] * self.z_scale_factor + self.padding)
             ref.children[0].rotation_euler = (0, 0, 0)
             ref.children[0].scale = ARROW_SCALE
 
@@ -1512,16 +1526,21 @@ class GraphBobject3D(GraphBobject):
                 apply_material(con_bobj.objects[0], 'color2')
                 self.add_subbobject(con_bobj)
                 ref = con_bobj.ref_obj
-                ref.location = (0, 0, self.z_range[0] * self.z_scale_factor - GRAPH_PADDING)
+                ref.location = (0, 0, self.z_range[0] * self.z_scale_factor - self.padding)
                 ref.children[0].rotation_euler = (math.pi, 0, 0)
                 ref.children[0].scale = ARROW_SCALE
 
         #z axis label
-        z_lab = tex_bobject.TexBobject(self.z_label, name = 'z_lab', centered = True)
+        z_lab = tex_bobject.TexBobject(
+            self.z_label,
+            name = 'z_lab',
+            centered = True,
+            color = 'color5'
+        )
         if self.z_label_pos == 'along':
             z_lab.ref_obj.location = (0, -2, (self.z_range[1] + self.z_range[0]) * self.z_scale_factor / 2)
         elif self.z_label_pos == 'end':
-            z_lab.ref_obj.location = (0, 0, self.z_range[1] * self.z_scale_factor + GRAPH_PADDING + 1.5)
+            z_lab.ref_obj.location = (0, 0, self.z_range[1] * self.z_scale_factor + self.padding + 1.5)
             z_lab.centered = False
         self.add_subbobject(z_lab)
         self.z_label_bobject = z_lab
@@ -1588,7 +1607,8 @@ class GraphBobject3D(GraphBobject):
             ),
             centered = True,
             scale = label_scale,
-            name = 'x_tick_label ' + str(value)
+            name = 'x_tick_label ' + str(value),
+            color = 'color5'
         )
         self.add_subbobject(label)
         self.tick_labels_x.append(label)
@@ -1633,7 +1653,8 @@ class GraphBobject3D(GraphBobject):
             ),
             centered = True,
             scale = label_scale,
-            name = 'y_tick_label ' + str(value)
+            name = 'y_tick_label ' + str(value),
+            color = 'color5'
         )
         self.add_subbobject(label)
         self.tick_labels_y.append(label)
@@ -1678,7 +1699,8 @@ class GraphBobject3D(GraphBobject):
             ),
             centered = True,
             scale = label_scale,
-            name = 'z_tick_label ' + str(value)
+            name = 'z_tick_label ' + str(value),
+            color = 'color5'
         )
         self.add_subbobject(label)
         self.tick_labels_z.append(label)

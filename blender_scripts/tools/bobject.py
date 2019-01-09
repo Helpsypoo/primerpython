@@ -340,11 +340,12 @@ class Bobject(object):
         if constant_rate == True:
             for fc in self.ref_obj.animation_data.action.fcurves:
                 if fc.data_path == 'rotation_euler':
-                    fc.extrapolation = 'LINEAR' # Set extrapolation type
+                    #fc.extrapolation = 'LINEAR' # Set extrapolation type
                     # Iterate over this fcurve's keyframes and set handles to vector
                     for kp in fc.keyframe_points:
-                        kp.handle_left_type  = 'VECTOR'
-                        kp.handle_right_type = 'VECTOR'
+                        #kp.handle_left_type  = 'VECTOR'
+                        #kp.handle_right_type = 'VECTOR'
+                        kp.interpolation = 'LINEAR'
 
     def pulse(
         self,

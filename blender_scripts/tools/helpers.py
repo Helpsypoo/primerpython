@@ -758,7 +758,6 @@ def import_object(filename, *folders, **kwargs):
         reye.keyframe_insert(data_path = 'scale', frame = BLINK_CYCLE_LENGTH)
 
 
-        num_blinks = 0
         while t < cycle_length - BLINK_LENGTH:
             blink_roll = random()
             if blink_roll < BLINK_CHANCE:
@@ -782,10 +781,8 @@ def import_object(filename, *folders, **kwargs):
 
                 t += BLINK_LENGTH
 
-                num_blinks += 1
             else:
                 t += 1
-        print(num_blinks)
         #Make blinks cyclical
         try:
             leye_fcurve = ref_obj.children[0].animation_data.action.fcurves.find(

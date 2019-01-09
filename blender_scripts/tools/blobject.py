@@ -5,6 +5,8 @@ from helpers import *
 
 class Blobject(Bobject):
     def __init__(self, mat = 'creature_color3', **kwargs):
+        if 'name' not in kwargs:
+            kwargs['name'] = 'blob'
         #returns a bobject
         blob = import_object(
             'boerd_blob', 'creatures',
@@ -17,22 +19,87 @@ class Blobject(Bobject):
         if self.get_from_kwargs('mouth', False):
             for child in self.ref_obj.children[0].children:
                 if 'Mouth' in child.name:
-                    mouth = child
+                    self.mouth = child
                     break
 
-            mouth.location = [-0.04, 0.36, 0.40609]
-            mouth.rotation_euler = [
+            self.mouth.location = [-0.04, 0.36, 0.40609]
+            self.mouth.rotation_euler = [
                 -8.91 * math.pi / 180,
                 -0.003 * math.pi / 180,
                 -3.41 * math.pi / 180,
             ]
-            mouth.scale = [
+            self.mouth.scale = [
                 0.487,
                 0.719,
                 0.398
             ]
 
-    def add_beard(self, mat = None, start_time = -1):
+    def move_head(
+        self,
+        rotation_quaternion = None,
+        start_time = None,
+        end_time = None,
+        attack = None,
+        decay = None
+    ):
+        if start_time == None:
+            raise Warning('Need start time for move_head')
+        if rotation_quaternion == None:
+            raise Warning('Need angle for move_head')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        if attack == None:
+            if end_time == None:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+        #Head
+        head = self.ref_obj.children[0].pose.bones[3]
+        initial = list(head.rotation_quaternion)
+
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        head.rotation_quaternion = rotation_quaternion
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + attack_frames
+        )
+
+        #And back
+        if end_time != None:
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = end_frame - decay_frames
+            )
+            head.rotation_quaternion = initial
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = end_frame
+            )
+
+
+
+
+    def add_beard(self, mat = None, start_time = -1, duration = OBJECT_APPEARANCE_TIME):
         beard = import_object(
             'beard', 'misc',
             location = [0.86383, -1.79778, 0.29876],
@@ -42,12 +109,74 @@ class Blobject(Bobject):
         beard.ref_obj.parent = self.ref_obj.children[0]
         beard.ref_obj.parent_bone = self.ref_obj.children[0].pose.bones["brd_bone_neck"].name
         beard.ref_obj.parent_type = 'BONE'
-        beard.add_to_blender(appear_time = start_time)
+        beard.add_to_blender(appear_time = start_time, transition_time = duration)
 
         if mat is not None:
             apply_material(beard.ref_obj.children[0], mat)
 
+    def hold_gift(
+        self,
+        start_time = None,
+        end_time = None,
+        attack = None,
+        decay = None
+    ):
+        if start_time == None:
+            raise Warning('Need start time for hold_gift')
 
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        if attack == None:
+            if end_time == None:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+        self.hold_object(
+            start_time = start_time,
+            end_time = end_time,
+            attack = attack,
+            decay = decay
+        )
+
+        gift = import_object(
+            'gift_white', 'misc',
+            rotation_euler = [-math.pi / 2, 0, 0],
+            scale = 0.28
+        )
+        gift.add_to_blender(
+            appear_time = start_time,
+            transition_time = attack * FRAME_RATE
+        )
+        gift.ref_obj.parent = self.ref_obj
+        gift.move_to(
+            new_location = [0, 0, 0.8],
+            start_time = start_time,
+            end_time = start_time + attack
+        )
+
+        if end_time != None:
+            gift.move_to(
+                new_location = [0, 0, 0],
+                new_scale = 0,
+                start_time = end_time - decay,
+                end_time = end_time
+            )
 
     def blob_wave(
         self,
@@ -700,7 +829,7 @@ class Blobject(Bobject):
         decay = None
     ):
         if start_time == None:
-            raise Warning('Need start time for evil pose')
+            raise Warning('Need start time for hold_object')
 
         start_frame = start_time * FRAME_RATE
         end_frame = None
@@ -749,8 +878,6 @@ class Blobject(Bobject):
             data_path = "rotation_quaternion",
             frame = start_frame + attack_frames
         )
-
-        #Shakes?
 
         #And back
         if end_frame != None:
