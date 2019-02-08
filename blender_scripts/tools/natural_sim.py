@@ -16,7 +16,7 @@ from helpers import *
 
 #Sim constants
 WORLD_DIMENSIONS = [150, 150]
-SIM_RESOLUTION = 0.3
+SIM_RESOLUTION = 0.25
 DEFAULT_DAY_LENGTH = 600 * SIM_RESOLUTION
 PREDATOR_SIZE_RATIO = 1.2 #Vals close to 1 apply strong pressure toward bigness,
                           #since it becomes possible to eat recent ancestors.
@@ -37,7 +37,7 @@ HOMEBOUND_RATIO = 2# 1.5
 
 
 #Visual constants
-DEFAULT_DAY_ANIM_DURATION = 8 #seconds
+DEFAULT_DAY_ANIM_DURATION = 4 #seconds
 BLENDER_UNITS_PER_WORLD_UNIT = 1 / 40
 FOOD_SCALE = 2 * BLENDER_UNITS_PER_WORLD_UNIT
 BASE_CREATURE_SCALE = 0.25
@@ -338,7 +338,7 @@ class Creature(Food):
         speed = 1,
         size = 1,
         sense = 1,
-        altruist = False,
+        altruist = True,
         kin_radius = 0,
         parent = None,
         world = None
@@ -628,7 +628,7 @@ class Creature(Food):
                     rand = correction
 
                 new_heading = day.heading_targets[-1] + rand
-                print(new_heading)
+                #print(new_heading)
 
 
             #Check for predators. If one is close, abandon foraging and flee
@@ -1026,7 +1026,7 @@ class NaturalSim(object):
                 self.initial_creatures.append(
                     Creature(
                         size = 1 ,#+ randrange(-5, 6) * MUTATION_VARIATION,
-                        speed = 2 ,#+ randrange(-5, 6) * MUTATION_VARIATION,
+                        speed = 1 ,#+ randrange(-5, 6) * MUTATION_VARIATION,
                         sense = 1 ,#+ randrange(-5, 6) * MUTATION_VARIATION
                     )
                 )

@@ -38,7 +38,8 @@ class TextScene(Scene):
         #self.intro_card()
         #self.outline()
         #self.inner_ear_intro()
-        self.asymmetrical_inputs()
+        #self.asymmetrical_inputs()
+        self.long_term_symptoms()
         #self.transition_card()
         #self.end_card()
 
@@ -499,6 +500,58 @@ class TextScene(Scene):
             spin_rate = rate,
             start_time = zoom_out_time - 1 / rate * 0.125
         )'''
+
+    def long_term_symptoms(self):
+        lt = tex_bobject.TexBobject(
+            "\\text{Long-term effects}",
+            location = [-12.5, 5.5, 0],
+            #centered = True,
+            typeface = 'arial',
+            scale = 3
+        )
+        lt.add_to_blender(appear_time = 0)
+
+        vnga = tex_bobject.TexBobject(
+            "\\bullet\\text{Vertigo and nystagmus go away}",
+            typeface = 'arial',
+        )
+        rb = tex_bobject.TexBobject(
+            "\\bullet\\text{Reduced balance}",
+            typeface = 'arial',
+        )
+        d = tex_bobject.TexBobject(
+            "\\bullet\\text{Dizziness}",
+            typeface = 'arial',
+        )
+        bv = tex_bobject.TexBobject(
+            "\\bullet\\text{Blurred vision}",
+            typeface = 'arial',
+        )
+        nhl = tex_bobject.TexBobject(
+            "\\bullet\\text{Not hearing loss}",
+            typeface = 'arial',
+        )
+        n = []
+        for i in range(1, 4):
+            n.append(nhl.lookup_table[0][i])
+        for char in n:
+            char.color_shift(
+                color = COLORS_SCALED[2],
+                start_time = 4,
+                duration_time = 200,
+            )
+
+
+        contents = tex_complex.TexComplex(
+            vnga, rb, d, bv, nhl,
+            location = [-11.5, 2, 0],
+            scale = 1.5,
+            multiline = True
+        )
+        contents.add_to_blender(
+            appear_time = 1,
+            subbobject_timing = [0, 35, 70, 105, 140]
+        )
 
     def transition_card(self):
         text = tex_bobject.TexBobject(

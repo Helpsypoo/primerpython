@@ -6,7 +6,7 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'medium'
+RENDER_QUALITY = 'final'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
@@ -47,7 +47,7 @@ else:
 '''
 Colorssssss
 '''
-color_scheme = 2
+color_scheme = 4
 if color_scheme == 1:
     #Coolors Exported Palette - https://coolors.co/393e41-f3f2f0-3e7ea0-ff9400-e7e247
     COLORS = [

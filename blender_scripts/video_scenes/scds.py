@@ -37,6 +37,8 @@ class TextScene(Scene):
         #These don't really need to be object methods ¯\_(ツ)_/¯
         #self.intro_card()
         self.outline()
+        #self.inner_ear_intro()
+        #self.surgery_routes()
         #self.transition_card()
         #self.end_card()
 
@@ -150,7 +152,7 @@ class TextScene(Scene):
         )
 
         acronym = tex_bobject.TexBobject(
-            '\\bullet\\text{Vestibular system overview}',
+            '\\bullet\\text{Inner ear overview}',
             color = 'color2',
             typeface = 'arial'
         )
@@ -160,7 +162,7 @@ class TextScene(Scene):
             typeface = 'arial'
         )
         treat = tex_bobject.TexBobject(
-            '\\bullet\\text{Treatments}',
+            '\\bullet\\text{Diagnosis and treatment}',
             color = 'color2',
             typeface = 'arial'
         )
@@ -218,6 +220,450 @@ class TextScene(Scene):
         #sc.move_to(new_location = [0, 5.5, 0], start_time = 15.75)
         ds.disappear(disappear_time = 16)
         #ds.move_to(new_location = [0, 5.5, 0], start_time = 15.75)
+
+    def inner_ear_intro(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 5],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0.2, 0, 0.25],
+            swivel_rotation_euler = [math.pi / 2, 0,  55 * math.pi / 180],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1)
+        cam_bobj.ref_obj.children[0].data.clip_end = 200
+
+        start_time = 15
+        coch_time = 18.5
+        vest_time = 20.5
+        sup_time = 29.5
+        temp_time = 32.5
+        dehiscence_time = 39.5
+        head_time = 48
+
+        r_inner_ear = bpy.data.objects['inner ear_from microCT']
+        t_bone = bpy.data.objects['Temporal Bone 2 bone.outer']
+        skin = bpy.data.objects['robertot']
+        to_keep = [r_inner_ear, t_bone, skin]
+        for obj in bpy.data.objects:
+            if obj not in to_keep:
+                obj.hide = True
+                obj.hide_render = True
+
+        slots = r_inner_ear.material_slots
+        v_sys_mats = [
+            slots[1].material,
+            slots[2].material,
+            slots[3].material,
+            slots[4].material
+        ]
+        coch_mat = slots[0].material
+        sup_mat = slots[2].material
+
+        for mat in v_sys_mats + [coch_mat]:
+            nodes = mat.node_tree.nodes
+            mix = nodes['Mix Shader']
+            mix.inputs[0].default_value = 0
+            princ = nodes['Principled BSDF']
+            color = princ.inputs[0]
+
+            if mat == coch_mat:
+                starting_color = list(color.default_value)
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = coch_time * FRAME_RATE
+                )
+                color.default_value = [0, 1, 0, 1]
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = coch_time * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (vest_time - 0.5) * FRAME_RATE
+                )
+                color.default_value = starting_color
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (vest_time - 0.5) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+            if mat != coch_mat and mat != sup_mat:
+                starting_color = list(color.default_value)
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = vest_time * FRAME_RATE
+                )
+                color.default_value = [0, 1, 0, 1]
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = vest_time * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (sup_time - 0.5) * FRAME_RATE
+                )
+                color.default_value = starting_color
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (sup_time - 0.5) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+            if mat == sup_mat:
+                starting_color = list(color.default_value)
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = vest_time * FRAME_RATE
+                )
+                color.default_value = [0, 1, 0, 1]
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = vest_time * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+                '''color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (temp_time - 0.5) * FRAME_RATE
+                )
+                color.default_value = starting_color
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (temp_time - 0.5) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )'''
+
+        #Fade in temporal bone, then Dehiscence
+        for slot in t_bone.material_slots:
+            mat = slot.material
+            nodes = mat.node_tree.nodes
+            mix = nodes['Mix Shader']
+            mix.inputs[0].default_value = 1
+            #princ = nodes['Principled BSDF']
+            #color = princ.inputs[0]
+
+            mix.inputs[0].keyframe_insert(
+                data_path = 'default_value',
+                frame = (temp_time) * FRAME_RATE
+            )
+            mix.inputs[0].default_value = 0.8
+            mix.inputs[0].keyframe_insert(
+                data_path = 'default_value',
+                frame = (temp_time) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+            )
+            if mat == t_bone.material_slots[1].material: #Dehiscence
+                mix.inputs[0].default_value = 0.4
+                mix.inputs[0].keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (dehiscence_time) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+                mix2 = nodes['Mix Shader.001'].inputs[0]
+                mix2.default_value = 0
+                mix2.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = dehiscence_time * FRAME_RATE
+                )
+                mix2.default_value = 1
+                mix2.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = dehiscence_time * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+                em = nodes['Emission']
+                color = em.inputs[0]
+                '''color.default_value = [1, 1, 1, 1]
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = turn_red_time * FRAME_RATE
+                )'''
+                color.default_value = [1, 0, 0, 1]
+                '''color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = turn_red_time * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+                )'''
+
+        #Fade in head for context
+        mat = skin.material_slots[0].material
+        nodes = mat.node_tree.nodes
+        mix = nodes['Mix Shader']
+        mix.inputs[0].default_value = 1
+        #princ = nodes['Principled BSDF']
+        #color = princ.inputs[0]
+
+        mix.inputs[0].keyframe_insert(
+            data_path = 'default_value',
+            frame = (head_time - 0.5) * FRAME_RATE
+        )
+        mix.inputs[0].default_value = 0.9
+        mix.inputs[0].keyframe_insert(
+            data_path = 'default_value',
+            frame = (head_time - 0.5) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+        )
+
+        #Zoom out for temporal bone
+        cam_swivel.move_to(
+            new_location = [0.2, 0, 1.25],
+            start_time = temp_time - 0.5,
+            end_time = temp_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+        cam_bobj.move_to(
+            new_location = [0, 0, 24],
+            start_time = temp_time - 0.5,
+            end_time = temp_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+
+        #Zoom out for head context
+        cam_swivel.move_to(
+            new_location = [0, 5.1, -2],
+            start_time = head_time - 0.5,
+            end_time = head_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+        cam_bobj.move_to(
+            new_location = [0, 0, 100],
+            start_time = head_time - 0.5,
+            end_time = head_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+
+        #swivel_rotation_euler = [75 * math.pi / 180, 0, 45 * math.pi / 180],
+
+
+        #Spinnnnnnn camera
+        cam_swivel.spin(
+            spin_rate = 0.11,
+            start_time = start_time,
+            axis = 2
+        )
+
+    def surgery_routes(self):
+        #Continuation of inner_ear_intro
+
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 5],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0.2, 0, 0.25],
+            swivel_rotation_euler = [math.pi / 2, 0,  55 * math.pi / 180],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1)
+        cam_bobj.ref_obj.children[0].data.clip_end = 200
+
+        start_time = 15
+        coch_time = 18.5
+        vest_time = 20.5
+        sup_time = 29.5
+        temp_time = 32.5
+        dehiscence_time = 39.5
+        head_time = 48
+
+        behind_time = 55
+
+        r_inner_ear = bpy.data.objects['inner ear_from microCT']
+        t_bone = bpy.data.objects['Temporal Bone 2 bone.outer']
+        skin = bpy.data.objects['robertot']
+        to_keep = [r_inner_ear, t_bone, skin]
+        for obj in bpy.data.objects:
+            if obj not in to_keep:
+                obj.hide = True
+                obj.hide_render = True
+
+        slots = r_inner_ear.material_slots
+        v_sys_mats = [
+            slots[1].material,
+            slots[2].material,
+            slots[3].material,
+            slots[4].material
+        ]
+        coch_mat = slots[0].material
+        sup_mat = slots[2].material
+
+        for mat in v_sys_mats + [coch_mat]:
+            nodes = mat.node_tree.nodes
+            mix = nodes['Mix Shader']
+            mix.inputs[0].default_value = 0
+            princ = nodes['Principled BSDF']
+            color = princ.inputs[0]
+
+            if mat == coch_mat:
+                starting_color = list(color.default_value)
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = coch_time * FRAME_RATE
+                )
+                color.default_value = [0, 1, 0, 1]
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = coch_time * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (vest_time - 0.5) * FRAME_RATE
+                )
+                color.default_value = starting_color
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (vest_time - 0.5) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+            if mat != coch_mat and mat != sup_mat:
+                starting_color = list(color.default_value)
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = vest_time * FRAME_RATE
+                )
+                color.default_value = [0, 1, 0, 1]
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = vest_time * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (sup_time - 0.5) * FRAME_RATE
+                )
+                color.default_value = starting_color
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (sup_time - 0.5) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+            if mat == sup_mat:
+                starting_color = list(color.default_value)
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = vest_time * FRAME_RATE
+                )
+                color.default_value = [0, 1, 0, 1]
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = vest_time * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+                '''color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (temp_time - 0.5) * FRAME_RATE
+                )
+                color.default_value = starting_color
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (temp_time - 0.5) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )'''
+
+        #Fade in temporal bone, then Dehiscence
+        for slot in t_bone.material_slots:
+            mat = slot.material
+            nodes = mat.node_tree.nodes
+            mix = nodes['Mix Shader']
+            mix.inputs[0].default_value = 1
+            #princ = nodes['Principled BSDF']
+            #color = princ.inputs[0]
+
+            mix.inputs[0].keyframe_insert(
+                data_path = 'default_value',
+                frame = (temp_time) * FRAME_RATE
+            )
+            mix.inputs[0].default_value = 0.8
+            mix.inputs[0].keyframe_insert(
+                data_path = 'default_value',
+                frame = (temp_time) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+            )
+            if mat == t_bone.material_slots[1].material: #Dehiscence
+                mix.inputs[0].default_value = 0.4
+                mix.inputs[0].keyframe_insert(
+                    data_path = 'default_value',
+                    frame = (dehiscence_time) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+
+                mix2 = nodes['Mix Shader.001'].inputs[0]
+                mix2.default_value = 0
+                mix2.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = dehiscence_time * FRAME_RATE
+                )
+                mix2.default_value = 1
+                mix2.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = dehiscence_time * FRAME_RATE + OBJECT_APPEARANCE_TIME
+                )
+                em = nodes['Emission']
+                color = em.inputs[0]
+                '''color.default_value = [1, 1, 1, 1]
+                color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = turn_red_time * FRAME_RATE
+                )'''
+                color.default_value = [1, 0, 0, 1]
+                '''color.keyframe_insert(
+                    data_path = 'default_value',
+                    frame = turn_red_time * FRAME_RATE + 2 * OBJECT_APPEARANCE_TIME
+                )'''
+
+        #Fade in head for context
+        mat = skin.material_slots[0].material
+        nodes = mat.node_tree.nodes
+        mix = nodes['Mix Shader']
+        mix.inputs[0].default_value = 1
+        #princ = nodes['Principled BSDF']
+        #color = princ.inputs[0]
+
+        mix.inputs[0].keyframe_insert(
+            data_path = 'default_value',
+            frame = (head_time - 0.5) * FRAME_RATE
+        )
+        mix.inputs[0].default_value = 0.9
+        mix.inputs[0].keyframe_insert(
+            data_path = 'default_value',
+            frame = (head_time - 0.5) * FRAME_RATE + OBJECT_APPEARANCE_TIME
+        )
+
+        #Zoom out for temporal bone
+        cam_swivel.move_to(
+            new_location = [0.2, 0, 1.25],
+            start_time = temp_time - 0.5,
+            end_time = temp_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+        cam_bobj.move_to(
+            new_location = [0, 0, 24],
+            start_time = temp_time - 0.5,
+            end_time = temp_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+
+        #Zoom out for head context
+        cam_swivel.move_to(
+            new_location = [0, 5.1, -2],
+            start_time = head_time - 0.5,
+            end_time = head_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+        cam_bobj.move_to(
+            new_location = [0, 0, 100],
+            start_time = head_time - 0.5,
+            end_time = head_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+
+        #swivel_rotation_euler = [75 * math.pi / 180, 0, 45 * math.pi / 180],
+
+        #Go behind head for surgery view
+        cam_swivel.move_to(
+            new_location = [0, -1.9, 0.6],
+            new_angle = [math.pi / 2, 0, - math.pi / 2],
+            start_time = behind_time - 0.5,
+            end_time = behind_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+        cam_bobj.move_to(
+            new_location = [0, 0, 20],
+            start_time = behind_time - 0.5,
+            end_time = behind_time + 2 * OBJECT_APPEARANCE_TIME / FRAME_RATE
+        )
+
+        #Spinnnnnnn camera
+        '''cam_swivel.spin(
+            spin_rate = 0.11,
+            start_time = start_time,
+            axis = 2
+        )'''
 
     def transition_card(self):
         text = tex_bobject.TexBobject(

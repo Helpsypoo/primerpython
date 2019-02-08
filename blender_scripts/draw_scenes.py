@@ -63,8 +63,8 @@ import blobject
 imp.reload(blobject)
 from blobject import Blobject
 
-import inclusive_fitness
-imp.reload(inclusive_fitness)
+import scds
+imp.reload(scds)
 
 from helpers import *
 
@@ -355,9 +355,9 @@ def main():
     #tex_test()
     """"""
 
-    test()
-    #draw_scenes_from_file(vn, clear = False)
-    #draw_scenes_from_file(inclusive_fitness)
+    #test()
+    #draw_scenes_from_file(scds, clear = False)
+    draw_scenes_from_file(scds)
     '''tournament = centipede.Tournament(
         initial_players = 'spread',
         mutation_chance = 0

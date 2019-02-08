@@ -550,10 +550,6 @@ class InclusiveFitness(Scene):
         blob.move_to(start_time = 7, new_angle = [0, -15 * math.pi / 180, 0])
 
     def random_altruism_sim(self):
-        #cues = self.subscenes['spd_sim']
-        #st = cues['start']
-        #et = cues['end']
-
         cam_bobj, cam_swivel = cam_and_swivel(
             cam_location = [0, 0, 34],
             cam_rotation_euler = [0, 0, 0],
@@ -568,15 +564,15 @@ class InclusiveFitness(Scene):
         sim = natural_sim.DrawnNaturalSim(
             mutation_switches = [True, True, True, True, False],
             scale = 1.5,
-            food_count = 20,
+            food_count = 50,
             #sim = 'altruism_test',
             location = [-6.5, 0, 0],
             day_length_style = 'fixed_length'
         )
 
-        for i in range(1):
+        for i in range(50):
             save = False
-            if i == 9:
+            if i == 49:
                 save = True
             sim.sim.sim_next_day(save = save)
 
@@ -668,19 +664,6 @@ class InclusiveFitness(Scene):
                 #print()
             return counts
 
-        '''bar = g.add_bar(
-            appear_time = 2,
-            x = space_width + bar_width / 2,
-            value = 50,
-            dx = bar_width
-        )
-        bar2 = g.add_bar(
-            appear_time = 2,
-            x = 2 * space_width + bar_width * 1.5,
-            value = 50,
-            dx = bar_width
-        )'''
-
         '''bar_width = 0.5
         num_bars = 2
         space_width = (g.x_range[1] - num_bars * bar_width) / (num_bars + 1)'''
@@ -723,7 +706,7 @@ class InclusiveFitness(Scene):
         #counts = count_by_vals(9, [True, False], sim.sim)
         #update_graph_bars(0, bars, counts)
 
-        '''def draw_possible_states():
+        def draw_possible_states():
             #fast state
             start_time = 156
             counts = []
@@ -763,21 +746,31 @@ class InclusiveFitness(Scene):
                 counts.append(count)
             update_graph_bars(start_time, bars, counts)
 
-        '''
         #draw_possible_states()
 
-        sim.add_to_blender(
+        '''first_day_start = 172
+        sim_appearance_time = 150.5
+
+        #Find proper duration for first morning pause to fill talking time
+        initial_day_durs = sim.sim.date_records[0]['anim_durations']
+        first_morning_dur = first_day_start - \
+                           sim_appearance_time - \
+                           initial_day_durs['dawn'] - \
+                           1 #For standard start_delay on drawn sims
+        initial_day_durs['morning'] = first_morning_dur'''
+
+        '''sim.add_to_blender(
             appear_time = 0,
             #start_day = first_day,
             #end_day = first_day + 21
             #start_day = actual_start_day,
             #end_day = actual_start_day + 21
-        )
+        )'''
 
         #Update bars each day
         for day in sim.sim.date_records:
             date = day['date']
-            if date == 0: #Don't regraph the old days
+            if date == 0:
                 start_time = 1 - OBJECT_APPEARANCE_TIME / FRAME_RATE
                 end_time = 1
 
@@ -818,7 +811,7 @@ class InclusiveFitness(Scene):
             new_angle = [74 * math.pi / 180, 0, 0 * math.pi / 180]
         )'''
 
-        end = 20
+        end = 500
         to_disappear = [sim]
         for i, thing in enumerate(to_disappear):
             thing.disappear(disappear_time = end - (len(to_disappear) - 1 - i) * 0.05)
