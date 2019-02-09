@@ -63,8 +63,8 @@ import blobject
 imp.reload(blobject)
 from blobject import Blobject
 
-import scds
-imp.reload(scds)
+import inclusive_fitness
+imp.reload(inclusive_fitness)
 
 from helpers import *
 
@@ -294,7 +294,7 @@ def draw_scenes_from_file(script_file, clear = True):
 def test():
     initialize_blender()
 
-    sim = natural_sim.DrawnNaturalSim(
+    '''sim = natural_sim.DrawnNaturalSim(
         mutation_switches = [True, True, True, True, False],
         scale = 2.2,
         initial_creatures = 1,
@@ -302,6 +302,31 @@ def test():
         initial_energy = 50000,
         #sim = 'altruism_test',
         location = [0, 0, 0],
+        day_length_style = 'fixed_speed'
+    )'''
+
+    b_creature = natural_sim.Creature(
+        speed = 1.5,
+        size = 1.5,
+        sense = 10,
+        #altruist = False
+    )
+    s_creature = natural_sim.Creature(
+        speed = 1,
+        size = 0.5,
+        sense = 10,
+    )
+    initial_creatures = [b_creature, s_creature]
+
+
+    sim = natural_sim.DrawnNaturalSim(
+        mutation_switches = [True, True, True, True, False],
+        scale = 1.5,
+        food_count = 1,
+        initial_creatures = initial_creatures,
+        #sim = 'altruism_test',
+        location = [-6.5, 0, 0],
+        initial_energy = 10000,
         day_length_style = 'fixed_speed'
     )
 
@@ -357,7 +382,8 @@ def main():
 
     #test()
     #draw_scenes_from_file(scds, clear = False)
-    draw_scenes_from_file(scds)
+    draw_scenes_from_file(inclusive_fitness)
+
     '''tournament = centipede.Tournament(
         initial_players = 'spread',
         mutation_chance = 0

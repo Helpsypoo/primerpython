@@ -816,7 +816,6 @@ class InclusiveFitness(Scene):
         for i, thing in enumerate(to_disappear):
             thing.disappear(disappear_time = end - (len(to_disappear) - 1 - i) * 0.05)
 
-
     def green_beard(self):
 
         blob = Blobject(wiggle = True, mouth = True)

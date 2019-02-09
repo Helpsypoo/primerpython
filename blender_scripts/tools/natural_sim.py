@@ -29,7 +29,7 @@ MAX_TURN_SPEED = 0.07 / SIM_RESOLUTION
 TURN_ACCELERATION = 0.005 / SIM_RESOLUTION
 BASE_SENSE_DISTANCE = 25
 EAT_DISTANCE = 10
-MUTATION_CHANCE = 0.1
+MUTATION_CHANCE = 0.05
 MUTATION_VARIATION = 0.1
 STARTING_ENERGY = 800 #1800
 HOMEBOUND_RATIO = 2# 1.5
@@ -338,7 +338,7 @@ class Creature(Food):
         speed = 1,
         size = 1,
         sense = 1,
-        altruist = True,
+        altruist = False,
         kin_radius = 0,
         parent = None,
         world = None
@@ -543,7 +543,7 @@ class Creature(Food):
             else:
                 to_be_nice_to = [x for x in close_creatures if \
                     ((x.size - self.size) ** 2 + (x.speed - self.speed) ** 2 + \
-                    (x.sense - self.sense) ** 2) ** (1/2) > self.kin_radius]
+                    (x.sense - self.sense) ** 2) ** (1/2) < self.kin_radius]
 
             #Forget about food that another slower-but-similar creature is going
             #for,
@@ -595,6 +595,7 @@ class Creature(Food):
                             day.has_eaten[-1].append(nom)
                     day.has_eaten[-1].append(food)
                     food.is_eaten = True
+                    #print('Heyyyyyy')
                     #TODO: Remove later to deal with ties.
                 elif dist < EAT_DISTANCE + BASE_SENSE_DISTANCE * self.sense \
                     and dist < closest_food_dist:
