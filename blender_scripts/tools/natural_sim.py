@@ -29,10 +29,12 @@ MAX_TURN_SPEED = 0.07 / SIM_RESOLUTION
 TURN_ACCELERATION = 0.005 / SIM_RESOLUTION
 BASE_SENSE_DISTANCE = 25
 EAT_DISTANCE = 10
-MUTATION_CHANCE = 0.05
+HELP_REP_BOOST = 0.9 #Reproduction chance improvement creatures get by helping
+MUTATION_CHANCE = 0.1
 MUTATION_VARIATION = 0.1
 STARTING_ENERGY = 800 #1800
 HOMEBOUND_RATIO = 2# 1.5
+SAMARITAN_RATIO = 1.3
 
 
 
@@ -142,6 +144,7 @@ class CreatureDay(object):
         self.has_eaten = []
         self.energies = []
         self.states = []
+        self.has_helped = 0
 
         self.dead = False
         self.death_time = None
@@ -339,6 +342,8 @@ class Creature(Food):
         size = 1,
         sense = 1,
         altruist = False,
+        green_beard = False,
+        kin_altruist = False,
         kin_radius = 0,
         parent = None,
         world = None
@@ -347,8 +352,10 @@ class Creature(Food):
         self.speed = speed
         self.size = size
         self.sense = sense
-        self.kin_radius = kin_radius
         self.altruist = altruist
+        self.green_beard = green_beard
+        self.kin_altruist = kin_altruist
+        self.kin_radius = kin_radius
         self.parent = parent
 
         self.days = []
@@ -365,7 +372,7 @@ class Creature(Food):
     def new_day(self, date = 0, parent = None):
         new_day = CreatureDay(creature = self, date = date)
         if len(self.days) == 0: #First day of life, ahhhh.
-            if parent == None: #For initial creatures
+            if parent == None or date == 0: #For initial creatures
 
                 loc, heading_target, heading = self.random_wall_placement()
 
@@ -479,13 +486,20 @@ class Creature(Food):
             day.death_time = len(day.locations)
             self.days[-1].dead = True
 
+            was_samaritan = False
+            for state in day.states:
+                if state == 'samaritan':
+                    was_samaritan == True
+            if was_samaritan == True:
+                print("I ran out of energy after being a samaritan!")
+
+
         if self.days[-1].dead == True:
             day.heading_targets.append(None)
             day.d_headings.append(None)
             day.headings.append(None)
             day.locations.append(None)
             self.world_location = None
-            #day.has_eaten.append(None)
             day.has_eaten.append(copy(day.has_eaten[-1]))
             day.energies.append(None)
         else:
@@ -519,9 +533,12 @@ class Creature(Food):
             elif len(day.has_eaten[-1]) > 1:
                 state = 'homebound'
             else:
-                raise Warning('Somehow, the creature has eaten negative food')
+                raise Warning('Somehow, the creature has eaten negative or fractional food')
 
-
+            if state == 'homebound' and \
+                    len(day.has_eaten[-1]) > 1 and \
+                    distance_left > distance_out * HOMEBOUND_RATIO * SAMARITAN_RATIO:
+                state = 'samaritan'
 
             new_heading = None
 
@@ -539,19 +556,62 @@ class Creature(Food):
             close_creatures = [x for x in live_creatures if vec_len(add_lists_by_element(x.world_location, day.locations[-1], subtract = True)) < EAT_DISTANCE + BASE_SENSE_DISTANCE * self.sense]
 
             if self.altruist == True:
+                #print('altruist')
                 to_be_nice_to = close_creatures
+            elif self.green_beard == True:
+                #print("green beard")
+                to_be_nice_to = [x for x in close_creatures if x.green_beard == True]
+            elif self.kin_altruist == True:
+                to_be_nice_to = [x for x in live_creatures if x.parent == self or self.parent == x]
+                #to_be_nice_to = [x for x in live_creatures if x.parent == self or self.parent == x]
+                #Gave kin altruists the ability to go help any related creature
+                #regardless of distance, to increase the number of interactions
             else:
                 to_be_nice_to = [x for x in close_creatures if \
                     ((x.size - self.size) ** 2 + (x.speed - self.speed) ** 2 + \
                     (x.sense - self.sense) ** 2) ** (1/2) < self.kin_radius]
+
+
+            if state == 'samaritan':
+                to_be_helped = None
+                to_be_helped_dist = math.inf
+                for cre in to_be_nice_to:
+                    if len(cre.days[-1].has_eaten[-1]) == 0:
+                        vec_to_help = add_lists_by_element(
+                            cre.days[-1].locations[-1],
+                            self.days[-1].locations[-1],
+                            subtract = True
+                        )
+                        dist = vec_len(vec_to_help)
+                        if dist < to_be_helped_dist:
+                            to_be_helped_dist = dist
+                            to_be_helped = cre
+                if to_be_helped != None:
+                    if dist < EAT_DISTANCE:
+                        #Give food
+                        to_be_helped.days[-1].has_eaten[-1].append(
+                            self.days[-1].has_eaten[-1].pop()
+                        )
+                        self.days[-1].has_helped += 1
+                        if distance_left < distance_out * HOMEBOUND_RATIO:
+                            state = 'homebound'
+                        else:
+                            state = 'foraging'
+                    else:
+                        #print('Heading to give food')
+                        new_heading = math.atan2(vec_to_help[1], vec_to_help[0])
+                else:
+                    state = 'homebound'
+                    #print("Nobody to help")
 
             #Forget about food that another slower-but-similar creature is going
             #for,
             #if you're not about to starve
             #if len(day.has_eaten[-1]) > -1:
 
-            for cre in to_be_nice_to:
-                if cre.speed < self.speed:
+
+            '''for cre in to_be_nice_to:
+                if cre.speed < self.speed and len(day.has_eaten[-1]) > 0:
                     claimed_food = None
                     claimed_food_dist = math.inf
                     for food in close_food:
@@ -562,7 +622,9 @@ class Creature(Food):
                                 claimed_food = food
                     #print(" Leaving a food for that creature ")
                     if claimed_food != None:
-                        close_food.remove(claimed_food)
+                        close_food.remove(claimed_food)'''
+
+
 
             #Who to eat?
             edible_creatures = [x for x in close_creatures if x.is_eaten == False and \
@@ -571,9 +633,8 @@ class Creature(Food):
 
             #Don't eat similar creatures you're nice to
             #if you're not about to starve
-            #if len(day.has_eaten[-1]) > -1:
-
-            edible_creatures = [x for x in edible_creatures if x not in to_be_nice_to]
+            #if len(day.has_eaten[-1]) > 0:
+            #    edible_creatures = [x for x in edible_creatures if x not in to_be_nice_to]
 
             visible_food = edible_creatures + close_food
 
@@ -593,6 +654,14 @@ class Creature(Food):
                         food.days[-1].death_time = len(food.days[-1].locations)
                         for nom in food.days[-1].has_eaten[-1]:
                             day.has_eaten[-1].append(nom)
+
+                        was_samaritan = False
+                        for state in food.days[-1].states:
+                            if state == 'samaritan':
+                                was_samaritan == True
+                        if was_samaritan == True:
+                            print("I was eaten after being a samaritan!")
+
                     day.has_eaten[-1].append(food)
                     food.is_eaten = True
                     #print('Heyyyyyy')
@@ -604,7 +673,7 @@ class Creature(Food):
 
             #print(state)
 
-            if target_food != None:
+            if state == 'foraging' and target_food != None:
                 vec_to_food = add_lists_by_element(
                     target_food.world_location,
                     day.locations[-1],
@@ -635,14 +704,25 @@ class Creature(Food):
             #Check for predators. If one is close, abandon foraging and flee
             closest_pred_dist = math.inf
             threat = None
+
             #creatures = self.world.date_records[day.date]['creatures']
             predators = [x for x in close_creatures if \
-                       x.size >= self.size * PREDATOR_SIZE_RATIO]# and \
-                       #x.days[-1].home_time == None
-                       #Predators can't eat when home. BUT THEY CAN.
-                       #This makes small creatures avoid going to a predator's
-                       #home, which would just make them get eaten immediatly
-                       #in the morning.
+                       x.size >= self.size * PREDATOR_SIZE_RATIO]
+
+            '''safe_to_help = []
+            for pred in predators:
+                safe = False
+                if pred.altruist == True:
+                    safe = True
+                if pred.green_beard == True and self.green_beard == True:
+                    safe = True
+                if ((pred.size - self.size) ** 2 + (pred.speed - self.speed) ** 2 + \
+                        (pred.sense - self.sense) ** 2) ** (1/2) < pred.kin_radius:
+                    safe = True
+                if safe == True:
+                    safe_to_help.append(pred)
+
+            predators = [x for x in predators if x not in safe_to_help]'''
 
             for pred in predators:
                 try:
@@ -690,10 +770,12 @@ class Creature(Food):
                     else:
                         target = - math.pi / 2
                 new_heading = target
+                #print('heading home')
 
             day.states.append(state)
 
             #Add new_heading to the heading_targets list
+            #print(new_heading)
             day.heading_targets.append(new_heading)
 
             #Calculate heading
@@ -850,6 +932,9 @@ class Creature(Food):
             rotation_euler = [0, 0, self.days[0].headings[0]],
             wiggle = True
         )
+        if self.green_beard == True:
+            cre_bobj.add_beard(mat = 'color7')
+
         #Rotate creature so a ref_obj rotation_euler of [0, 0, 0] results in
         #an x-facing blob standing in the z direction
         cre_bobj.ref_obj.children[0].rotation_euler = [math.pi / 2, 0, math.pi / 2]
@@ -897,7 +982,9 @@ class Creature(Food):
             if bobj == None:
                 bobj = self.bobject
                 spd = self.speed
-                obj = self.bobject.ref_obj.children[0].children[0]
+                for child in self.bobject.ref_obj.children[0].children:
+                    if child.name[-9:] == 'brd_mball':
+                        obj = child
             else:
                 obj = bobj.ref_obj.children[0]
 
@@ -1005,8 +1092,17 @@ class NaturalSim(object):
         food_count = 10,
         dimensions = WORLD_DIMENSIONS,
         day_length = DEFAULT_DAY_LENGTH,
+        mutation_chance = MUTATION_CHANCE,
         initial_creatures = None,
-        mutation_switches = [True, True, True, True, False],
+        mutation_switches = {
+            'speed' : True,
+            'size' : True,
+            'sense' : True,
+            'altruist' : True,
+            'green_beard' : False,
+            'kin_altruist' : False,
+            'kin_radius' : False,
+        },
         initial_energy = STARTING_ENERGY,
         **kwargs
     ):
@@ -1014,6 +1110,7 @@ class NaturalSim(object):
         self.initial_energy = initial_energy
         self.dimensions = dimensions
         self.day_length = day_length
+        self.mutation_chance = mutation_chance
         self.date_records = []
 
         self.mutation_switches = mutation_switches
@@ -1032,7 +1129,7 @@ class NaturalSim(object):
                     )
                 )
         elif initial_creatures == None:
-            num_creatures = math.floor(self.food_count * 1 / 2)
+            num_creatures = math.floor(self.food_count * 1 / 5)
             for i in range(num_creatures):
                 self.initial_creatures.append(
                     Creature(
@@ -1085,30 +1182,54 @@ class NaturalSim(object):
 
     def get_newborn_creatures(self, parents = None):
         if parents == None:
-            raise Warning('Must define parents and date for get_newborn_creatures')
+            raise Warning('Must define parents for get_newborn_creatures')
         babiiieeesss = []
         for par in parents:
             if len(par.days[-1].has_eaten[-1]) > 1:
+                reproduction_chance = 1
+            elif  len(par.days[-1].has_eaten[-1]) > 0:
+                reproduction_chance = par.days[-1].has_helped * HELP_REP_BOOST
+                if reproduction_chance > 0:
+                    print('Reproduction chance is ' + str(reproduction_chance) + ' because I helped!')
+            else:
+                reproduction_chance = 0
+            if random() < reproduction_chance:
                 speed_addition = 0
-                if self.mutation_switches[0] == True:
-                    if random() < MUTATION_CHANCE:
+                if self.mutation_switches['speed'] == True:
+                    if random() < self.mutation_chance:
                         speed_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
                 size_addition = 0
-                if self.mutation_switches[1] == True:
-                    if random() < MUTATION_CHANCE:
+                if self.mutation_switches['size'] == True:
+                    if random() < self.mutation_chance:
                         size_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
                 sense_addition = 0
-                if self.mutation_switches[2] == True:
-                    if random() < MUTATION_CHANCE:
+                if self.mutation_switches['sense'] == True:
+                    if random() < self.mutation_chance:
                         sense_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
-                kin_addition = 0
-                if self.mutation_switches[3] == True:
-                    if random() < MUTATION_CHANCE:
+                child_altruist = False
+                if self.mutation_switches['altruist'] == True:
+                    if random() < self.mutation_chance:
                         child_altruist = not par.altruist
                     else:
                         child_altruist = par.altruist
-                if self.mutation_switches[4] == True:
-                    if random() < MUTATION_CHANCE:
+                child_beard = False
+                if self.mutation_switches['green_beard'] == True:
+                    if random() < self.mutation_chance:
+                        child_beard = not par.green_beard
+                    else:
+                        child_beard = par.green_beard
+                child_kin_altruist = False
+                if self.mutation_switches['kin_altruist'] == True:
+                    if random() < self.mutation_chance:
+                        child_kin_altruist = not par.kin_altruist
+                    else:
+                        child_kin_altruist = par.kin_altruist
+                kin_addition = 0
+                if self.mutation_switches['kin_radius'] == True:
+                    if random() < self.mutation_chance * 1.73:
+                        #Increase chance by a factor of root 3. Makes it so
+                        #expected trait distance change is equal to expected
+                        #kin radius change.
                         kin_addition = randrange(-1, 2, 2) * MUTATION_VARIATION
                         if par.kin_radius + kin_addition < 0:
                             kin_addition = 0
@@ -1119,6 +1240,8 @@ class NaturalSim(object):
                     size = par.size + size_addition,
                     sense = par.sense + sense_addition,
                     altruist = child_altruist,
+                    green_beard = child_beard,
+                    kin_altruist = child_kin_altruist,
                     kin_radius = par.kin_radius + kin_addition,
                 )
                 babiiieeesss.append(baby)
@@ -1197,6 +1320,13 @@ class NaturalSim(object):
                    #print(str(cre) + " didn't make it home")
                    day.dead = True
 
+                   was_samaritan = False
+                   for state in day.states:
+                       if state == 'samaritan':
+                           was_samaritan == True
+                   if was_samaritan == True:
+                       print("I didn't make it home after being a samaritan!")
+
             #Shorten for animation
             if day.death_time != None and day.death_time > latest_action:
                 latest_action = day.death_time
@@ -1218,7 +1348,6 @@ class NaturalSim(object):
                     for loc in day.locations:
                         print(loc)"""
                     #print()
-
         if save == True:
             self.save_sim_result(filename)
 

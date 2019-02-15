@@ -306,23 +306,25 @@ def test():
     )'''
 
     b_creature = natural_sim.Creature(
-        speed = 1.5,
-        size = 1.5,
-        sense = 10,
-        #altruist = False
+        speed = 1,
+        size = 1.1,
+        sense = 15,
+        kin_altruist = True
     )
     s_creature = natural_sim.Creature(
-        speed = 1,
-        size = 0.5,
-        sense = 10,
+        speed = 0.2,
+        size = 1,
+        sense = 15,
+        parent = b_creature,
+        kin_altruist = True
     )
     initial_creatures = [b_creature, s_creature]
 
 
     sim = natural_sim.DrawnNaturalSim(
-        mutation_switches = [True, True, True, True, False],
+        #mutation_switches = [True, True, True, True, False],
         scale = 1.5,
-        food_count = 1,
+        food_count = 2,
         initial_creatures = initial_creatures,
         #sim = 'altruism_test',
         location = [-6.5, 0, 0],
@@ -334,46 +336,17 @@ def test():
 
     sim.add_to_blender(appear_time = 0)
 
-def marketing():
-    scene_end = 12
-    initialize_blender(total_duration = scene_end)
-
-    x = 7.64349
-    y = -8.71545
-
-    b_blob = import_object(
-        'boerd_blob_stern', 'creatures',
-        location = [-x, y, 0],
-        rotation_euler = [0, 57.4 * math.pi / 180, 0],
-        scale = 12,
+    '''def func1(x): return x
+    def func2(x): return math.sin(x) + 1
+    def func3(x): return math.cos(x) + 2
+    def func4(x): return x ** 2
+    g = graph_bobject.GraphBobject(
+        func1
     )
-    b_blob.ref_obj.children[0].children[0].data.resolution = 0.2
-    apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
-    b_blob.add_to_blender(appear_time = 0)
-
-    y_blob = import_object(
-        'boerd_blob_stern', 'creatures',
-        rotation_euler = [0, -57.4 * math.pi / 180, 0],
-        location = [x, y, 0],
-        scale = 12,
-    )
-    y_blob.ref_obj.children[0].children[0].data.resolution = 0.2
-    apply_material(y_blob.ref_obj.children[0].children[0], 'creature_color4')
-    y_blob.add_to_blender(appear_time = 0)
-
-    y_blob.blob_wave(
-        start_time = 0,
-        duration = 12
-    )
-
-    comp = tex_bobject.TexBobject(
-        '\\text{COMPETITION} \\phantom{blargh}',
-        centered = True,
-        scale = 4.5,
-        location = [0, 5.5, 0],
-        color = 'color2'
-    )
-    comp.add_to_blender(appear_time = 0)
+    g.add_to_blender(appear_time = 0)
+    g.add_new_function_and_curve(func2, color = 4)
+    g.add_new_function_and_curve(func3, color = 6)
+    g.add_new_function_and_curve(func4, color = 7)'''
 
 def main():
     """Use this as a test scene"""

@@ -405,7 +405,10 @@ class Bobject(object):
         #automatically finds object for simple bobjects
         if obj == None:
             obj = self.ref_obj.children[0]
-        mat_copy = obj.material_slots[0].material.copy()
+        try:
+            mat_copy = obj.material_slots[0].material.copy()
+        except:
+            print(obj)
         obj.active_material = mat_copy
         color_node = mat_copy.node_tree.nodes[-1]
         color_field = color_node.inputs[0]

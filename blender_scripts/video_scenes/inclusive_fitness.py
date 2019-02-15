@@ -52,8 +52,11 @@ class InclusiveFitness(Scene):
         #self.fast_altruism()
         #self.big_altruism()
         #self.altruism_trait()
-        self.random_altruism_sim()
+        #self.random_altruism_sim()
         #self.green_beard()
+        #self.green_beard_sim()
+        self.kin_selection_sim()
+        #self.kin_distance_sim()
         #self.end_card()
         #self.thumbnail()
 
@@ -85,7 +88,14 @@ class InclusiveFitness(Scene):
             location = [0, 0, 0],
             day_length_style = 'fixed_speed',
             #day_length_style = 'fixed_length'
-            mutation_switches = [False, False, False]
+            mutation_switches = {
+                 'speed' : False,
+                 'size' : False,
+                 'sense' : False,
+                 'altruist' : False,
+                 'green_beard' : False,
+                 'kin_radius' : False,
+            },
         )
         num_days = 1
         for i in range(num_days):
@@ -233,7 +243,6 @@ class InclusiveFitness(Scene):
             location = [0, 0, 0],
             day_length_style = 'fixed_speed',
             #day_length_style = 'fixed_length'
-            #mutation_switches = [False, False, False]
         )
         num_days = 1
         for i in range(num_days):
@@ -562,7 +571,14 @@ class InclusiveFitness(Scene):
         cam_swivel.add_to_blender(appear_time = 0)
 
         sim = natural_sim.DrawnNaturalSim(
-            mutation_switches = [True, True, True, True, False],
+            mutation_switches = {
+                 'speed' : False,
+                 'size' : False,
+                 'sense' : False,
+                 'altruist' : True,
+                 'green_beard' : False,
+                 'kin_radius' : False,
+            },
             scale = 1.5,
             food_count = 50,
             #sim = 'altruism_test',
@@ -570,7 +586,7 @@ class InclusiveFitness(Scene):
             day_length_style = 'fixed_length'
         )
 
-        for i in range(50):
+        for i in range(200):
             save = False
             if i == 49:
                 save = True
@@ -833,6 +849,809 @@ class InclusiveFitness(Scene):
         beard.ref_obj.parent_bone = blob.ref_obj.children[0].pose.bones["brd_bone_neck"].name
         beard.ref_obj.parent_type = 'BONE'
         beard.add_to_blender(appear_time = 0)'''
+
+    def green_beard_sim(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 34],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 4],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = 0)
+
+        food_count = 100
+        def set_initial_creatures():
+            initial_creatures = []
+            for i in range(math.floor(food_count / 4)):
+                initial_creatures.append(
+                    natural_sim.Creature(
+                        size = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        speed = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        sense = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        green_beard = True
+                    )
+                )
+                initial_creatures.append(
+                    natural_sim.Creature(
+                        size = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        speed = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        sense = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        green_beard = False
+                    )
+                )
+            return initial_creatures
+
+        sims = []
+        num_sims = 3
+        for i in range(num_sims):
+            print('------------------------- BEGIN SIM NUMBER ' + str(i + 1) + ' of ' + str(num_sims) + ' -------------------------')
+            sim = natural_sim.DrawnNaturalSim(
+                mutation_switches = {
+                     'speed' : False,
+                     'size' : False,
+                     'sense' : False,
+                     'altruist' : False,
+                     'green_beard' : True,
+                     'kin_altruist' : False,
+                     'kin_radius' : False,
+                },
+                scale = 1.5,
+                food_count = food_count,
+                initial_creatures = set_initial_creatures(),
+                #sim = 'altruism_test',
+                location = [-6.5, 0, 0],
+                day_length_style = 'fixed_length'
+            )
+
+            for i in range(100):
+                save = False
+                #if i == 99:
+                #    save = True
+                sim.sim.sim_next_day(save = save)
+
+            sims.append(sim)
+
+        tex = tex_bobject.TexBobject(
+            #'\\text{Reduced food}',
+            '\\text{Food count} =  100',
+            '\\text{Food count} =  10',
+            scale = 2,
+            location = [-6.5, 0, 8],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            color = 'color2',
+            centered = True
+        )
+        tex.add_to_blender(appear_time = 1)
+
+        #Move camera instead of sim, because moving or displaced sims don't function
+        #well.
+
+
+        g = graph_bobject.GraphBobject(
+            location = [2, -4, 0],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            #rotation_euler = [math.pi / 2, 0, 0],
+            width = 10,
+            x_range = 2,
+            x_label = '\\phantom{a}',
+            #x_label_pos = 'end',
+            height = 10,
+            y_range = 100,
+            y_label = '\\%\\text{ Creatures}',
+            y_label_pos = 'end',
+            tick_step = [10, 50],
+            #centered = True,
+            include_y = True,
+            arrows = False,
+            padding = 0
+        )
+
+        #Way more complicated than it needs to be.
+        bar_width = 0.5
+        num_bars = 2
+        space_width = (g.x_range[1] - num_bars * bar_width) / (num_bars + 1)
+
+        alt_tex = tex_bobject.TexBobject(
+            '\\text{Green beard}',
+            location = [
+                (space_width + bar_width / 2) * g.width / g.x_range[1],
+                -0.7,
+                0
+            ],
+            color = 'color5',
+            centered = True,
+            #scale = 0.8
+        )
+        g.add_subbobject(alt_tex)
+
+        not_tex = tex_bobject.TexBobject(
+            '\\text{Not}',
+            location = [
+                (2 * space_width + bar_width * 1.5) * g.width / g.x_range[1],
+                -0.7,
+                0
+            ],
+            color = 'color5',
+            centered = True,
+            #scale = 0.8
+        )
+        g.add_subbobject(not_tex)
+
+        g.add_to_blender(appear_time = 0)
+
+        def count_by_vals(date, vals, nat_sim):
+            counts = []
+            creatures = nat_sim.date_records[date]['creatures']
+            #print(len(creatures))
+            for val in vals:
+                #print()
+                #print(spd)
+                count = 0
+                '''for cre in creatures:
+                    print(str(val) + '   ' + str(cre.speed))
+                    if cre.altruist == val:
+                        count += 1'''
+                count = len([x for x in creatures if x.green_beard == val])
+                #print(count)
+                counts.append(count)
+                #print(counts)
+                #print()
+            return counts
+
+        '''bar_width = 0.5
+        num_bars = 2
+        space_width = (g.x_range[1] - num_bars * bar_width) / (num_bars + 1)'''
+
+        def make_graph_bars(num_bars, appear_time, bar_width):
+            bars = []
+            space_width = (g.x_range[1] - num_bars * bar_width) / (num_bars + 1)
+            for i in range(num_bars):
+                #print(spd)
+                bar = g.add_bar(
+                    appear_time = appear_time,
+                    x = (1 + i) * space_width + bar_width * (0.5 + i),
+                    value = 0,
+                    dx = bar_width
+                )
+                '''dummy = natural_sim.Creature()
+                dummy.apply_material_by_speed(
+                    bobj = bar,
+                    spd = bar_width,
+                )'''
+
+                bars.append(bar)
+
+            return bars
+
+        def update_graph_bars(start_time, bars, counts, end_time = None):
+            total = sum(counts)
+            for i, bar in enumerate(bars):
+                g.update_bar(
+                    bar = bar,
+                    new_value = counts[i] / total * 100,
+                    start_time = start_time,
+                    end_time = end_time
+                )
+
+        #speed_vals = [x/10 for x in range(23)]
+        appear_time = 0
+        bars = make_graph_bars(num_bars, appear_time, bar_width)
+        #print(speed_vals)
+        #counts = count_by_vals(9, [True, False], sim.sim)
+        #update_graph_bars(0, bars, counts)
+
+        def draw_possible_states():
+            #fast state
+            start_time = 156
+            counts = []
+            for spd in speed_vals:
+                dev = 0.2
+                avg = 1.6
+                count = 30 * math.exp(- (spd - avg) ** 2 / (2 * dev ** 2) )
+                counts.append(count)
+            update_graph_bars(start_time, bars, counts)
+
+            start_time = 158
+            counts = []
+            for spd in speed_vals:
+                dev = 0.2
+                avg = 0.5
+                count = 30 * math.exp(- (spd - avg) ** 2 / (2 * dev ** 2) )
+                counts.append(count)
+            update_graph_bars(start_time, bars, counts)
+
+            start_time = 162.5
+            counts = []
+            for spd in speed_vals:
+                dev = 0.2
+                avg = 1
+                count = 30 * math.exp(- (spd - avg) ** 2 / (2 * dev ** 2) )
+                counts.append(count)
+            update_graph_bars(start_time, bars, counts)
+
+            start_time = 165
+            counts = []
+            for spd in speed_vals:
+                dev = 0.2
+                avg1 = 0.5
+                avg2 = 1.6
+                count = 15 * math.exp(- (spd - avg1) ** 2 / (2 * dev ** 2) ) + \
+                        15 * math.exp(- (spd - avg2) ** 2 / (2 * dev ** 2) )
+                counts.append(count)
+            update_graph_bars(start_time, bars, counts)
+
+        #draw_possible_states()
+
+        '''first_day_start = 172
+        sim_appearance_time = 150.5
+
+        #Find proper duration for first morning pause to fill talking time
+        initial_day_durs = sim.sim.date_records[0]['anim_durations']
+        first_morning_dur = first_day_start - \
+                           sim_appearance_time - \
+                           initial_day_durs['dawn'] - \
+                           1 #For standard start_delay on drawn sims
+        initial_day_durs['morning'] = first_morning_dur'''
+
+        '''sim.add_to_blender(
+            appear_time = 0,
+            #start_day = first_day,
+            #end_day = first_day + 21
+            #start_day = actual_start_day,
+            #end_day = actual_start_day + 21
+        )'''
+
+        #Update bars each day
+        for day in sims[0].sim.date_records:
+            date = day['date']
+            if date == 0:
+                start_time = 1 - OBJECT_APPEARANCE_TIME / FRAME_RATE
+                end_time = 1
+
+                total_counts_for_date = [0, 0]
+                print('Counts for day ' + str(date))
+                for single_sim in sims:
+                    counts = count_by_vals(date, [True, False], single_sim.sim)
+                    print(' ' + str(counts))
+                    total_counts_for_date[0] += counts[0]
+                    total_counts_for_date[1] += counts[1]
+                print(' ----------------------')
+                print(' ' + str(total_counts_for_date))
+                avgs_for_date = [[],[]]
+                avgs_for_date[0] = total_counts_for_date[0] / len(sims)
+                avgs_for_date[1] = total_counts_for_date[1] / len(sims)
+                update_graph_bars(start_time, bars, avgs_for_date, end_time = end_time)
+
+                #One the first day, the bar actually appears at the end of the
+                #morning pause instead of at the end of the dawn stage. So
+                #subtracting the morning duration from start time, since it's
+                #added during the following loop.
+                start_time = 1 - day['anim_durations']['morning']
+
+            elif date > 0: #Don't regraph the old days
+                prev_day_anims = sim.sim.date_records[date - 1]['anim_durations']
+                start_time += prev_day_anims['morning'] + \
+                              prev_day_anims['day'] + \
+                              prev_day_anims['evening'] + \
+                              prev_day_anims['night']
+
+                #print(len(sim.sim.date_records[i]['creatures']))
+                #print(counts)
+                end_time = start_time + day['anim_durations']['dawn']
+
+                total_counts_for_date = [0, 0]
+                print('Counts for day ' + str(date))
+                for single_sim in sims:
+                    counts = count_by_vals(date, [True, False], single_sim.sim)
+                    print(' ' + str(counts))
+                    total_counts_for_date[0] += counts[0]
+                    total_counts_for_date[1] += counts[1]
+                print(' ----------------------')
+                print(' ' + str(total_counts_for_date))
+                avgs_for_date = [[],[]]
+                avgs_for_date[0] = total_counts_for_date[0] / len(sims)
+                avgs_for_date[1] = total_counts_for_date[1] / len(sims)
+                update_graph_bars(start_time, bars, avgs_for_date, end_time = end_time)
+                start_time += day['anim_durations']['dawn']
+
+        #Cam swaying
+        '''cam_swivel.move_to(
+            start_time = 190,
+            end_time = 203,
+            new_angle = [74 * math.pi / 180, 0, 10 * math.pi / 180]
+        )
+        cam_swivel.move_to(
+            start_time = 203,
+            end_time = 216,
+            new_angle = [74 * math.pi / 180, 0, 0 * math.pi / 180]
+        )'''
+
+        end = 500
+        to_disappear = [sim]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = end - (len(to_disappear) - 1 - i) * 0.05)
+
+    def kin_selection_sim(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 34],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 4],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = 0)
+
+        food_count = 100
+        def set_initial_creatures():
+            initial_creatures = []
+            for i in range(math.floor(food_count / 4)):
+                initial_creatures.append(
+                    natural_sim.Creature(
+                        size = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        speed = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        sense = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        kin_altruist = True
+                    )
+                )
+                initial_creatures.append(
+                    natural_sim.Creature(
+                        size = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        speed = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        sense = 1,# + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                        kin_altruist = False
+                    )
+                )
+            return initial_creatures
+
+        sims = []
+        num_sims = 10
+        for i in range(num_sims):
+            print('------------------------- BEGIN SIM NUMBER ' + str(i + 1) + ' of ' + str(num_sims) + ' -------------------------')
+            sim = natural_sim.DrawnNaturalSim(
+                mutation_switches = {
+                     'speed' : False,
+                     'size' : False,
+                     'sense' : False,
+                     'altruist' : False,
+                     'green_beard' : False,
+                     'kin_altruist' : True,
+                     'kin_radius' : False,
+                },
+                scale = 1.5,
+                food_count = food_count,
+                initial_creatures = set_initial_creatures(),
+                #sim = 'altruism_test',
+                location = [-6.5, 0, 0],
+                day_length_style = 'fixed_length'
+            )
+
+            for i in range(100):
+                save = False
+                #if i == 99:
+                #    save = True
+                sim.sim.sim_next_day(save = save)
+
+            sims.append(sim)
+
+        tex = tex_bobject.TexBobject(
+            #'\\text{Reduced food}',
+            '\\text{Food count} =  100',
+            '\\text{Food count} =  10',
+            scale = 2,
+            location = [-6.5, 0, 8],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            color = 'color2',
+            centered = True
+        )
+        tex.add_to_blender(appear_time = 1)
+
+        #Move camera instead of sim, because moving or displaced sims don't function
+        #well.
+
+
+        g = graph_bobject.GraphBobject(
+            location = [2, -4, 0],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            #rotation_euler = [math.pi / 2, 0, 0],
+            width = 10,
+            x_range = 2,
+            x_label = '\\phantom{a}',
+            #x_label_pos = 'end',
+            height = 10,
+            y_range = 100,
+            y_label = '\\%\\text{ Creatures}',
+            y_label_pos = 'end',
+            tick_step = [10, 50],
+            #centered = True,
+            include_y = True,
+            arrows = False,
+            padding = 0
+        )
+
+        #Way more complicated than it needs to be.
+        bar_width = 0.5
+        num_bars = 2
+        space_width = (g.x_range[1] - num_bars * bar_width) / (num_bars + 1)
+
+        alt_tex = tex_bobject.TexBobject(
+            '\\text{Kin altruist}',
+            location = [
+                (space_width + bar_width / 2) * g.width / g.x_range[1],
+                -0.7,
+                0
+            ],
+            color = 'color5',
+            centered = True,
+            #scale = 0.8
+        )
+        g.add_subbobject(alt_tex)
+
+        not_tex = tex_bobject.TexBobject(
+            '\\text{Not}',
+            location = [
+                (2 * space_width + bar_width * 1.5) * g.width / g.x_range[1],
+                -0.7,
+                0
+            ],
+            color = 'color5',
+            centered = True,
+            #scale = 0.8
+        )
+        g.add_subbobject(not_tex)
+
+        g.add_to_blender(appear_time = 0)
+
+        def count_by_vals(date, vals, nat_sim):
+            counts = []
+            creatures = nat_sim.date_records[date]['creatures']
+            #print(len(creatures))
+            for val in vals:
+                #print()
+                #print(spd)
+                count = 0
+                '''for cre in creatures:
+                    print(str(val) + '   ' + str(cre.speed))
+                    if cre.altruist == val:
+                        count += 1'''
+                count = len([x for x in creatures if x.kin_altruist == val])
+                #print(count)
+                counts.append(count)
+                #print(counts)
+                #print()
+            return counts
+
+        '''bar_width = 0.5
+        num_bars = 2
+        space_width = (g.x_range[1] - num_bars * bar_width) / (num_bars + 1)'''
+
+        def make_graph_bars(num_bars, appear_time, bar_width):
+            bars = []
+            space_width = (g.x_range[1] - num_bars * bar_width) / (num_bars + 1)
+            for i in range(num_bars):
+                #print(spd)
+                bar = g.add_bar(
+                    appear_time = appear_time,
+                    x = (1 + i) * space_width + bar_width * (0.5 + i),
+                    value = 0,
+                    dx = bar_width
+                )
+                '''dummy = natural_sim.Creature()
+                dummy.apply_material_by_speed(
+                    bobj = bar,
+                    spd = bar_width,
+                )'''
+
+                bars.append(bar)
+
+            return bars
+
+        def update_graph_bars(start_time, bars, counts, end_time = None):
+            total = sum(counts)
+            for i, bar in enumerate(bars):
+                g.update_bar(
+                    bar = bar,
+                    new_value = counts[i] / total * 100,
+                    start_time = start_time,
+                    end_time = end_time
+                )
+
+        #speed_vals = [x/10 for x in range(23)]
+        appear_time = 0
+        bars = make_graph_bars(num_bars, appear_time, bar_width)
+        #print(speed_vals)
+        #counts = count_by_vals(9, [True, False], sim.sim)
+        #update_graph_bars(0, bars, counts)
+
+        def draw_possible_states():
+            #fast state
+            start_time = 156
+            counts = []
+            for spd in speed_vals:
+                dev = 0.2
+                avg = 1.6
+                count = 30 * math.exp(- (spd - avg) ** 2 / (2 * dev ** 2) )
+                counts.append(count)
+            update_graph_bars(start_time, bars, counts)
+
+            start_time = 158
+            counts = []
+            for spd in speed_vals:
+                dev = 0.2
+                avg = 0.5
+                count = 30 * math.exp(- (spd - avg) ** 2 / (2 * dev ** 2) )
+                counts.append(count)
+            update_graph_bars(start_time, bars, counts)
+
+            start_time = 162.5
+            counts = []
+            for spd in speed_vals:
+                dev = 0.2
+                avg = 1
+                count = 30 * math.exp(- (spd - avg) ** 2 / (2 * dev ** 2) )
+                counts.append(count)
+            update_graph_bars(start_time, bars, counts)
+
+            start_time = 165
+            counts = []
+            for spd in speed_vals:
+                dev = 0.2
+                avg1 = 0.5
+                avg2 = 1.6
+                count = 15 * math.exp(- (spd - avg1) ** 2 / (2 * dev ** 2) ) + \
+                        15 * math.exp(- (spd - avg2) ** 2 / (2 * dev ** 2) )
+                counts.append(count)
+            update_graph_bars(start_time, bars, counts)
+
+        #draw_possible_states()
+
+        '''first_day_start = 172
+        sim_appearance_time = 150.5
+
+        #Find proper duration for first morning pause to fill talking time
+        initial_day_durs = sim.sim.date_records[0]['anim_durations']
+        first_morning_dur = first_day_start - \
+                           sim_appearance_time - \
+                           initial_day_durs['dawn'] - \
+                           1 #For standard start_delay on drawn sims
+        initial_day_durs['morning'] = first_morning_dur'''
+
+        '''sim.add_to_blender(
+            appear_time = 0,
+            #start_day = first_day,
+            #end_day = first_day + 21
+            #start_day = actual_start_day,
+            #end_day = actual_start_day + 21
+        )'''
+
+        #Update bars each day
+        for day in sims[0].sim.date_records:
+            date = day['date']
+
+            total_counts_for_date = [0, 0]
+            print('Stats for day ' + str(date))
+            for single_sim in sims:
+                print(' ----------------------')
+                counts = count_by_vals(date, [True, False], single_sim.sim)
+                print(' Counts: ' + str(counts))
+                total_counts_for_date[0] += counts[0]
+                total_counts_for_date[1] += counts[1]
+                print(' ----------------------')
+                counts = count_by_vals(date, [True, False], single_sim.sim)
+                print(' Counts: ' + str(counts))
+                total_counts_for_date[0] += counts[0]
+                total_counts_for_date[1] += counts[1]
+
+                tot_speed = 0
+                tot_size = 0
+                tot_sense = 0
+                cres = single_sim.sim.date_records[date]['creatures']
+                for cre in cres:
+                    tot_speed += cre.speed
+                    tot_size += cre.size
+                    tot_sense += cre.sense
+
+                avg_speed = tot_speed / len(cres)
+                print(' Avg speed: ' + str(avg_speed))
+                avg_size = tot_size / len(cres)
+                print(' Avg size: ' + str(avg_size))
+                avg_sense = tot_sense / len(cres)
+                print(' Avg sense: ' + str(avg_sense))
+
+            print(' ----------------------')
+            print(' Total counts')
+            print(' ' + str(total_counts_for_date))
+            print()
+
+            avgs_for_date = [[],[]]
+            avgs_for_date[0] = total_counts_for_date[0] / len(sims)
+            avgs_for_date[1] = total_counts_for_date[1] / len(sims)
+
+            if date == 0:
+                start_time = 1 - OBJECT_APPEARANCE_TIME / FRAME_RATE
+                end_time = 1
+
+                update_graph_bars(start_time, bars, avgs_for_date, end_time = end_time)
+
+                #On the first day, the bar actually appears at the end of the
+                #morning pause instead of at the end of the dawn stage. So
+                #subtracting the morning duration from start time, since it's
+                #added during the following loop.
+                start_time = 1 - day['anim_durations']['morning']
+
+            elif date > 0: #Don't regraph the old days
+                prev_day_anims = sim.sim.date_records[date - 1]['anim_durations']
+                start_time += prev_day_anims['morning'] + \
+                              prev_day_anims['day'] + \
+                              prev_day_anims['evening'] + \
+                              prev_day_anims['night']
+
+                #print(len(sim.sim.date_records[i]['creatures']))
+                #print(counts)
+                end_time = start_time + day['anim_durations']['dawn']
+
+                update_graph_bars(start_time, bars, avgs_for_date, end_time = end_time)
+                start_time += day['anim_durations']['dawn']
+
+        try:
+            print(natural_sim.SAMARITAN_RATIO)
+        except:
+            pass
+
+        #Cam swaying
+        '''cam_swivel.move_to(
+            start_time = 190,
+            end_time = 203,
+            new_angle = [74 * math.pi / 180, 0, 10 * math.pi / 180]
+        )
+        cam_swivel.move_to(
+            start_time = 203,
+            end_time = 216,
+            new_angle = [74 * math.pi / 180, 0, 0 * math.pi / 180]
+        )'''
+
+        end = 500
+        to_disappear = [sim]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = end - (len(to_disappear) - 1 - i) * 0.05)
+
+    def kin_distance_sim(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 34],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 4],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = 0)
+
+        food_count = 1000
+        initial_creatures = []
+        #for i in range(math.floor(food_count / 4)):
+        for i in range(25):
+            initial_creatures.append(
+                natural_sim.Creature(
+                    size = 1 + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                    speed = 1 + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                    sense = 1 + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                    kin_radius = 0.2
+                )
+            )
+            initial_creatures.append(
+                natural_sim.Creature(
+                    size = 1 + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                    speed = 1 + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                    sense = 1 + randrange(-5, 6) * natural_sim.MUTATION_VARIATION,
+                    kin_radius = 0.2
+                )
+            )
+
+        sim = natural_sim.DrawnNaturalSim(
+            mutation_switches = {
+                 'speed' : True,
+                 'size' : True,
+                 'sense' : True,
+                 'altruist' : False,
+                 'green_beard' : False,
+                 'kin_radius' : True,
+            },
+            scale = 1.5,
+            food_count = food_count,
+            initial_creatures = initial_creatures,
+            #sim = 'NAT20190212T124649',
+            location = [-6.5, 0, 0],
+            day_length_style = 'fixed_length'
+        )
+
+        for i in range(10):
+            save = False
+            if i == 999:
+                save = True
+            sim.sim.sim_next_day(save = save)
+
+
+        tex = tex_bobject.TexBobject(
+            #'\\text{Reduced food}',
+            '\\text{Food count} =  100',
+            '\\text{Food count} =  10',
+            scale = 2,
+            location = [-6.5, 0, 8],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            color = 'color2',
+            centered = True
+        )
+        tex.add_to_blender(appear_time = 1)
+
+        #Move camera instead of sim, because moving or displaced sims don't function
+        #well.
+        dist_avgs = []
+        spd_avgs = []
+        size_avgs = []
+        sense_avgs = []
+        for date in sim.sim.date_records:
+            num = len(date['creatures'])
+            print(num)
+            tot = sum([x.kin_radius for x in date['creatures']])
+            if num > 0:
+                dist_avgs.append(tot/num)
+            else:
+                dist_avgs.append(0)
+
+            tot = sum([x.speed for x in date['creatures']])
+            if num > 0:
+                spd_avgs.append(tot/num)
+            else:
+                spd_avgs.append(0)
+
+            tot = sum([x.size for x in date['creatures']])
+            if num > 0:
+                size_avgs.append(tot/num)
+            else:
+                size_avgs.append(0)
+
+            tot = sum([x.sense for x in date['creatures']])
+            if num > 0:
+                sense_avgs.append(tot/num)
+            else:
+                sense_avgs.append(0)
+
+
+        g = graph_bobject.GraphBobject(
+            dist_avgs,
+            location = [2, -4, 0],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            #rotation_euler = [math.pi / 2, 0, 0],
+            width = 10,
+            x_range = len(sim.sim.date_records),
+            x_label = '\\text{Day}',
+            x_label_pos = 'end',
+            height = 10,
+            y_range = 2,
+            y_label = '\\text{Avg distance}',
+            y_label_pos = 'end',
+            tick_step = [100, 0.5],
+            #centered = True,
+            include_y = True,
+            arrows = True,
+            padding = 0
+        )
+        g.add_to_blender(appear_time = 0)
+
+        g.add_new_function_and_curve(spd_avgs, color = 4)
+        g.add_new_function_and_curve(size_avgs, color = 6)
+        g.add_new_function_and_curve(sense_avgs, color = 7)
+
+
+        end = 500
+        to_disappear = [sim]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = end - (len(to_disappear) - 1 - i) * 0.05)
 
     def end_card(self):
         cues = self.subscenes
