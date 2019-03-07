@@ -148,7 +148,7 @@ class TexComplex(Bobject):
         alignment = 'top',
         labels = None,
         angle = 0,
-        length = 1.5,
+        length = 1,
         label_scale = 0.67,
         gest_scale = 1
     ):
@@ -244,20 +244,20 @@ class TexComplex(Bobject):
             elif len(target) > 3 and target[3] == 'arrow' or \
                 (len(target) == 3 and len(bobjs) == 1): #Arrow
                 if alignment == 'top':
-                    y += 0.4 * self.scale[1] * tex_bobj.scale[1]
+                    y += 0.3 * tex_bobj.scale[1] #* self.scale[1]
                     head = ((right_most + left_most) / 2 / gest_scale + math.tan(this_angle) * 0.4,
-                            y,
+                            y / gest_scale,
                             0)
                     tail = ((right_most + left_most) / 2 / gest_scale + math.tan(this_angle) * length,
-                            y + length,
+                            (y + length) / gest_scale,
                             0)
                 elif alignment == 'bottom':
-                    y -= 0.4 * self.scale[1] * tex_bobj.scale[1]
+                    y -= 0.3 * tex_bobj.scale[1] #* self.scale[1]
                     head = ((right_most + left_most) / 2 / gest_scale - math.tan(this_angle) * 0.4,
-                            y,
+                            y / gest_scale,
                             0)
                     tail = ((right_most + left_most) / 2 / gest_scale - math.tan(this_angle) * length,
-                            y - length,
+                            (y - length) / gest_scale,
                             0)
                     #if label_anchor == None:
                     #    label_anchor = list(tail)
@@ -296,21 +296,25 @@ class TexComplex(Bobject):
             strings = []
             for label in labels:
                 strings.append(label[i])
+                #print(len(strings))
             t_bobj = tex_bobject.TexBobject(*strings, centered = True, color = 'color2')
             t_bobjs.append(t_bobj)
 
-        scale = 0.67 #Smaller than text. Could do this in a more robust way
-        line_height = 1.2 #Could make this a constant. It's already a default.
-        dy = (1/2 + t_bobj_count) / 2 * line_height * scale
-        #if alignment == 'bottom':
-        #    dy = -dy
+        #label_scale = 0.67 #Smaller than text. Could do this in a more robust way
+        #se;fline_height = 1.2 #Could make this a constant. It's already a default.
+        #dy = (1 + t_bobj_count) / 2 * self.line_height
+        #print(t_bobj_count)
+        if alignment == 'top':
+            dy = (t_bobj_count / 2 + 1/2) * self.line_height
+        if alignment == 'bottom':
+            dy = (t_bobj_count / 2) * self.line_height
 
         #Some t_bobjs may start with empty expressions. Initial position
         #shouldn't take empty lines into account, and position will be adjusted on morph
         if alignment == 'top':
             for t_bobj in t_bobjs:
                 if t_bobj.paths[0] == None:
-                    dy -= line_height * scale
+                    dy -= self.line_height# * label_scale
 
         #label_anchor[1] += dy
 
@@ -318,6 +322,7 @@ class TexComplex(Bobject):
             *t_bobjs,
             multiline = True,
             centered = True,
+            align_y = 'center',
             scale = label_scale,
             name = 'label',
             location = (0, dy, 0),#label_anchor

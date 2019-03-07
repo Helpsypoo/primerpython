@@ -3,6 +3,11 @@ import subprocess
 import os
 import shutil
 
+import sys
+sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts')
+sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts\\tools')
+import helpers
+
 def render_with_skips(start, stop):
     """
     Take start and stop, and render animation only for animated
@@ -22,16 +27,16 @@ def render_with_skips(start, stop):
         try:
             obj.animation_data.action.fcurves
         except AttributeError:
-            print("--|'%s' is not animated" % obj.name)
+            #print("--|'%s' is not animated" % obj.name)
             continue
 
-        print("\n--> '%s' is animated at frames:" % obj.name)
+        #print("\n--> '%s' is animated at frames:" % obj.name)
 
         for fr in list(range(start,stop+1)):
             fc_evals = [c.evaluate(fr) for c in obj.animation_data.action.fcurves]
             obj_fcurves.update({int(fr): fc_evals})
-            print(fr, end=", ")
-        print()
+            #print(fr, end=", ")
+        #print()
 
         all_obj_fcurves.update({obj.name: obj_fcurves})
 
@@ -59,20 +64,29 @@ def render_with_skips(start, stop):
     filepath = bpy.context.scene.render.filepath
 
     for fr in render_range:
-        if fr not in still_frames or fr == render_range[0]:
-            bpy.context.scene.frame_set(fr)
-            bpy.context.scene.render.filepath = filepath + '%04d' % fr
-            bpy.ops.render.render(write_still=True)
-        else:
-            scene = bpy.context.scene
-            abs_filepath = scene.render.frame_path(scene.frame_current)
-            #abs_path = '/'.join(abs_filepath.split('/')[:-1]) + '/'
-            print("Frame %d is still, copying from equivalent" % fr)
-            scn = bpy.context.scene
-            shutil.copyfile(filepath + '%04d.png' % (fr-1), filepath + '%04d.png' % fr)
+        exists = False
+        directory = os.fsencode(filepath)
+        for file in os.listdir(directory):
+            filename = os.fsdecode(file)
+            if ('%04d' % fr) in filename:
+                exists = True
+        if exists == False:
+            if fr not in still_frames or fr == render_range[0]:
+                bpy.context.scene.frame_set(fr)
+                bpy.context.scene.render.filepath = filepath + '%04d' % fr
+                bpy.context.scene.render.use_overwrite = False
+                bpy.ops.render.render(write_still=True)
+            else:
+                scene = bpy.context.scene
+                abs_filepath = scene.render.frame_path(scene.frame_current)
+                #abs_path = '/'.join(abs_filepath.split('/')[:-1]) + '/'
+                print("Frame %d is still, copying from equivalent" % fr)
+                scn = bpy.context.scene
+                shutil.copyfile(filepath + '%04d.png' % (fr-1), filepath + '%04d.png' % fr)
 
     bpy.context.scene.render.filepath = filepath
 
 start = bpy.data.scenes['Scene'].frame_start
 end = bpy.data.scenes['Scene'].frame_end
 render_with_skips(start,end)
+helpers.finish_noise()

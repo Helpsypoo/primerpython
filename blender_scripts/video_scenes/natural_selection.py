@@ -55,14 +55,14 @@ class NaturalSelectionScene(Scene):
         #self.pokemon()
         #self.selfish_gene()
         #self.size()
-        #self.sense()
+        self.sense()
         #self.all_traits()
         #self.sudden_famine()
         #self.gradual_famine()
         #self.evolution_diagram()
         #self.recap()
         #self.end_card()
-        self.thumbnail()
+        #self.thumbnail()
 
     def intro(self):
         cues = self.subscenes['intro']

@@ -169,15 +169,16 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = 
 def is_scene(obj):
     #print('checking scene')
     #if "TextScene" in str(obj):
-    #print(obj)
     if not inspect.isclass(obj):
-        #print('not class')
+        #print('  not class')
         return False
     if not issubclass(obj, Scene):
-        #print('not subclass of scene')
+        print(obj)
+        #print('  not subclass of scene')
         return False
     if obj == Scene:
-        #print('is scene class itself')
+        #print(obj)
+        #print('  is scene class itself')
         return False
     return True
 

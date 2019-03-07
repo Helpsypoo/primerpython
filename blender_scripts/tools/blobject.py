@@ -99,20 +99,39 @@ class Blobject(Bobject):
 
 
 
-    def add_beard(self, mat = None, start_time = -1, duration = OBJECT_APPEARANCE_TIME):
-        beard = import_object(
-            'beard', 'misc',
-            location = [0.86383, -1.79778, 0.29876],
-            rotation_euler = [-40.8 * math.pi / 180, 68.3 * math.pi / 180, -5.77 * math.pi / 180],
-            scale = [1.377, 1.377, 0.685]
-        )
-        beard.ref_obj.parent = self.ref_obj.children[0]
-        beard.ref_obj.parent_bone = self.ref_obj.children[0].pose.bones["brd_bone_neck"].name
-        beard.ref_obj.parent_type = 'BONE'
-        beard.add_to_blender(appear_time = start_time, transition_time = duration)
+    def add_beard(
+        self,
+        mat = None,
+        low_res = False,
+        start_time = -1,
+        duration = OBJECT_APPEARANCE_TIME / FRAME_RATE
+    ):
+        has_beard_already = False
+        for obj in self.ref_obj.children[0].children:
+            if 'beard' in obj.name:
+                has_beard_already = True
 
-        if mat is not None:
-            apply_material(beard.ref_obj.children[0], mat)
+        if has_beard_already == False:
+            which_beard = 'beard'
+            if low_res == True:
+                which_beard = 'beard_low_res'
+
+            beard = import_object(
+                which_beard, 'misc',
+                location = [0.86383, -1.79778, 0.29876],
+                rotation_euler = [-40.8 * math.pi / 180, 68.3 * math.pi / 180, -5.77 * math.pi / 180],
+                scale = [1.377, 1.377, 0.685],
+                name = 'beard'
+            )
+            beard.ref_obj.parent = self.ref_obj.children[0]
+            beard.ref_obj.parent_bone = self.ref_obj.children[0].pose.bones["brd_bone_neck"].name
+            beard.ref_obj.parent_type = 'BONE'
+            beard.add_to_blender(appear_time = start_time, transition_time = duration * FRAME_RATE)
+
+            self.beard = beard
+
+            if mat is not None:
+                apply_material(beard.ref_obj.children[0], mat)
 
     def hold_gift(
         self,
@@ -188,6 +207,8 @@ class Blobject(Bobject):
         #own subclass of bobject.
         start_frame = start_time * FRAME_RATE
         end_pause_frames = end_pause_duration * FRAME_RATE
+        if duration == 0:
+            duration = 1
         duration_frames = duration * FRAME_RATE
 
         wave_cycle_length = 8
@@ -395,6 +416,8 @@ class Blobject(Bobject):
     ):
         if start_time == None:
             raise Warning('Need start time for evil pose')
+        if end_time == None:
+            raise Warning('Need end time for evil pose')
 
         start_frame = start_time * FRAME_RATE
         end_frame = None
@@ -443,8 +466,6 @@ class Blobject(Bobject):
             data_path = "rotation_quaternion",
             frame = start_frame + attack_frames
         )
-
-        #Shakes?
 
         #And back
         if end_frame != None:
@@ -695,7 +716,10 @@ class Blobject(Bobject):
         decay = None
     ):
         if start_time == None:
-            raise Warning('Need start time for evil pose')
+            raise Warning('Need start time for wince')
+
+        if end_time == None:
+            raise Warning('Need end time for wince')
 
         start_frame = start_time * FRAME_RATE
         end_frame = None
@@ -915,6 +939,64 @@ class Blobject(Bobject):
                 frame = end_frame
             )
 
+    def show_mouth(
+        self,
+        start_time = None,
+        end_time = None,
+        attack = None,
+        decay = None
+    ):
+        if start_time == None:
+            raise Warning('Need start time for hold_object')
+
+        if end_time != None:
+            raise Warning('End time not implemented for show_mouth')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        if attack == None:
+            if end_time == None:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+        for child in self.ref_obj.children[0].children:
+            if 'Mouth' in child.name:
+                self.mouth = child
+                break
+
+        self.mouth.keyframe_insert(data_path = 'location', frame = start_frame)
+        self.mouth.keyframe_insert(data_path = 'rotation_euler', frame = start_frame)
+        self.mouth.keyframe_insert(data_path = 'scale', frame = start_frame)
+        self.mouth.location = [-0.04, 0.36, 0.40609]
+        self.mouth.rotation_euler = [
+            -8.91 * math.pi / 180,
+            -0.003 * math.pi / 180,
+            -3.41 * math.pi / 180,
+        ]
+        self.mouth.scale = [
+            0.487,
+            0.719,
+            0.398
+        ]
+        self.mouth.keyframe_insert(data_path = 'location', frame = start_frame + attack_frames)
+        self.mouth.keyframe_insert(data_path = 'rotation_euler', frame = start_frame + attack_frames)
+        self.mouth.keyframe_insert(data_path = 'scale', frame = start_frame + attack_frames)
 
     def eat_animation(
         self,
@@ -980,3 +1062,125 @@ class Blobject(Bobject):
         mouth.keyframe_insert(data_path = 'location', frame = end_frame)
         mouth.keyframe_insert(data_path = 'rotation_euler', frame = end_frame)
         mouth.keyframe_insert(data_path = 'scale', frame = end_frame)
+
+    def dance(
+        self,
+        start_time = None,
+        end_time = None,
+        beat_duration = 0.25,
+        arms = True,
+        neck = True
+    ):
+        if start_time == None:
+            raise Warning('Need start time for dance')
+
+        if end_time == None:
+            raise Warning('Need end time for dance')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = end_time * FRAME_RATE
+
+        #Head
+        head = self.ref_obj.children[0].pose.bones[3]
+        initial_head = list(head.location)
+        head_left = [0, 0, -0.3]
+        head_right = [0, 0, 0.3]
+
+
+        l_arm = None
+        r_arm = None
+        for child in self.ref_obj.children:
+            if 'boerd_blob' in child.name:
+                l_arm = child.pose.bones[1]
+                r_arm = child.pose.bones[2]
+
+        initial_left = list(l_arm.rotation_quaternion)
+        initial_right = list(r_arm.rotation_quaternion)
+
+
+        l_arm_up_z = -2.7
+        l_arm_down_z = 3
+        l_arm_out_y = -7.6
+        l_arm_forward_x = -3
+
+        r_arm_up_z = -3.6
+        r_arm_down_z = 1.8
+        r_arm_out_y = -12.7
+        r_arm_forward_x = -2.2
+
+        head.keyframe_insert(
+            data_path = "location",
+            frame = start_frame
+        )
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        time = start_time
+        i = 0
+        while time < end_time:
+            time += beat_duration
+            i += 1 #Music starts on beat 1!
+            if i % 2 == 1:
+                head.location = head_left
+                #l_arm.rotation_quaternion = initial_left
+                l_arm.rotation_quaternion = [
+                    1,
+                    l_arm_forward_x,
+                    l_arm_out_y,
+                    l_arm_down_z
+                ]
+                r_arm.rotation_quaternion = [
+                    1,
+                    r_arm_forward_x,
+                    r_arm_out_y,
+                    r_arm_up_z
+                ]
+            else:
+                head.location = head_right
+                l_arm.rotation_quaternion = [
+                    1,
+                    l_arm_forward_x,
+                    l_arm_out_y,
+                    l_arm_up_z
+                ]
+                #r_arm.rotation_quaternion = initial_right
+                r_arm.rotation_quaternion = [
+                    1,
+                    r_arm_forward_x,
+                    r_arm_out_y,
+                    r_arm_down_z
+                ]
+
+            head.keyframe_insert(
+                data_path = "location",
+                frame = time * FRAME_RATE
+            )
+            l_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = time * FRAME_RATE
+            )
+            r_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = time * FRAME_RATE
+            )
+
+        head.location = initial_head
+        head.keyframe_insert(
+            data_path = "location",
+            frame = time * FRAME_RATE
+        )
+        l_arm.rotation_quaternion = initial_left
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = time * FRAME_RATE
+        )
+        r_arm.rotation_quaternion = initial_right
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = time * FRAME_RATE
+        )

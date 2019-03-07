@@ -2,8 +2,8 @@ import collections
 import math
 
 import imp
-import scene
-imp.reload(scene)
+#import scene
+#imp.reload(scene)
 from scene import Scene
 
 import svg_bobject
@@ -28,7 +28,7 @@ imp.reload(helpers)
 from helpers import *
 
 
-class LogisticGrowth(Scene):
+class LogisticGrowthScene(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
             ('last_video', {'duration': 14}),
@@ -51,6 +51,7 @@ class LogisticGrowth(Scene):
         #self.competition()
         #self.take_stock()
         #self.natural()
+        print('playing')
 
     def last_video(self):
         cues = self.subscenes['last_video']

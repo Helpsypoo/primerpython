@@ -16,7 +16,7 @@ from helpers import *
 
 #Sim constants
 WORLD_DIMENSIONS = [150, 150]
-SIM_RESOLUTION = 0.25
+SIM_RESOLUTION = 1 #0.25
 DEFAULT_DAY_LENGTH = 600 * SIM_RESOLUTION
 PREDATOR_SIZE_RATIO = 1.2 #Vals close to 1 apply strong pressure toward bigness,
                           #since it becomes possible to eat recent ancestors.
@@ -29,12 +29,14 @@ MAX_TURN_SPEED = 0.07 / SIM_RESOLUTION
 TURN_ACCELERATION = 0.005 / SIM_RESOLUTION
 BASE_SENSE_DISTANCE = 25
 EAT_DISTANCE = 10
-HELP_REP_BOOST = 0.9 #Reproduction chance improvement creatures get by helping
-MUTATION_CHANCE = 0.1
+HELP_REP_BOOST = 0.5 #Reproduction chance improvement creatures get by helping
+FAMILY_JUMPS = 3
+KIN_ALTRUISM_RADIUS = 0
+MUTATION_CHANCE = 0.05
 MUTATION_VARIATION = 0.1
 STARTING_ENERGY = 800 #1800
 HOMEBOUND_RATIO = 2# 1.5
-SAMARITAN_RATIO = 1.3
+SAMARITAN_RATIO = 1.1
 
 
 
@@ -162,6 +164,7 @@ class Food(object):
         self.world_location = world_location
         self.world = world
         self.is_eaten = False
+        #self.was_shared = False
 
         '''if isinstance(parents, list):
             self.parents = parents
@@ -326,14 +329,14 @@ class Food(object):
                 raise Warning('Need parent for child_of constraint')
             new_cons.target = parent
 
-    def add_to_blender(self):
+    '''def add_to_blender(self):
         self.bobject = import_object(
             'goodicosphere', 'primitives',
             #world_location = [0, 0, 0],
             location = [0, 0, 0],
             scale = FOOD_SCALE
         )
-        apply_material(self.bobject.ref_obj.children[0], 'color7')
+        apply_material(self.bobject.ref_obj.children[0], 'color7')'''
 
 class Creature(Food):
     def __init__(
@@ -343,6 +346,8 @@ class Creature(Food):
         sense = 1,
         altruist = False,
         green_beard = False,
+        gbo = False,
+        a_gb = False,
         kin_altruist = False,
         kin_radius = 0,
         parent = None,
@@ -354,9 +359,13 @@ class Creature(Food):
         self.sense = sense
         self.altruist = altruist
         self.green_beard = green_beard
+        self.a_gb = a_gb
+        self.gbo = gbo
+        self.green_beard = green_beard
         self.kin_altruist = kin_altruist
         self.kin_radius = kin_radius
         self.parent = parent
+        self.children = []
 
         self.days = []
 
@@ -365,12 +374,13 @@ class Creature(Food):
 
         cost = 0
         cost += (self.size * SIZE_ADJUST_FACTOR) ** 3 * (self.speed * SPEED_ADJUST_FACTOR) ** 2 #* 2
-        cost += (self.size * SIZE_ADJUST_FACTOR) ** 3 / 2
-        cost += self.sense / 2
+        #cost += (self.size * SIZE_ADJUST_FACTOR) ** 3 / 2
+        cost += self.sense
         self.energy_cost = cost / SIM_RESOLUTION
 
-    def new_day(self, date = 0, parent = None):
+    def new_day(self, date = 0):
         new_day = CreatureDay(creature = self, date = date)
+        parent = self.parent
         if len(self.days) == 0: #First day of life, ahhhh.
             if parent == None or date == 0: #For initial creatures
 
@@ -484,14 +494,15 @@ class Creature(Food):
                 has_energy = False
         if has_energy == False and day.death_time == None and day.home_time == None:
             day.death_time = len(day.locations)
-            self.days[-1].dead = True
+            day.dead = True
 
             was_samaritan = False
-            for state in day.states:
-                if state == 'samaritan':
-                    was_samaritan == True
+            for sta in day.states:
+                if sta == 'samaritan':
+                    was_samaritan = True
             if was_samaritan == True:
                 print("I ran out of energy after being a samaritan!")
+                print(day.locations[-1])
 
 
         if self.days[-1].dead == True:
@@ -561,8 +572,28 @@ class Creature(Food):
             elif self.green_beard == True:
                 #print("green beard")
                 to_be_nice_to = [x for x in close_creatures if x.green_beard == True]
+            elif self.a_gb == True:
+                to_be_nice_to = [x for x in close_creatures if x.gbo == True]
             elif self.kin_altruist == True:
-                to_be_nice_to = [x for x in live_creatures if x.parent == self or self.parent == x]
+                #to_be_nice_to = [x for x in close_creatures if \
+                #    ((x.size - self.size) ** 2 + (x.speed - self.speed) ** 2 + \
+                #    (x.sense - self.sense) ** 2) ** (1/2) < KIN_ALTRUISM_RADIUS]
+                fam = [self]
+                fam_to_check = [self]
+                for i in range(FAMILY_JUMPS):
+                    new_fam = []
+                    for cre in fam_to_check:
+                        if cre.parent != None and cre.parent not in fam:
+                            new_fam.append(cre.parent)
+                        for chi in cre.children:
+                            if chi not in fam:
+                                new_fam.append(chi)
+                    fam = fam + new_fam
+                    fam_to_check = new_fam
+
+
+                to_be_nice_to = [x for x in close_creatures if x in fam]
+
                 #to_be_nice_to = [x for x in live_creatures if x.parent == self or self.parent == x]
                 #Gave kin altruists the ability to go help any related creature
                 #regardless of distance, to increase the number of interactions
@@ -571,6 +602,7 @@ class Creature(Food):
                     ((x.size - self.size) ** 2 + (x.speed - self.speed) ** 2 + \
                     (x.sense - self.sense) ** 2) ** (1/2) < self.kin_radius]
 
+            #print(len(to_be_nice_to))
 
             if state == 'samaritan':
                 to_be_helped = None
@@ -593,6 +625,7 @@ class Creature(Food):
                             self.days[-1].has_eaten[-1].pop()
                         )
                         self.days[-1].has_helped += 1
+                        day.states.append(str(state)) #Make sure to count samaritan attempt
                         if distance_left < distance_out * HOMEBOUND_RATIO:
                             state = 'homebound'
                         else:
@@ -656,9 +689,9 @@ class Creature(Food):
                             day.has_eaten[-1].append(nom)
 
                         was_samaritan = False
-                        for state in food.days[-1].states:
-                            if state == 'samaritan':
-                                was_samaritan == True
+                        for sta in food.days[-1].states:
+                            if sta == 'samaritan':
+                                was_samaritan = True
                         if was_samaritan == True:
                             print("I was eaten after being a samaritan!")
 
@@ -828,6 +861,20 @@ class Creature(Food):
             #No moving if you're out of energy
             if has_energy == False:
                 effective_speed = 0
+                if day.dead == False:
+                    if day.home_time == None:
+                        raise Warning('Something with no anergy is alive...')
+                was_samaritan = False
+                for sta in day.states:
+                    if sta == 'samaritan':
+                        was_samaritan = True
+                if was_samaritan == True:
+                    if day.home_time != None:
+                        pass
+                        #print("I have no energy after being a samaritan, but I'm home, so it's k.")
+                    else:
+                        print("I have no energy after being a samaritan!")
+                        raise Warning('A samaritan died after helping')
             day.locations.append([
                 day.locations[-1][0] + math.cos(day.headings[-1]) * effective_speed / SIM_RESOLUTION,
                 day.locations[-1][1] + math.sin(day.headings[-1]) * effective_speed / SIM_RESOLUTION,
@@ -933,7 +980,13 @@ class Creature(Food):
             wiggle = True
         )
         if self.green_beard == True:
-            cre_bobj.add_beard(mat = 'color7')
+            cre_bobj.add_beard(mat = 'color7', low_res = True)
+        try:
+            if self.gbo == True:
+                cre_bobj.add_beard(mat = 'color7', low_res = True)
+        except:
+            pass
+            #Some sims were run before self.gbo existed
 
         #Rotate creature so a ref_obj rotation_euler of [0, 0, 0] results in
         #an x-facing blob standing in the z direction
@@ -968,7 +1021,7 @@ class Creature(Food):
         time = 0,
         bobj = None,
         spd = None,
-        obj = None
+        obj = None,
     ):
         #2 -> Blue
         #6 -> Green
@@ -988,7 +1041,9 @@ class Creature(Food):
             else:
                 obj = bobj.ref_obj.children[0]
 
-        if spd < 1 - 3 * SPEED_PER_COLOR:
+        #Commented out because I just want blue creatures now.
+        #Such graceful
+        '''if spd < 1 - 3 * SPEED_PER_COLOR:
             color = COLORS_SCALED[0]
         elif spd < 1 - 2 * SPEED_PER_COLOR:
             #black to purple
@@ -1042,6 +1097,9 @@ class Creature(Food):
             shift_time = 1 / FRAME_RATE,
             obj = obj
         )
+        '''
+
+        apply_material(obj, 'creature_color3')
 
         #Add speed property to bobject for reference when reusing bobjects
         bobj.speed = spd
@@ -1095,11 +1153,13 @@ class NaturalSim(object):
         mutation_chance = MUTATION_CHANCE,
         initial_creatures = None,
         mutation_switches = {
-            'speed' : True,
-            'size' : True,
-            'sense' : True,
-            'altruist' : True,
+            'speed' : False,
+            'size' : False,
+            'sense' : False,
+            'altruist' : False,
             'green_beard' : False,
+            'gbo' : False,
+            'a_gb' : False,
             'kin_altruist' : False,
             'kin_radius' : False,
         },
@@ -1133,9 +1193,9 @@ class NaturalSim(object):
             for i in range(num_creatures):
                 self.initial_creatures.append(
                     Creature(
-                        size = 1 + randrange(-5, 6) * MUTATION_VARIATION,
-                        speed = 1 + randrange(-5, 6) * MUTATION_VARIATION,
-                        sense = 1 + randrange(-5, 6) * MUTATION_VARIATION
+                        size = 1,# + randrange(-5, 6) * MUTATION_VARIATION,
+                        speed = 1,# + randrange(-5, 6) * MUTATION_VARIATION,
+                        sense = 1,# + randrange(-5, 6) * MUTATION_VARIATION
                     )
                 )
 
@@ -1218,6 +1278,18 @@ class NaturalSim(object):
                         child_beard = not par.green_beard
                     else:
                         child_beard = par.green_beard
+                child_gbo = False
+                if self.mutation_switches['gbo'] == True:
+                    if random() < self.mutation_chance:
+                        child_gbo = not par.gbo
+                    else:
+                        child_gbo = par.gbo
+                child_a_gb = False
+                if self.mutation_switches['a_gb'] == True:
+                    if random() < self.mutation_chance:
+                        child_a_gb = not par.a_gb
+                    else:
+                        child_a_gb = par.a_gb
                 child_kin_altruist = False
                 if self.mutation_switches['kin_altruist'] == True:
                     if random() < self.mutation_chance:
@@ -1241,9 +1313,12 @@ class NaturalSim(object):
                     sense = par.sense + sense_addition,
                     altruist = child_altruist,
                     green_beard = child_beard,
+                    a_gb = child_a_gb,
+                    gbo = child_gbo,
                     kin_altruist = child_kin_altruist,
                     kin_radius = par.kin_radius + kin_addition,
                 )
+                par.children.append(baby)
                 babiiieeesss.append(baby)
 
         return babiiieeesss
@@ -1252,6 +1327,7 @@ class NaturalSim(object):
         self,
         save = False,
         filename = None,
+        filename_seed = None,
         anim_durations = DEFAULT_ANIM_DURATIONS,
         custom_creature_set = None #For stringing separate sims together
     ):
@@ -1281,7 +1357,10 @@ class NaturalSim(object):
             'food_objects' : self.gen_food(),
             'creatures' : creatures,
             'day_length' : day_length, #number of steps in day to show all creatures
-            'anim_durations' : deepcopy(anim_durations)
+            'anim_durations' : deepcopy(anim_durations),
+            'food_given_away': 0,
+            'food_giving_attempts' : 0,
+            'martyrs' : 0
         }
         self.date_records.append(date_dict)
         """print()
@@ -1291,7 +1370,7 @@ class NaturalSim(object):
 
         """Conduct sim"""
         for cre in creatures:
-            cre.new_day(date = date, parent = cre.parent)
+            cre.new_day(date = date)
 
         for t in range(date_dict['day_length']):
             for cre in creatures:
@@ -1314,6 +1393,13 @@ class NaturalSim(object):
                    #print(str(cre) + " didn't eat enough")
                    day.dead = True
 
+                   was_samaritan = False
+                   for sta in day.states:
+                       if sta == 'samaritan':
+                           was_samaritan = True
+                   if was_samaritan == True:
+                       print("I had zero food after being a samaritan, somehow!")
+
                 #Didn't make it home
                 if (abs(day.locations[-1][0]) < self.dimensions[0] and \
                    abs(day.locations[-1][1]) < self.dimensions[1]):
@@ -1321,11 +1407,18 @@ class NaturalSim(object):
                    day.dead = True
 
                    was_samaritan = False
-                   for state in day.states:
-                       if state == 'samaritan':
-                           was_samaritan == True
+                   for sta in day.states:
+                       if sta == 'samaritan':
+                           was_samaritan = True
                    if was_samaritan == True:
                        print("I didn't make it home after being a samaritan!")
+
+            '''was_samaritan = False
+            for sta in day.states:
+                if sta == 'samaritan':
+                    was_samaritan = True
+            if was_samaritan == True:
+                print("I was a samaritan!")'''
 
             #Shorten for animation
             if day.death_time != None and day.death_time > latest_action:
@@ -1337,26 +1430,58 @@ class NaturalSim(object):
             #print(date_dict['date'], latest_action)
             date_dict['day_length'] = latest_action
 
-        for cre in self.date_records[-1]['creatures']:
-            for day in cre.days:
-                if day.date == date:
-                    pass
-                    #print('Date: ' + str(date))
-                    #print('Dead time: ' + str(day.death_time))
-                    #print('Home time: ' + str(day.home_time))
-                    """print('Locations: ')
-                    for loc in day.locations:
-                        print(loc)"""
-                    #print()
-        if save == True:
-            self.save_sim_result(filename)
+        #Gather info on altruism in previous day
+        #Also check whether a creature is there more than once
+        documented_creatures = []
+        for cre in date_dict['creatures']:
+            if cre in documented_creatures:
+                raise Warning('Date dict creature list has duplicate creatures')
+            documented_creatures.append(cre)
 
-    def save_sim_result(self, filename):
-        if filename == None:
+            day = cre.days[-1]
+            ##Food given away
+            date_dict['food_given_away'] += day.has_helped
+            ##Attempts
+            states = day.states
+            was_samaritan = False
+            for i in range(1, len(states)):
+                if states[i] == 'samaritan':
+                    was_samaritan = True
+                    if states[i-1] != 'samaritan':
+                        date_dict['food_giving_attempts'] += 1
+            if was_samaritan == True and day.dead == True:
+                date_dict['martyrs'] += 1
+                print('Recorded martyr')
+
+
+        if save == True:
+            self.save_sim_result(filename, filename_seed)
+
+    def save_sim_result(self, filename, filename_seed):
+        if filename != None:
+            name = filename
+        elif filename_seed != None:
+            k = 0
+            directory = os.fsencode(SIM_DIR)
+            while k <= len(os.listdir(directory)):
+                #print('looking in dir')
+                name_to_check = str(filename_seed) + '_' + str(k)
+                already_exists = False
+                for existing_file in os.listdir(directory):
+                    existing_file_name = os.fsdecode(existing_file)[:-4]
+                    #print(name_to_check)
+                    #print(existing_file_name)
+                    if existing_file_name == name_to_check:
+                        already_exists = True
+                        #print(already_exists)
+                if already_exists:
+                    k += 1
+                else:
+                    name = name_to_check
+                    break
+        else:
             now = datetime.datetime.now()
             name = "NAT" + now.strftime('%Y%m%dT%H%M%S')
-        else:
-            name = filename
         #name = 'test'
         result = os.path.join(
             SIM_DIR,
@@ -1375,6 +1500,8 @@ class DrawnNaturalSim(Bobject):
         *subbobjects,
         sim = None,
         save = False,
+        loud = True,
+        start_delay = 1,
         blender_units_per_world_unit = BLENDER_UNITS_PER_WORLD_UNIT,
         day_length_style = 'fixed_speed', #Can also be 'fixed_length'
         **kwargs
@@ -1389,11 +1516,14 @@ class DrawnNaturalSim(Bobject):
                 SIM_DIR,
                 sim
             ) + ".pkl"
-            print(result)
+            if loud:
+                print(result)
             with open(result, 'rb') as input:
-                print(input)
+                if loud:
+                    print(input)
                 self.sim = pickle.load(input)
-            print("Loaded the world")
+            if loud:
+                print("Loaded the world")
         elif sim == None:
             #I was previously passing on only certain kwargs, but I'm not sure
             #why I don't send them all. Makes it easier to use a new kwarg.
@@ -1407,8 +1537,19 @@ class DrawnNaturalSim(Bobject):
         #As written, changing this will change some proportions, since some
         #other constants depend on the default value
 
-        self.reusable_food_bobjs = []
+        self.start_delay = start_delay
+
+        #self.reusable_food_bobjs = []
         self.reusable_cre_bobjs = []
+
+        food_bobject_model = import_object(
+            'goodicosphere', 'primitives',
+            #world_location = [0, 0, 0],
+            #location = [0, 0, 0],
+            #scale = FOOD_SCALE
+        )
+        self.food_object_model = food_bobject_model.ref_obj.children[0]
+        apply_material(self.food_object_model, 'color7')
 
     def animate_days(self, start_day, end_day):
         if end_day == None:
@@ -1425,13 +1566,18 @@ class DrawnNaturalSim(Bobject):
                         OBJECT_APPEARANCE_TIME,
                         date_record['anim_durations']['dawn'] * FRAME_RATE - delay * FRAME_RATE
                     )
-                    if len(self.reusable_food_bobjs) == 0:
+                    food.bobject = bobject.Bobject(
+                        objects = [self.food_object_model.copy()],
+                        scale = FOOD_SCALE
+                    )
+                    food.bobject.ref_obj.parent = self.ref_obj
+                    '''if len(self.reusable_food_bobjs) == 0:
                         food.add_to_blender()
                         food.bobject.ref_obj.parent = self.ref_obj
                     else:
                         bobj = self.reusable_food_bobjs.pop()
                         bobj.scale = [FOOD_SCALE, FOOD_SCALE, FOOD_SCALE]
-                        '''for cons in bobj.ref_obj.constraints:
+                        for cons in bobj.ref_obj.constraints:
                             cons.keyframe_insert(
                                 data_path = 'influence',
                                 frame = (self.start_time + self.elapsed_time + delay) * FRAME_RATE - 1
@@ -1440,9 +1586,9 @@ class DrawnNaturalSim(Bobject):
                             cons.keyframe_insert(
                                 data_path = 'influence',
                                 frame = (self.start_time + self.elapsed_time + delay) * FRAME_RATE
-                            )'''
+                            )
 
-                        food.bobject = bobj
+                        food.bobject = bobj'''
 
                     starting_loc = scalar_mult_vec(
                         food.world_location,
@@ -1450,13 +1596,13 @@ class DrawnNaturalSim(Bobject):
                     )
                     #This line primes move_to to have food on first day start
                     #in the right place
-                    if i == 0:
-                        food.bobject.ref_obj.location = starting_loc
-                    food.bobject.move_to(
+                    #if i == 0:
+                    food.bobject.ref_obj.location = starting_loc
+                    '''food.bobject.move_to(
                         new_location = starting_loc,
                         start_time = self.start_time + self.elapsed_time + delay - 1 / FRAME_RATE,
                         end_time = self.start_time + self.elapsed_time + delay
-                    )
+                    )'''
 
                     food.bobject.add_to_blender(
                         appear_time = self.start_time + self.elapsed_time + delay,
@@ -1577,9 +1723,10 @@ class DrawnNaturalSim(Bobject):
 
                 #Reduce number of keyframes when there's two or more per frame.
                 #Number of time steps in one frame
-                key_every_n_t = math.floor(1 / FRAME_RATE / time_step)
+                '''key_every_n_t = math.floor(1 / FRAME_RATE / time_step)
                 if key_every_n_t < 1:
-                    key_every_n_t = 1
+                    key_every_n_t = 1'''
+                key_every_n_t = 1
                 #print(str(date_record['date']) + ' ' + str(len(date_record['creatures'])))
                 for t in range(date_record['day_length']):
                     time_of_day = t * time_step
@@ -1625,20 +1772,27 @@ class DrawnNaturalSim(Bobject):
                             #same time step.
                             if len(day.has_eaten[t]) > 0:
                                 last_eaten = day.has_eaten[t][-1]
-                                if last_eaten not in day.has_eaten[t-1]:
+                                #was_eaten_not_shared = (last_eaten.was_shared == False or len(day.has_eaten) > 1)
+                                #if last_eaten.was_shared == True:
+                                #    print(last_eaten.bobject.ref_obj.name)
+                                if last_eaten not in day.has_eaten[t-1] and \
+                                    len(last_eaten.bobject.ref_obj.constraints) == 0:
+                                    #was_eaten_not_shared == True:
+                                    #Second condition avoids erroneous animations
+                                    #for shared_food
                                     last_eaten.git_ate(
                                         eater = cre,
                                         start_time = anim_time,
                                         drawn_world = self,
                                         time_step = time_step
                                     )
-                                    if isinstance(last_eaten, Creature):
+                                    '''if isinstance(last_eaten, Creature):
                                         pass
                                         #There's another place where creatures are
                                         #added to the reusable pile.
                                         #self.reusable_cre_bobjs.append(last_eaten.bobject)
                                     else:
-                                        self.reusable_food_bobjs.append(last_eaten.bobject)
+                                        self.reusable_food_bobjs.append(last_eaten.bobject)'''
 
                 ''' Older version that didn't update date record if speed is fixed
                 if self.day_length_style == 'fixed_length':
@@ -1657,6 +1811,7 @@ class DrawnNaturalSim(Bobject):
             """Creatures that die should disappear."""
             """Along with food"""
             print(" Cleaning up")
+
             def clean_up():
                 duration_frames = min(
                     OBJECT_APPEARANCE_TIME,
@@ -1679,6 +1834,7 @@ class DrawnNaturalSim(Bobject):
                         if candidate_day.date == date_record['date']:
                             day = candidate_day
                             break
+
                     if day.dead == True:
                         cre.bobject.disappear(
                             disappear_time = self.start_time + self.elapsed_time + date_record['anim_durations']['night'],
@@ -1712,7 +1868,7 @@ class DrawnNaturalSim(Bobject):
                             pass
 
                 for food in date_record['food_objects']:
-                    for cons in food.bobject.ref_obj.constraints:
+                    '''for cons in food.bobject.ref_obj.constraints:
                         cons.keyframe_insert(
                             data_path = 'influence',
                             frame = (self.start_time + self.elapsed_time + date_record['anim_durations']['night']) * FRAME_RATE - 1
@@ -1721,13 +1877,13 @@ class DrawnNaturalSim(Bobject):
                         cons.keyframe_insert(
                             data_path = 'influence',
                             frame = (self.start_time + self.elapsed_time + date_record['anim_durations']['night']) * FRAME_RATE
-                        )
+                        )'''
                     if food.is_eaten == False:
                         food.bobject.disappear(
                             disappear_time = self.start_time + self.elapsed_time + date_record['anim_durations']['night'],
-                            duration_frames = duration_frames / 2
+                            duration_frames = duration_frames# / 2
                         )
-                        self.reusable_food_bobjs.append(food.bobject)
+                        #self.reusable_food_bobjs.append(food.bobject)
 
                 self.elapsed_time += date_record['anim_durations']['night']
 
@@ -1735,7 +1891,7 @@ class DrawnNaturalSim(Bobject):
 
     def add_to_blender(
         self,
-        start_delay = 1,
+        start_delay = None,
         start_day = 0,
         end_day = None,
         **kwargs
@@ -1744,8 +1900,23 @@ class DrawnNaturalSim(Bobject):
             raise Warning('Need appear_time to add natural sim.')
         self.start_time = kwargs['appear_time']
 
-        self.elapsed_time = start_delay #Will add to this as phases are
+        #Already set in __init__, but can be set again here
+        if start_delay != None:
+            self.start_delay = start_delay
+
+
+        self.elapsed_time = self.start_delay #Will add to this as phases are
                                              #animated to keep them sequential
+
+        #Adjust elapsed_time if start day not 0
+        for i in range(start_day):
+            day = self.sim.date_records[i]
+            self.elapsed_time += day['anim_durations']['dawn'] + \
+                            day['anim_durations']['morning'] + \
+                            day['anim_durations']['day'] + \
+                            day['anim_durations']['evening'] + \
+                            day['anim_durations']['night']
+
 
         plane = import_object(
             'xyplane', 'primitives',

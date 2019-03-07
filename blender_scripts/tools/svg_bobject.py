@@ -26,7 +26,7 @@ class SVGBobject(Bobject):
         if 'vert_align_centers' in kwargs:
             self.vert_align_centers = kwargs['vert_align_centers']
         else:
-            self.vert_align_centers = False
+            self.vert_align_centers = 'x_and_y'
 
         if 'centered' in kwargs:
             self.centered = kwargs['centered']
@@ -942,6 +942,7 @@ class SVGBobject(Bobject):
             self.imported_svg_data[expr]['top'] = top_most_y
             self.imported_svg_data[expr]['bottom'] = bottom_most_y
             self.imported_svg_data[expr]['height'] = height * self.scale[1]
+            self.imported_svg_data[expr]['centery'] = (top_most_y + bottom_most_y) / 2
 
     def get_figure_curves(self, fig):
         #Really just here to be overridden by tex_bobject
@@ -962,6 +963,12 @@ class SVGBobject(Bobject):
             offset[0] = cen
         elif self.centered == 'right':
             offset[0] = data[fig]['end']
+        elif self.centered == 'top_centered':
+            offset[0] = data[fig]['centerx']
+            offset[1] = data[fig]['top']
+        elif self.centered == 'x_and_y':
+            offset[0] = data[fig]['centerx']
+            offset[1] = data[fig]['centery']
         else:
             offset[0] = data[fig]['beginning']
 

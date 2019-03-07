@@ -1041,13 +1041,23 @@ def cam_and_swivel(
 '''
 Animation helpers
 '''
-def make_animations_linear(thing_with_animation_data):
-    for fc in thing_with_animation_data.animation_data.action.fcurves:
-        fc.extrapolation = 'LINEAR' # Set extrapolation type
+def make_animations_linear(thing_with_animation_data, data_paths = None, extrapolate = False):
+    if data_paths == None:
+        f_curves = thing_with_animation_data.animation_data.action.fcurves
+    else:
+        f_curves = []
+        for fc in thing_with_animation_data.animation_data.action.fcurves:
+            if fc.data_path in data_paths:
+                f_curves.append(fc)
+    for fc in f_curves:
+        if extrapolate == True:
+            fc.extrapolation = 'LINEAR' # Set extrapolation type
         # Iterate over this fcurve's keyframes and set handles to vector
         for kp in fc.keyframe_points:
             kp.handle_left_type  = 'VECTOR'
             kp.handle_right_type = 'VECTOR'
+            kp.interpolation = 'LINEAR'
+
 
 '''
 Anatomy video helpers
