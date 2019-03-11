@@ -66,6 +66,9 @@ from blobject import Blobject
 import inclusive_fitness
 imp.reload(inclusive_fitness)
 
+import market_sim
+imp.reload(market_sim)
+
 from helpers import *
 
 def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = True):
@@ -295,68 +298,63 @@ def draw_scenes_from_file(script_file, clear = True):
 def test():
     initialize_blender()
 
-    '''sim = natural_sim.DrawnNaturalSim(
-        mutation_switches = [True, True, True, True, False],
-        scale = 2.2,
-        initial_creatures = 1,
-        food_count = 1,
-        initial_energy = 50000,
-        #sim = 'altruism_test',
-        location = [0, 0, 0],
-        day_length_style = 'fixed_speed'
-    )'''
-
-    b_creature = natural_sim.Creature(
-        speed = 1,
-        size = 1.1,
-        sense = 15,
-        kin_altruist = True
+    sim = market_sim.Market(
+        num_buyers = 100,
+        num_sellers = 100,
+        #interaction_mode = 'negotiate',
+        #interaction_mode = 'walk',
+        interaction_mode = 'seller_asks_buyer_decides',
+        initial_price = 10,
+        #session_mode = 'rounds_w_concessions',
+        #session_mode = 'rounds',
+        session_mode = 'one_shot',
+        fluid_sellers = True
     )
-    s_creature = natural_sim.Creature(
-        speed = 0.2,
-        size = 1,
-        sense = 15,
-        parent = b_creature,
-        kin_altruist = True
-    )
-    initial_creatures = [b_creature, s_creature]
+    num_sessions = 500
+    for i in range(num_sessions):
+        print("Running session " + str(i))
+        sim.new_session()
+        #print(sim.sessions[-1])
+
+    for i, session in enumerate(sim.sessions):
+        print('Session ' + str(i))
+        print(' Completed transactions: ' + str(session.num_transactions) + ' Sellers: ' + str(session.num_sellers) + ' Price: ' + str(session.avg_price))
+
+        goal_prices = []
+        for transaction in session.meetings:
+            try:
+                goal_prices.append([transaction.buyer.price_limit, transaction.seller.price_limit])
+            except:
+                print(i)
+                print(len(transaction.buyer.goal_prices))
+                print(len(transaction.seller.goal_prices))
+                raise()
+        #print(' ' + str(sorted(goal_prices)))
+
+    ordered_bids = sorted([x.price_limit for x in sim.agents if x.type == 'buyer'])
+    ordered_bids.reverse()
+    #print(ordered_bids)
+    ordered_asks = sorted([x.price_limit for x in sim.agents if x.type == 'seller'])
+    #print(ordered_asks)
+    for i, [bid, ask] in enumerate(zip(ordered_bids, ordered_asks)):
+        if bid >= ask:
+            continue
+        else:
+            print(i-1, ordered_bids[i-1], ordered_asks[i-1])
+            print(i, bid, ask)
+            print(i+1, ordered_bids[i+1], ordered_asks[i+1])
+            break
 
 
-    sim = natural_sim.DrawnNaturalSim(
-        #mutation_switches = [True, True, True, True, False],
-        scale = 1.5,
-        food_count = 2,
-        initial_creatures = initial_creatures,
-        #sim = 'altruism_test',
-        location = [-6.5, 0, 0],
-        initial_energy = 10000,
-        day_length_style = 'fixed_speed'
-    )
-
-    sim.sim.sim_next_day()
-
-    sim.add_to_blender(appear_time = 0)
-
-    '''def func1(x): return x
-    def func2(x): return math.sin(x) + 1
-    def func3(x): return math.cos(x) + 2
-    def func4(x): return x ** 2
-    g = graph_bobject.GraphBobject(
-        func1
-    )
-    g.add_to_blender(appear_time = 0)
-    g.add_new_function_and_curve(func2, color = 4)
-    g.add_new_function_and_curve(func3, color = 6)
-    g.add_new_function_and_curve(func4, color = 7)'''
 
 def main():
     """Use this as a test scene"""
     #tex_test()
     """"""
 
-    #test()
+    test()
     #draw_scenes_from_file(scds, clear = False)
-    draw_scenes_from_file(inclusive_fitness)
+    #draw_scenes_from_file(inclusive_fitness)
 
     '''tournament = centipede.Tournament(
         initial_players = 'spread',
