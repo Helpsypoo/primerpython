@@ -17,7 +17,7 @@ PRICE_ADJUST_MODE = 'chance'
 PRICE_ADJUST_CHANCE = 0.5
 PRICE_ADJUST_MEAN = 1
 PRICE_ADJUST_DEV = 0.1
-PRICE_CONCESSION = 0.25
+PRICE_CONCESSION = 1
 
 class Agent(object):
     """docstring for Agent."""
@@ -79,7 +79,8 @@ class Meeting(object):
     def __init__(self,
         buyer = None,
         seller = None,
-        interaction_mode = None
+        interaction_mode = None,
+        concession_size = 0
     ):
         super().__init__()
         self.buyer = buyer
@@ -88,8 +89,10 @@ class Meeting(object):
         if self.seller == None or self.buyer == None:
             raise Warning('Meeting is missing a buyer or a seller')
 
-        bid = self.buyer.goal_prices[-1]
-        ask = self.seller.goal_prices[-1]
+
+
+        bid = self.buyer.goal_prices[-1] + concession_size
+        ask = self.seller.goal_prices[-1] - concession_size
 
         if interaction_mode == None:
             raise Warning('Buyers and sellers have undefined interaction mode')
@@ -181,8 +184,8 @@ class Session(object):
 
         if self.session_mode == 'rounds' or self.session_mode == 'rounds_w_concessions':
             disqualified = []
-            sellers_this_round = self.sellers
-            buyers_this_round = self.buyers
+            sellers_this_round = copy(self.sellers)
+            buyers_this_round = copy(self.buyers)
 
             round_count = 0
             while len(buyers_this_round) > 0 and len(sellers_this_round) > 0:
@@ -256,7 +259,7 @@ class Session(object):
             for seller in sellers_this_round:
                 disqualified.append(seller)
 
-            if self.session_mode != 'rounds_w_concessions':
+            if self.session_mode == 'rounds':
                 #Agents who never made a deal adjust prices
                 for agent in disqualified:
                     agent.adjust_price(success = False)
@@ -265,7 +268,9 @@ class Session(object):
                 #price for the adjustment. Purpose of this is to get transaction
                 #count up.
                 buyers_this_round = [x for x in disqualified if x.type == 'buyer']
+                disqualified = [x for x in disqualified if x not in buyers_this_round]
                 sellers_this_round = [x for x in disqualified if x.type == 'seller']
+                disqualified = [x for x in disqualified if x not in sellers_this_round]
 
                 #Similar to loop from before, but always negotiate to see if a
                 #deal is possible within base limits
@@ -291,6 +296,8 @@ class Session(object):
                                     min(x.goal_prices[-1] + PRICE_CONCESSION, x.price_limit) >= min_seller_price]
                     #print('  ' + str(len(buyers_this_round)) + ' buyers')
 
+                    #if len(disqualified + buyers_this_round + sellers_this_round)
+
                     #Prep container for creatures who will go to next round
                     buyers_next_round = []
                     sellers_next_round = []
@@ -306,15 +313,16 @@ class Session(object):
                             Meeting(
                                 buyer = buyer,
                                 seller = seller,
-                                interaction_mode = 'buyer_gets_it'
+                                interaction_mode = self.interaction_mode,
+                                concession_size = PRICE_CONCESSION
                             )
                         )
 
                         last_price = self.meetings[-1].transaction_price
 
                         if last_price == None:
-                            disqualified.append(buyer)
-                            disqualified.append(seller)
+                            buyers_next_round.append(buyer)
+                            sellers_next_round.append(seller)
                         else: #success!
                             buyer.adjust_price(set_price = last_price)
                             seller.adjust_price(set_price = last_price)
@@ -329,6 +337,15 @@ class Session(object):
                     buyers_this_round = buyers_next_round
                     sellers_this_round = sellers_next_round
 
+                #Put leftovers in disqualified. Will sometimes make an agen adjust
+                #price even when they never got a chance, but that will be fairly rare.
+                #Main point is to make sure agents who have failed do end up
+                #adjusting price
+                for buyer in buyers_this_round:
+                    disqualified.append(buyer)
+                for seller in sellers_this_round:
+                    disqualified.append(seller)
+
                 for agent in disqualified:
                     agent.adjust_price(success = False)
 
@@ -340,6 +357,7 @@ class Session(object):
         self.failed_meetings = 0
         for meet in self.meetings:
             if meet.transaction_price != None:
+                print(meet.transaction_price)
                 total_price += meet.transaction_price
                 self.num_transactions += 1
             else:
@@ -348,7 +366,6 @@ class Session(object):
             self.avg_price = total_price / self.num_transactions
         else:
             self.avg_price = None
-
 
 class Market(object):
     """docstring for Market."""
@@ -392,6 +409,7 @@ class Market(object):
             #return math.floor(x ** 2 / (2 * self.price_range[1]) + x / 2)
             return math.floor(x ** 2 / (self.price_range[1]))
             #return math.floor(x ** 3 / self.price_range[1] ** 2)
+            pass
 
     def get_point_on_demand_curve(self, shape = 'linear'):
         if shape == 'linear':
@@ -401,6 +419,7 @@ class Market(object):
             #return math.floor(x ** 2 / (2 * self.price_range[1]) + x / 2)
             return math.floor(x ** 2 / (self.price_range[1]))
             #return math.floor(x ** 3 / self.price_range[1] ** 2)
+            pass
 
     def generate_agents(self):
         self.agents = []
@@ -440,7 +459,7 @@ class Market(object):
             if agent.type == 'seller':
                 if self.fluid_sellers == True and \
                     expected_price != None and \
-                    expected_price <= agent.price_limit:
+                    expected_price < agent.price_limit:
                     #If seller sits session out, add to its goal_prices list
                     #to keep them the same length
                     agent.goal_prices.append(agent.price_limit)
@@ -461,3 +480,5 @@ class Market(object):
                 #meetings kwarg is specified.
             )
         )
+        '''for agent in self.agents:
+            print(len(agent.goal_prices))'''

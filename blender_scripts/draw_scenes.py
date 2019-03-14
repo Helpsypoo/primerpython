@@ -63,8 +63,8 @@ import blobject
 imp.reload(blobject)
 from blobject import Blobject
 
-import inclusive_fitness
-imp.reload(inclusive_fitness)
+import scds
+imp.reload(scds)
 
 import market_sim
 imp.reload(market_sim)
@@ -299,18 +299,18 @@ def test():
     initialize_blender()
 
     sim = market_sim.Market(
-        num_buyers = 100,
-        num_sellers = 100,
+        num_buyers = 1,
+        num_sellers = 2,
         #interaction_mode = 'negotiate',
         #interaction_mode = 'walk',
         interaction_mode = 'seller_asks_buyer_decides',
-        initial_price = 10,
-        #session_mode = 'rounds_w_concessions',
+        initial_price = 50,
+        session_mode = 'rounds_w_concessions',
         #session_mode = 'rounds',
-        session_mode = 'one_shot',
+        #session_mode = 'one_shot',
         fluid_sellers = True
     )
-    num_sessions = 500
+    num_sessions = 200
     for i in range(num_sessions):
         print("Running session " + str(i))
         sim.new_session()
@@ -320,31 +320,43 @@ def test():
         print('Session ' + str(i))
         print(' Completed transactions: ' + str(session.num_transactions) + ' Sellers: ' + str(session.num_sellers) + ' Price: ' + str(session.avg_price))
 
+        ordered_bids = sorted([x.goal_prices[i] for x in session.buyers])
+        #ordered_bids.reverse()
+        print(ordered_bids)
+        ordered_asks = sorted([x.goal_prices[i] for x in session.sellers])
+        print(ordered_asks)
+
         goal_prices = []
         for transaction in session.meetings:
+            print(transaction.transaction_price)
             try:
-                goal_prices.append([transaction.buyer.price_limit, transaction.seller.price_limit])
+                goal_prices.append([transaction.buyer.goal_prices[i], transaction.seller.goal_prices[i]])
             except:
                 print(i)
                 print(len(transaction.buyer.goal_prices))
                 print(len(transaction.seller.goal_prices))
                 raise()
-        #print(' ' + str(sorted(goal_prices)))
+        print(' ' + str(goal_prices))
+
+        '''for agent in sim.agents:
+            print(len(agent.goal_prices))'''
 
     ordered_bids = sorted([x.price_limit for x in sim.agents if x.type == 'buyer'])
     ordered_bids.reverse()
-    #print(ordered_bids)
+    print(ordered_bids)
     ordered_asks = sorted([x.price_limit for x in sim.agents if x.type == 'seller'])
-    #print(ordered_asks)
-    for i, [bid, ask] in enumerate(zip(ordered_bids, ordered_asks)):
+    print(ordered_asks)
+
+
+
+    '''for i, [bid, ask] in enumerate(zip(ordered_bids, ordered_asks)):
         if bid >= ask:
             continue
         else:
             print(i-1, ordered_bids[i-1], ordered_asks[i-1])
             print(i, bid, ask)
             print(i+1, ordered_bids[i+1], ordered_asks[i+1])
-            break
-
+            break'''
 
 
 def main():
