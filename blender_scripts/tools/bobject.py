@@ -163,7 +163,7 @@ class Bobject(object):
                 bobj.add_to_blender(appear_frame = appear_frame + subbobject_timing)
         elif isinstance(subbobject_timing, list):
             if len(subbobject_timing) != len(followers):
-                print("Subbobject list and timing list are mismatched.")
+                raise Warning("Subbobject list and timing list are mismatched.")
             for frame, bobj in zip(subbobject_timing, followers):
                 #frame += subbobject_delay
                 bobj.add_to_blender(appear_frame = appear_frame + frame, animate = True)

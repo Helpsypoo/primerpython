@@ -110,13 +110,16 @@ Parameter considerations
 Learnings:
 - It seems like it was a bad call to use bobjects and bobject methods for the
   sim. Bobjects and their methods are made to be easy to use for arranging
-  objects manually throughout a scene, but when embedded automated structures,
+  objects manually throughout a scene, but when embedded in automated structures,
   they cause two problems. First, methods like bobject.move_to() place a starting
   keyframe and ending keyframe. This can cause durations to overlap, creating
   confused motions. Second, the bobject methods generally use seconds as the
   time unit. This is all well and good when thinking directly about a timeline,
   but using them alongside the blender api creates a need to convert units often,
   giving many chances for confusion, bugs, and ugliness.
+  EDIT: This might be okay as long as objects in blender aren't reused for
+  multiple sim objects, which is where the overlapping keyframe confusion seems
+  to occur.
 - Managing the double-parent relationships has proven difficult. It may have been
   better to have a childof constraint rather than full parenting of the food,
   since the constraints can simply be turned off.

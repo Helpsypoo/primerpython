@@ -676,7 +676,6 @@ class GraphBobject(Bobject):
         else:
             end_frame = end_time * FRAME_RATE
 
-
         bar.move_to(
             start_frame = start_frame,
             new_location = [

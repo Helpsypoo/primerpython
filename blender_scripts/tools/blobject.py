@@ -582,6 +582,103 @@ class Blobject(Bobject):
             decay_frames = decay_frames
         )
 
+    def angry_eyes(
+        self,
+        start_time = None,
+        end_time = None,
+        attack = None,
+        decay = None
+    ):
+        if start_time == None:
+            raise Warning('Need start time for angry_eyes()')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        if attack == None:
+            if end_time == None:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+        #Eyes
+        eyes = [
+            self.ref_obj.children[0].children[-2],
+            self.ref_obj.children[0].children[-3],
+        ]
+        for eye in eyes:
+                key = eye.data.shape_keys.key_blocks['Key 1']
+                key.keyframe_insert(data_path = 'value', frame = start_frame)
+                key.value = 1
+                key.keyframe_insert(data_path = 'value', frame = start_frame + attack_frames)
+                if end_frame != None:
+                    key.keyframe_insert(data_path = 'value', frame = end_frame - decay_frames)
+                    key.value = 0
+                    key.keyframe_insert(data_path = 'value', frame = end_frame)
+
+    def normal_eyes(
+        self,
+        start_time = None,
+        end_time = None,
+        attack = None,
+        decay = None
+    ):
+        if start_time == None:
+            raise Warning('Need start time for normal_eyes()')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        if attack == None:
+            if end_time == None:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+        #Eyes
+        eyes = [
+            self.ref_obj.children[0].children[-2],
+            self.ref_obj.children[0].children[-3],
+        ]
+        for eye in eyes:
+                key = eye.data.shape_keys.key_blocks['Key 1']
+                initial_val = key.value
+                key.keyframe_insert(data_path = 'value', frame = start_frame)
+                key.value = 0
+                key.keyframe_insert(data_path = 'value', frame = start_frame + attack_frames)
+                if end_frame != None:
+                    key.keyframe_insert(data_path = 'value', frame = end_frame - decay_frames)
+                    key.value = initial_val
+                    key.keyframe_insert(data_path = 'value', frame = end_frame)
+
     def hello(
         self,
         start_time = None,
@@ -996,6 +1093,51 @@ class Blobject(Bobject):
         ]
         self.mouth.keyframe_insert(data_path = 'location', frame = start_frame + attack_frames)
         self.mouth.keyframe_insert(data_path = 'rotation_euler', frame = start_frame + attack_frames)
+        self.mouth.keyframe_insert(data_path = 'scale', frame = start_frame + attack_frames)
+
+    def hide_mouth(
+        self,
+        start_time = None,
+        end_time = None,
+        attack = None,
+        decay = None
+    ):
+        if start_time == None:
+            raise Warning('Need start time for hold_object')
+
+        if end_time != None:
+            raise Warning('End time not implemented for show_mouth')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        if attack == None:
+            if end_time == None:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+        for child in self.ref_obj.children[0].children:
+            if 'Mouth' in child.name:
+                self.mouth = child
+                break
+
+        self.mouth.keyframe_insert(data_path = 'scale', frame = start_frame)
+        self.mouth.scale = [0, 0, 0]
         self.mouth.keyframe_insert(data_path = 'scale', frame = start_frame + attack_frames)
 
     def eat_animation(

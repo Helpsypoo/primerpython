@@ -69,6 +69,9 @@ imp.reload(scds)
 import market_sim
 imp.reload(market_sim)
 
+import drawn_market
+imp.reload(drawn_market)
+
 from helpers import *
 
 def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = True):
@@ -298,6 +301,7 @@ def draw_scenes_from_file(script_file, clear = True):
 def test():
     initialize_blender()
 
+    """
     sim = market_sim.Market(
         num_buyers = 1,
         num_sellers = 2,
@@ -358,6 +362,90 @@ def test():
             print(i+1, ordered_bids[i+1], ordered_asks[i+1])
             break'''
 
+    """
+
+    '''agent = market_sim.Agent(
+        type = 'seller',
+        price_limit = 10,
+        interaction_mode = 'seller_asks_buyer_decides'
+    )
+    d_agent = drawn_market.DrawnAgent(agent = agent)
+    d_agent.add_to_blender(appear_time = 1)
+
+    d_agent.make_display(appear_time = 3)
+    d_agent.add_price_line(price = 45, appear_time = 5, emote = True)
+    d_agent.move_price_line(price = 25, start_time = 7, emote = True)
+
+    d_agent.add_expected_price(price = 25, appear_time = 9)
+    d_agent.move_expected_price(price = 15, start_time = 11)
+
+    d_agent.highlight_surplus(price = 25, start_time = 13, end_time = 15)'''
+
+    sim = market_sim.Market(
+        num_initial_buyers = 5,
+        num_initial_sellers = 5,
+        #interaction_mode = 'negotiate',
+        #interaction_mode = 'walk',
+        interaction_mode = 'seller_asks_buyer_decides',
+        initial_price = 10,
+        session_mode = 'rounds_w_concessions',
+        #session_mode = 'rounds',
+        #session_mode = 'one_shot',
+        fluid_sellers = True
+    )
+    num_sessions = 50
+    for i in range(num_sessions):
+        print("Running session " + str(i))
+        sim.new_session()
+        #print(sim.sessions[-1])
+
+    for i, session in enumerate(sim.sessions):
+        print('Session ' + str(i))
+        print(' Completed transactions: ' + str(session.num_transactions) + ' Sellers: ' + str(session.num_sellers) + ' Price: ' + str(session.avg_price))
+
+        ordered_bids = sorted([x.goal_prices[i] for x in session.buyers])
+        #ordered_bids.reverse()
+        #print(ordered_bids)
+        ordered_asks = sorted([x.goal_prices[i] for x in session.sellers])
+        #print(ordered_asks)
+
+        goal_prices = []
+        for round in session.rounds:
+            for transaction in round:
+                #print(transaction.transaction_price)
+                try:
+                    goal_prices.append([transaction.buyer.goal_prices[i], transaction.seller.goal_prices[i]])
+                except:
+                    print(i)
+                    print(len(transaction.buyer.goal_prices))
+                    print(len(transaction.seller.goal_prices))
+                    raise()
+            #print(' ' + str(goal_prices))
+
+        '''for agent in sim.agents:
+            print(len(agent.goal_prices))'''
+
+    ordered_bids = sorted([x.price_limit for x in sim.agents_lists[-1] if x.type == 'buyer'])
+    ordered_bids.reverse()
+    print(ordered_bids)
+    ordered_asks = sorted([x.price_limit for x in sim.agents_lists[-1] if x.type == 'seller'])
+    print(ordered_asks)
+
+
+    #print('baanasdf')
+    for i, [bid, ask] in enumerate(zip(ordered_bids, ordered_asks)):
+        if bid >= ask:
+            continue
+        else:
+            print(i-1, ordered_bids[i-1], ordered_asks[i-1])
+            print(i, bid, ask)
+            print(i+1, ordered_bids[i+1], ordered_asks[i+1])
+            break
+
+    market = drawn_market.DrawnMarket(sim = sim)
+    market.add_to_blender(appear_time = 0)
+
+    market.animate_sessions(start_time = 4)
 
 def main():
     """Use this as a test scene"""
