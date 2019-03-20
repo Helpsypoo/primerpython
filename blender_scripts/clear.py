@@ -17,6 +17,8 @@ def clear_blender():
         for id_data in bpy_data_iter:
             bpy_data_iter.remove(id_data)
 
+    #bpy.ops.wm.read_homefile(use_empty=True)
+    #bpy.context.scene.update()
 
 if __name__ == '__main__':
     clear_blender()

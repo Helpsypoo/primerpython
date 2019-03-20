@@ -8,6 +8,8 @@ import bobject
 imp.reload(bobject)
 from bobject import Bobject
 
+from graph_bobject import GraphBobject
+
 from blobject import Blobject
 
 import helpers
@@ -18,14 +20,17 @@ import market_sim
 
 BUYER_MAT = 'creature_color4'
 SELLER_MAT = 'creature_color3'
-SELLER_SURPLUS_COLOR = COLORS_SCALED[1]
-BUYER_SURPLUS_COLOR = 'color2' #Yeah, these are in different formats. Eh.
+BUYER_BAR_COLOR = COLORS_SCALED[3]
+SELLER_BAR_COLOR = COLORS_SCALED[2]
+BUYER_SURPLUS_COLOR = COLORS_SCALED[1]
+SELLER_SURPLUS_COLOR = 'color2' #Yeah, these are in different formats. Eh.
 
 BAR_WIDTH = 0.3
 MAX_BAR_HEIGHT = 1.6
 MAX_PRICE = market_sim.MAX_PRICE
 BAR_THICKNESS = 0.08
 BAR_BASE_LIP = 0.01
+O_SLASH_SCALE = 0.5
 
 BUYER_X_MAX = 0.7
 BUYER_X_MIN = -0.7
@@ -34,7 +39,7 @@ BUYER_Y_MIN = -0.7
 AGENT_BASE_SCALE = 0.6
 AGENT_HEIGHT_FACTOR = 0.8
 
-PAUSE_LENGTH = 0.5
+PAUSE_LENGTH = 1
 ROUND_MOVE_DURATION = 0.5
 
 class DrawnAgent(Blobject):
@@ -43,7 +48,7 @@ class DrawnAgent(Blobject):
     def __init__(
         self,
         agent = None,
-        display_alignment = 'camera_left',
+        display_mode = 'camera_left',
         **kwargs
     ):
 
@@ -62,13 +67,16 @@ class DrawnAgent(Blobject):
             **kwargs
         )
 
-        self.display_alignment = display_alignment
+        self.display_mode = display_mode
 
         self.extra_top_cap = None
         self.extra_bot_cap = None
 
         #Toggle to control whether to move to lobby on a given animation
         self.was_just_meeting_seller = False
+
+        self.good = None
+        self.slash = None
 
     def add_to_blender(self, **kwargs):
         super().add_to_blender(**kwargs)
@@ -77,12 +85,24 @@ class DrawnAgent(Blobject):
         if appear_time == None:
             raise Warning('make_display() needs appear_time')
 
-        if self.display_alignment == 'camera_left':
+        display_bobjects = []
+
+        if self.display_mode == 'camera_left':
             self.bar_loc = [-1.5, -0.8, 0]
-        elif self.display_alignment == 'above':
+        elif self.display_mode == 'above':
             self.bar_loc = [0, 1, 0]
+        elif self.display_mode == 'table':
+            self.bar_loc = [0, 1, 0]
+
+            table = import_object(
+                'table', 'misc',
+                rotation_euler = [0, math.pi / 2, math.pi / 2],
+                location = [0.000584, -0.206953, 1.01555]
+            )
+            display_bobjects.append(table)
+
         else:
-            raise Warning('Unrecognized display_alignment')
+            raise Warning('Unrecognized display_mode')
 
         self.value_bar = import_object(
             'xy_plane_unrounded', 'primitives',
@@ -129,16 +149,20 @@ class DrawnAgent(Blobject):
         )
         apply_material(self.bar_base.ref_obj.children[0], 'color2')
 
-        self.display_container = bobject.Bobject(
+        display_bobjects += [
             self.value_bar,
             self.surplus_bar,
             self.bar_cap,
-            self.bar_base,
+            self.bar_base
+        ]
+
+        self.display_container = bobject.Bobject(
+            *display_bobjects,
             name = 'value_display'
         )
         self.display_container.add_to_blender(
             appear_time = appear_time - OBJECT_APPEARANCE_TIME / FRAME_RATE,
-            subbobject_timing = [0, 0, 0, OBJECT_APPEARANCE_TIME]
+            subbobject_timing = OBJECT_APPEARANCE_TIME
         )
 
         constraint = self.display_container.ref_obj.constraints.new('CHILD_OF')
@@ -232,7 +256,7 @@ class DrawnAgent(Blobject):
             #rotation_euler = [0, math.pi / 2, 0],
             name = 'expected_price',
         )
-        apply_material(self.price_line.ref_obj.children[0], 'color6')
+        #apply_material(self.expected_price_indicator.ref_obj.children[0], 'color6')
 
         self.display_container.add_subbobject(self.expected_price_indicator)
         self.expected_price_indicator.add_to_blender(
@@ -240,7 +264,7 @@ class DrawnAgent(Blobject):
             subbobject_timing = OBJECT_APPEARANCE_TIME
         )
 
-    def move_expected_price(self, price = 0, start_time = None, emote = False):
+    def move_expected_price(self, price = 0, start_time = None):
         if start_time == None:
             raise Warning('move_expected_price() needs start_time')
 
@@ -253,27 +277,42 @@ class DrawnAgent(Blobject):
 
     def highlight_surplus(self, price = None, start_time = None, end_time = None):
         cap_height = 0.5 * BAR_WIDTH
+
         if self.agent.type == 'buyer':
             if price >= self.agent.price_limit:
                 print('No surplus')
             else:
                 price_height = MAX_BAR_HEIGHT * price / MAX_PRICE
 
-                self.value_bar.move_to(
-                    start_frame = start_time * FRAME_RATE - 1,
-                    end_frame = start_time * FRAME_RATE,
-                    new_scale = [BAR_WIDTH, price_height, 1]
-                )
-
                 height_after_cap = MAX_BAR_HEIGHT * self.agent.price_limit / MAX_PRICE
                 height = height_after_cap - cap_height
 
-                self.surplus_bar.move_to(
-                    start_frame = start_time * FRAME_RATE - 1,
-                    end_frame = start_time * FRAME_RATE,
-                    new_location = add_lists_by_element(self.bar_loc, [0, price_height, 0]),
-                    new_scale = [BAR_WIDTH, height - price_height, 1]
-                )
+
+                if height - price_height >= 0:
+                    self.value_bar.move_to(
+                        start_frame = start_time * FRAME_RATE - 1,
+                        end_frame = start_time * FRAME_RATE,
+                        new_scale = [BAR_WIDTH, price_height, 1]
+                    )
+                    self.surplus_bar.move_to(
+                        start_frame = start_time * FRAME_RATE - 1,
+                        end_frame = start_time * FRAME_RATE,
+                        new_location = add_lists_by_element(self.bar_loc, [0, price_height, 0]),
+                        new_scale = [BAR_WIDTH, height - price_height, 1]
+                    )
+                else:
+                    self.value_bar.move_to(
+                        start_frame = start_time * FRAME_RATE,
+                        new_scale = [BAR_WIDTH, price_height, 1]
+                    )
+                    cap_scale_y = BAR_WIDTH * (height_after_cap - price_height) / cap_height
+                    self.bar_cap.move_to(
+                        start_frame = start_time * FRAME_RATE,
+                        new_scale = [BAR_WIDTH, cap_scale_y, 1],
+                        new_location = add_lists_by_element(self.bar_loc, [0, price_height, 0])
+                    )
+
+
 
                 duration_time = None
                 if end_time != None:
@@ -282,7 +321,7 @@ class DrawnAgent(Blobject):
                     bobj.color_shift(
                         start_time = start_time,
                         duration_time = duration_time,
-                        color = SELLER_SURPLUS_COLOR
+                        color = BUYER_SURPLUS_COLOR
                     )
 
 
@@ -331,7 +370,7 @@ class DrawnAgent(Blobject):
                 )
 
                 for bobj in [self.surplus_bar, self.extra_top_cap, self.extra_bot_cap]:
-                    apply_material(bobj.ref_obj.children[0], BUYER_SURPLUS_COLOR)
+                    apply_material(bobj.ref_obj.children[0], SELLER_SURPLUS_COLOR)
 
                 '''#Change color. In this case, make color changes before and after
                 #appearance
@@ -346,9 +385,34 @@ class DrawnAgent(Blobject):
                     )'''
 
                 #Put away
-                for piece in [self.extra_top_cap, self.extra_bot_cap, self.surplus_bar]:
+                if end_time != None:
+                    for piece in [self.extra_top_cap, self.extra_bot_cap, self.surplus_bar]:
+                        piece.move_to(
+                            start_time = end_time - OBJECT_APPEARANCE_TIME / FRAME_RATE,
+                            new_location = add_lists_by_element(self.bar_loc, [0, limit_height, 0]),
+                            new_scale = [BAR_WIDTH, 0, 1],
+                        )
+
+    def hide_surplus(self, start_time = None):
+        if self.agent.type == 'buyer':
+            duration_time = None
+            '''if end_time != None:
+                duration_time = end_time - start_time'''
+            for bobj in [self.surplus_bar, self.bar_cap]:
+                bobj.color_shift(
+                    start_time = start_time,
+                    duration_time = duration_time,
+                    color = BUYER_BAR_COLOR
+                )
+
+        if self.agent.type == 'seller':
+            limit_height = MAX_BAR_HEIGHT * self.agent.price_limit / MAX_PRICE
+
+            #Put away
+            for piece in [self.extra_top_cap, self.extra_bot_cap, self.surplus_bar]:
+                if piece != None: #Sometimes this gets called on bars that don't show surplus
                     piece.move_to(
-                        start_time = end_time - OBJECT_APPEARANCE_TIME / FRAME_RATE,
+                        start_time = start_time,
                         new_location = add_lists_by_element(self.bar_loc, [0, limit_height, 0]),
                         new_scale = [BAR_WIDTH, 0, 1],
                     )
@@ -368,6 +432,53 @@ class DrawnAgent(Blobject):
             elif price < self.agent.price_limit:
                 self.angry_eyes(start_time = start_time)
                 self.hide_mouth(start_time = start_time)
+
+    def set_out_good(self, start_time = None, model = None):
+        good = DrawnGood(
+            object_model = model,
+            name = 'good',
+            location = [0, 0.28, 1],
+            scale = 0.5
+        )
+        constraint = good.ref_obj.constraints.new('CHILD_OF')
+        constraint.target = self.ref_obj
+        self.good = good
+
+        good.add_to_blender(appear_time = start_time)
+
+    def show_o_slash(self, appear_time = None):
+        if self.slash == None:
+            self.slash = import_object(
+                'o_slash', 'primitives',
+                location = add_lists_by_element(
+                    self.bar_loc,
+                    [0, MAX_BAR_HEIGHT + O_SLASH_SCALE, 0],
+                ),
+                scale = O_SLASH_SCALE
+            )
+            self.add_subbobject(self.slash)
+            apply_material(self.slash.ref_obj.children[0], 'color6')
+            self.slash.add_to_blender(appear_time = appear_time)
+        else:
+            self.slash.move_to(
+                new_scale = O_SLASH_SCALE,
+                start_time = appear_time
+            )
+
+    def hide_o_slash(self, start_time = None, end_time = None):
+        if end_time == None:
+            end_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
+        else:
+            self.slash.disappear(disappear_time = end_time)
+
+class DrawnGood(Bobject):
+    """docstring for DrawnGood."""
+
+    def __init__(self, object_model, **kwargs):
+        super().__init__(
+            objects = [object_model.copy()],
+            **kwargs
+        )
 
 class DrawnMarket(Bobject):
     """docstring for DrawnMarket."""
@@ -392,9 +503,18 @@ class DrawnMarket(Bobject):
             num_buyers = len([x for x in list if x.type == 'buyer'])
             num_sellers = len([x for x in list if x.type == 'seller'])
             max_num_one_kind = max(max_num_one_kind, num_buyers, num_sellers)
-        self.agent_scale = AGENT_BASE_SCALE / max_num_one_kind
+
+        #Complicated function that
+        #modifier = (1.5 - 1 / (2 ** (max_num_one_kind - 5) + 1))
+        modifier = (1 + math.atan(max_num_one_kind - 5) / math.pi )
+        #Wanted to correct the 1/x scaling a bit
+        self.agent_scale = AGENT_BASE_SCALE / max_num_one_kind * modifier
 
         self.elapsed_time = 0
+
+        good_bobject_model = import_object('rocket', 'misc')
+        self.good_object_model = good_bobject_model.ref_obj.children[0]
+        good_bobject_model.tweak_colors_recursive()
 
     def add_to_blender(self, appear_time = None, **kwargs):
         if appear_time == None:
@@ -438,8 +558,8 @@ class DrawnMarket(Bobject):
             sellers_to_add.append(
                 DrawnAgent(
                     agent = seller,
-                    display_alignment = 'above',
-                    location = [0, 0.9, self.agent_scale * AGENT_HEIGHT_FACTOR],
+                    display_mode = 'table',
+                    location = [0, 1 - self.agent_scale, self.agent_scale * AGENT_HEIGHT_FACTOR],
                     rotation_euler = [math.pi / 2, 0, 0],
                     scale = self.agent_scale
                 )
@@ -464,6 +584,10 @@ class DrawnMarket(Bobject):
                     subbobject_timing = OBJECT_APPEARANCE_TIME
                 )
                 seller.make_display(appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE)
+                seller.add_expected_price(
+                    price = seller.agent.goal_prices[0],
+                    appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
+                )
                 seller.anchor = anchor
 
 
@@ -514,7 +638,7 @@ class DrawnMarket(Bobject):
             buyers_to_add.append(
                 DrawnAgent(
                     agent = buyer,
-                    display_alignment = 'above',
+                    display_mode = 'above',
                     location = location,
                     rotation_euler = [math.pi / 2, 0, uniform(0, 2 * math.pi)],
                     scale = self.agent_scale
@@ -526,27 +650,44 @@ class DrawnMarket(Bobject):
                 self.add_subbobject(buyer)
                 buyer.add_to_blender(appear_time = start_time)
                 buyer.make_display(appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE)
+                buyer.add_expected_price(
+                    price = buyer.agent.goal_prices[0],
+                    appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
+                )
                 self.drawn_buyers.append(buyer)
 
             if buyer in buyers_to_remove:
                 raise Warning('Not implemented!')
 
-    def animate_session(self, session = None):
-        #adjust sellers
-        pass
+    def animate_session(self, session = None, session_index = None):
+        #Set up sellers
+        for seller in self.drawn_sellers:
+            #If sitting session out, add o_slash
+            if seller.agent not in session.sellers:
+                seller.show_o_slash(appear_time = self.elapsed_time)
+            else:
+                seller.hide_o_slash(start_time = self.elapsed_time)
+                #set out goods
+                if seller.good == None:
+                    seller.set_out_good(
+                        start_time = self.elapsed_time,
+                        model = self.good_object_model
+                    )
 
         #pause
         self.elapsed_time += PAUSE_LENGTH
         #print(len(session.rounds))
         #Animate rounds
         for round in session.rounds:
-            ##Move Sellers
+            ##Move Buyers
             for drawn_buyer in self.drawn_buyers:
                 seller_to_meet = None
+                transaction_price = None
                 for meeting in round:
                     if meeting.buyer == drawn_buyer.agent:
                         #print("Hey, this meeting has the right buyer")
                         seller_to_meet = meeting.seller
+                        transaction_price = meeting.transaction_price
 
                 if seller_to_meet != None: #Go to seller
                     drawn_seller_to_meet = None
@@ -555,29 +696,164 @@ class DrawnMarket(Bobject):
                             drawn_seller_to_meet = d_seller
 
                     loc = drawn_seller_to_meet.ref_obj.location
-                    ang = drawn_seller_to_meet.anchor.ref_obj.rotation_euler
+                    ang = drawn_seller_to_meet.anchor.ref_obj.rotation_euler[2]
+
+
+
+
+                    TABLE_SPACING = 2 * self.agent_scale
                     location = [ #loc[0] = 0, rotating y coord
-                        - loc[1] * math.sin(ang[2]),# * math.pi / 180),
-                        loc[1] * math.cos(ang[2]),# * math.pi / 180),
+                        -(loc[1] - TABLE_SPACING) * math.sin(ang),
+                        (loc[1] - TABLE_SPACING) * math.cos(ang),
                         loc[2],
                     ]
 
+                    #Prep to use ang for actual drawn_agent orientation
+                    ang += math.pi
+                    ang = make_angles_within_pi(
+                        angle_to_change = ang,
+                        target_angle = drawn_buyer.ref_obj.rotation_euler[2]
+                    )
+
+                    angle = [
+                        drawn_buyer.ref_obj.rotation_euler[0],
+                        drawn_buyer.ref_obj.rotation_euler[1],
+                        ang
+                    ]
+
                     drawn_buyer.was_just_meeting_seller = True
+
+                    drawn_buyer.move_to(
+                        start_time = self.elapsed_time,
+                        end_time = self.elapsed_time + ROUND_MOVE_DURATION / 4,
+                        new_angle = angle
+                    )
+                    drawn_buyer.move_to(
+                        start_time = self.elapsed_time,
+                        end_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                        new_location = location
+                    )
+
                 elif drawn_buyer.was_just_meeting_seller == True: #Go to lobby
+                    old_loc = drawn_buyer.ref_obj.location
                     location = [
                         uniform(BUYER_X_MIN, BUYER_X_MAX),
                         uniform(BUYER_Y_MIN, BUYER_Y_MAX),
-                        self.agent_scale * AGENT_HEIGHT_FACTOR
+                        old_loc[2]
+                    ]
+                    ang = math.atan2(
+                        location[1] - old_loc[1],
+                        location[0] - old_loc[0]
+                    ) + math.pi / 2 #because the angle is actually from the y-axis
+                                    #because I like things to be hard for no reason
+                    ang = make_angles_within_pi(
+                        angle_to_change = ang,
+                        target_angle = drawn_buyer.ref_obj.rotation_euler[2]
+                    )
+                    angle = [
+                        drawn_buyer.ref_obj.rotation_euler[0],
+                        drawn_buyer.ref_obj.rotation_euler[1],
+                        ang
                     ]
                     drawn_buyer.was_just_meeting_seller = False
+
+                    '''#Add keyframes, making rotation happen faster
+                    obj = drawn_buyer.ref_obj
+                    obj.keyframe_insert(
+                        data_path = 'rotation_euler',
+                        frame = self.elapsed_time * FRAME_RATE
+                    )
+                    obj.keyframe_insert(
+                        data_path = 'location',
+                        frame = self.elapsed_time * FRAME_RATE
+                    )
+
+
+                    drawn_buyer.move_to(
+                        start_time = self.elapsed_time,
+                        end_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                        new_location = location,
+                        new_angle = angle
+                    )'''
+
+                    drawn_buyer.move_to(
+                        start_time = self.elapsed_time,
+                        end_time = self.elapsed_time + ROUND_MOVE_DURATION / 4,
+                        new_angle = angle
+                    )
+                    drawn_buyer.move_to(
+                        start_time = self.elapsed_time,
+                        end_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                        new_location = location
+                    )
+
+
                 else:
                     location = drawn_buyer.ref_obj.location
+                    angle = None
 
-                drawn_buyer.move_to(
-                    start_time = self.elapsed_time,
-                    end_time = self.elapsed_time + ROUND_MOVE_DURATION,
-                    new_location = location,
-                )
+                    drawn_buyer.move_to(
+                        start_time = self.elapsed_time,
+                        end_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                        new_location = location,
+                        new_angle = angle
+                    )
+
+                if transaction_price != None:
+                    drawn_buyer.highlight_surplus(
+                        price = transaction_price,
+                        start_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                        #end_time = self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH * 2
+                    )
+                    drawn_seller_to_meet.highlight_surplus(
+                        price = transaction_price,
+                        start_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                        #end_time = self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH * 2
+                    )
+
+                    #Hand off good
+                    good_sold = drawn_seller_to_meet.good
+                    old_cons = good_sold.ref_obj.constraints[0]
+                    old_cons.keyframe_insert(
+                        data_path = 'influence',
+                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE
+                    )
+                    old_cons.influence = 0
+                    old_cons.keyframe_insert(
+                        data_path = 'influence',
+                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE + 1
+                    )
+
+                    new_cons = good_sold.ref_obj.constraints.new('CHILD_OF')
+                    new_cons.target = drawn_buyer.ref_obj
+                    drawn_buyer.good = good_sold
+                    new_cons.influence = 0
+                    new_cons.keyframe_insert(
+                        data_path = 'influence',
+                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE
+                    )
+                    new_cons.influence = 1
+                    new_cons.keyframe_insert(
+                        data_path = 'influence',
+                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE + 1
+                    )
+
+                    #Turn good_around
+                    good_sold.ref_obj.keyframe_insert(
+                        data_path = 'rotation_euler',
+                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE
+                    )
+                    good_sold.ref_obj.rotation_euler = [
+                        good_sold.ref_obj.rotation_euler[0],
+                        good_sold.ref_obj.rotation_euler[1] + math.pi,
+                        good_sold.ref_obj.rotation_euler[2],
+                    ]
+                    good_sold.ref_obj.keyframe_insert(
+                        data_path = 'rotation_euler',
+                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE + 1
+                    )
+
+                    drawn_seller_to_meet.good = None
 
             self.elapsed_time += ROUND_MOVE_DURATION
 
@@ -591,21 +867,56 @@ class DrawnMarket(Bobject):
         #Buyers to lobby
         for drawn_buyer in self.drawn_buyers:
             if drawn_buyer.was_just_meeting_seller == True:
+                old_loc = drawn_buyer.ref_obj.location
+                new_loc = [
+                    uniform(BUYER_X_MIN, BUYER_X_MAX),
+                    uniform(BUYER_Y_MIN, BUYER_Y_MAX),
+                    old_loc[2]
+                ]
+                disp_ang = math.atan2(
+                    new_loc[1] - old_loc[1],
+                    new_loc[0] - old_loc[0]
+                ) + math.pi / 2 #because the angle is actually from the y-axis
+                                #because I like things to be hard for no reason
+                disp_ang = make_angles_within_pi(
+                    angle_to_change = disp_ang,
+                    target_angle = drawn_buyer.ref_obj.rotation_euler[2]
+                )
+                drawn_buyer.move_to(
+                    start_time = self.elapsed_time,
+                    end_time = self.elapsed_time + ROUND_MOVE_DURATION / 4,
+                    new_angle = [
+                        drawn_buyer.ref_obj.rotation_euler[0],
+                        drawn_buyer.ref_obj.rotation_euler[1],
+                        disp_ang
+                    ]
+                )
                 drawn_buyer.move_to(
                     start_time = self.elapsed_time,
                     end_time = self.elapsed_time + ROUND_MOVE_DURATION,
-                    new_location = [
-                        uniform(BUYER_X_MIN, BUYER_X_MAX),
-                        uniform(BUYER_Y_MIN, BUYER_Y_MAX),
-                        self.agent_scale * AGENT_HEIGHT_FACTOR
-                    ]
+                    new_location = new_loc,
                 )
+            drawn_buyer.was_just_meeting_seller = False
 
         #Consume/celebration animation?
         pass
 
         #Adjust prices
-        pass
+        self.elapsed_time += PAUSE_LENGTH
+        for drawn_agent in self.drawn_buyers + self.drawn_sellers:
+            drawn_agent.move_expected_price(
+                price = drawn_agent.agent.goal_prices[session_index + 1],
+                start_time = self.elapsed_time
+            )
+            drawn_agent.hide_surplus(
+                start_time = self.elapsed_time
+            )
+        #Put away bought goods
+        for drawn_buyer in self.drawn_buyers:
+            if drawn_buyer.good != None:
+                drawn_buyer.good.disappear(disappear_time = self.elapsed_time)
+                #drawn_buyer.good = None
+
 
         #pause
         self.elapsed_time += PAUSE_LENGTH
@@ -613,5 +924,22 @@ class DrawnMarket(Bobject):
     def animate_sessions(self, start_time = None):
         self.elapsed_time += start_time
 
-        for session in self.sim.sessions:
-            self.animate_session(session = session)
+        for i, session in enumerate(self.sim.sessions):
+            self.animate_session(session = session, session_index = i)
+
+class MarketGraph(GraphBobject):
+    """docstring for MarketGraph."""
+
+    def __init__(self, **kwargs):
+        super().__init__(self, **kwargs)
+
+    def add_agent(agent = None, start_time = None):
+        pass
+
+        #Add drawn_agent
+        #hide/delete blob
+        #sort relative to other agents
+        #place and scale graph appropriately
+        #scale bar (esp cap) appropriately, likely making BAR_WIDTH an argument
+        #rather than a constant
+        #May have to edit change_window()

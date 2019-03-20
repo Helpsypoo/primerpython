@@ -382,18 +382,18 @@ def test():
     d_agent.highlight_surplus(price = 25, start_time = 13, end_time = 15)'''
 
     sim = market_sim.Market(
-        num_initial_buyers = 5,
-        num_initial_sellers = 5,
+        num_initial_buyers = 20,
+        num_initial_sellers = 20,
         #interaction_mode = 'negotiate',
         #interaction_mode = 'walk',
         interaction_mode = 'seller_asks_buyer_decides',
-        initial_price = 10,
+        initial_price = 15,
         session_mode = 'rounds_w_concessions',
         #session_mode = 'rounds',
         #session_mode = 'one_shot',
         fluid_sellers = True
     )
-    num_sessions = 50
+    num_sessions = 20
     for i in range(num_sessions):
         print("Running session " + str(i))
         sim.new_session()
@@ -411,6 +411,7 @@ def test():
 
         goal_prices = []
         for round in session.rounds:
+            goal_prices = []
             for transaction in round:
                 #print(transaction.transaction_price)
                 try:
@@ -420,7 +421,7 @@ def test():
                     print(len(transaction.buyer.goal_prices))
                     print(len(transaction.seller.goal_prices))
                     raise()
-            #print(' ' + str(goal_prices))
+            print(' ' + str(goal_prices))
 
         '''for agent in sim.agents:
             print(len(agent.goal_prices))'''
@@ -432,7 +433,7 @@ def test():
     print(ordered_asks)
 
 
-    #print('baanasdf')
+    '''#print('baanasdf')
     for i, [bid, ask] in enumerate(zip(ordered_bids, ordered_asks)):
         if bid >= ask:
             continue
@@ -440,12 +441,14 @@ def test():
             print(i-1, ordered_bids[i-1], ordered_asks[i-1])
             print(i, bid, ask)
             print(i+1, ordered_bids[i+1], ordered_asks[i+1])
-            break
+            break'''
 
-    market = drawn_market.DrawnMarket(sim = sim)
-    market.add_to_blender(appear_time = 0)
+    animate = True
+    if animate:
+        market = drawn_market.DrawnMarket(sim = sim)
+        market.add_to_blender(appear_time = 0)
 
-    market.animate_sessions(start_time = 4)
+        market.animate_sessions(start_time = 4)
 
 def main():
     """Use this as a test scene"""
@@ -455,6 +458,12 @@ def main():
     test()
     #draw_scenes_from_file(scds, clear = False)
     #draw_scenes_from_file(inclusive_fitness)
+    """initialize_blender()
+    o = tex_bobject.TexBobject(
+        '\\oslash',
+        centered = True
+    )
+    o.add_to_blender(appear_time = 0)"""
 
     '''tournament = centipede.Tournament(
         initial_players = 'spread',

@@ -176,7 +176,6 @@ class Session(object):
                     buyer.adjust_price(success = success)
                 seller.adjust_price(success = success)
 
-
             self.rounds.append(round)
 
             #The number of sellers fluctuates, so sometimes buyers don't get matched
@@ -209,6 +208,7 @@ class Session(object):
                     buyers_this_round = [x for x in buyers_this_round if x.goal_prices[-1] >= min_seller_price]
                     print('  ' + str(len(buyers_this_round)) + ' buyers')
                 elif max_buyer_price < min_seller_price:
+                    self.rounds.append(round)
                     break
 
                 #Prep container for creatures who will go to next round
@@ -218,15 +218,21 @@ class Session(object):
                 #Create pairs
                 for i in range(min(len(buyers_this_round), len(sellers_this_round))):
                     pair_has_been_tried = True
+                    j = 0 #debug
                     while pair_has_been_tried == True:
+                        j+=1 #debug
+                        if j > 100:
+                            raise()
                         pair_has_been_tried = False
                         buyer = choice(buyers_this_round)
                         seller = choice(sellers_this_round)
 
-                        for meeting in round:
-                            if meeting.buyer == buyer and meeting.seller == seller:
-                                pair_has_been_tried = True
-                                print('Oop, need to try another pair')
+                        for prev_round in self.rounds:
+                            for meeting in prev_round:
+                                #print(' Checking round')
+                                if meeting.buyer == buyer and meeting.seller == seller:
+                                    pair_has_been_tried = True
+                                    print('Oop, need to try another pair')
 
                         if pair_has_been_tried == False:
                             buyers_this_round.remove(buyer)
@@ -269,6 +275,7 @@ class Session(object):
             #price even when they never got a chance, but that will be fairly rare.
             #Main point is to make sure agents who have failed do end up
             #adjusting price
+            print(len(self.rounds))
             for buyer in buyers_this_round:
                 disqualified.append(buyer)
             for seller in sellers_this_round:
@@ -286,6 +293,8 @@ class Session(object):
                 disqualified = [x for x in disqualified if x not in buyers_this_round]
                 sellers_this_round = [x for x in disqualified if x.type == 'seller']
                 disqualified = [x for x in disqualified if x not in sellers_this_round]
+
+                concession_rounds = []
 
                 #Similar to loop from before, but always negotiate to see if a
                 #deal is possible within base limits
@@ -331,15 +340,21 @@ class Session(object):
                     #Create pairs
                     for i in range(min(len(buyers_this_round), len(sellers_this_round))):
                         pair_has_been_tried = True
+                        j = 0
                         while pair_has_been_tried == True:
+                            j+=1
+                            if j > 100:
+                                raise()
                             pair_has_been_tried = False
                             buyer = choice(buyers_this_round)
                             seller = choice(sellers_this_round)
 
-                            for meeting in round:
-                                if meeting.buyer == buyer and meeting.seller == seller:
-                                    pair_has_been_tried = True
-                                    print('Oop, need to try another pair, extras')
+                            for prev_round in concession_rounds:
+                                for meeting in prev_round:
+                                    #print(' Checking round')
+                                    if meeting.buyer == buyer and meeting.seller == seller:
+                                        pair_has_been_tried = True
+                                        print('Oop, need to try another RETRY pair')
 
                             if pair_has_been_tried == False:
                                 buyers_this_round.remove(buyer)
@@ -373,7 +388,9 @@ class Session(object):
                     buyers_this_round = buyers_next_round
                     sellers_this_round = sellers_next_round
 
-                    self.rounds.append(round)
+
+                    concession_rounds.append(round)
+                    #print('   ' + str(len(concession_rounds)))
 
                 #Put leftovers in disqualified. Will sometimes make an agen adjust
                 #price even when they never got a chance, but that will be fairly rare.
@@ -386,6 +403,9 @@ class Session(object):
 
                 for agent in disqualified:
                     agent.adjust_price(success = False)
+
+                self.rounds = self.rounds + concession_rounds
+                print(len(self.rounds))
 
 
 
