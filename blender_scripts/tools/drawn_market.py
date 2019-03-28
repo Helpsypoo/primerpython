@@ -2,7 +2,7 @@ import bpy
 import imp
 from random import random, randrange, choice, gauss, uniform
 #from copy import copy
-#import pickle
+import pickle
 
 import bobject
 imp.reload(bobject)
@@ -25,12 +25,14 @@ SELLER_BAR_COLOR = COLORS_SCALED[2]
 BUYER_SURPLUS_COLOR = COLORS_SCALED[1]
 SELLER_SURPLUS_COLOR = 'color2' #Yeah, these are in different formats. Eh.
 
-BAR_WIDTH = 0.3
-MAX_BAR_HEIGHT = 1.6
+DEFAULT_BAR_WIDTH = 0.3
+DEFAULT_MAX_BAR_HEIGHT = 1.6
 MAX_PRICE = market_sim.MAX_PRICE
 BAR_THICKNESS = 0.08
 BAR_BASE_LIP = 0.01
 O_SLASH_SCALE = 0.5
+CAP_OBJECT_HEIGHT = 0.5
+
 
 BUYER_X_MAX = 0.7
 BUYER_X_MIN = -0.7
@@ -49,12 +51,17 @@ class DrawnAgent(Blobject):
         self,
         agent = None,
         display_mode = 'camera_left',
+        name = 'agent',
+        bar_width = DEFAULT_BAR_WIDTH,
+        max_bar_height = DEFAULT_MAX_BAR_HEIGHT,
         **kwargs
     ):
 
         if agent == None: #No reason to make default agents
             raise Warning('DrawnAgent needs agent')
         self.agent = agent
+        self.bar_width = bar_width
+        self.max_bar_height = max_bar_height
 
         if self.agent.type == 'seller':
             self.mat_string = SELLER_MAT
@@ -80,8 +87,13 @@ class DrawnAgent(Blobject):
 
     def add_to_blender(self, **kwargs):
         super().add_to_blender(**kwargs)
+        #probably a cleaner way to do this, but delete the blob if in graph mode
+        #bpy.ops.object.select_all(action='DESELECT')
+        if self.display_mode == 'graph':
+            bleb = self.ref_obj.children[0]
+            link_descendants(bleb, unlink = True)
 
-    def make_display(self, appear_time = None):
+    def make_display(self, thickness_factor = 1, appear_time = None):
         if appear_time == None:
             raise Warning('make_display() needs appear_time')
 
@@ -100,6 +112,8 @@ class DrawnAgent(Blobject):
                 location = [0.000584, -0.206953, 1.01555]
             )
             display_bobjects.append(table)
+        elif self.display_mode == 'graph':
+            self.bar_loc = [0, 0, 0]
 
         else:
             raise Warning('Unrecognized display_mode')
@@ -108,30 +122,30 @@ class DrawnAgent(Blobject):
             'xy_plane_unrounded', 'primitives',
             location = self.bar_loc,
             name = 'value_display_bar',
-            scale = [BAR_WIDTH, 0, 1]
+            scale = [self.bar_width * thickness_factor, 0, 1]
         )
 
-        #height of cap object is 0.5, then it's scaled by BAR_WIDTH when shown
-        cap_height = 0.5 * BAR_WIDTH
-        cap_scale_y = BAR_WIDTH
-        height_after_cap = MAX_BAR_HEIGHT * self.agent.price_limit / MAX_PRICE
+        #height of default cap object is 0.5, then it's scaled by self.bar_width when shown
+        cap_height = CAP_OBJECT_HEIGHT * self.bar_width * thickness_factor
+        cap_scale_y = self.bar_width * thickness_factor
+        height_after_cap = self.max_bar_height * self.agent.price_limit / MAX_PRICE
         height = height_after_cap - cap_height
         if height < 0:
             height = 0
-            cap_scale_y = BAR_WIDTH * height_after_cap / cap_height
+            cap_scale_y = self.bar_width * height_after_cap / cap_height
 
         self.bar_cap = import_object(
             'bar_cap', 'primitives',
             location = self.bar_loc,
-            scale = [BAR_WIDTH, 0, 1],
+            scale = [self.bar_width * thickness_factor, 0, 1],
             name = 'cap'
         )
 
         self.surplus_bar = import_object(
             'xy_plane_unrounded', 'primitives',
-            location = self.bar_loc,
+            location = add_lists_by_element(self.bar_loc, [0, height_after_cap, 0]),
             name = 'surplus_display_bar',
-            scale = [BAR_WIDTH, 0, 1]
+            scale = [self.bar_width * thickness_factor, 0, 0]
         )
 
         for piece in [self.value_bar, self.surplus_bar, self.bar_cap]:
@@ -145,7 +159,7 @@ class DrawnAgent(Blobject):
             location = add_lists_by_element(self.bar_loc, [0, 0, -BAR_THICKNESS]),
             rotation_euler = [0, math.pi / 2, 0],
             name = 'bar_base',
-            scale = [BAR_THICKNESS + 2 * BAR_BASE_LIP, base_bar_height, BAR_WIDTH * 1.2]
+            scale = [(BAR_THICKNESS + 2 * BAR_BASE_LIP) * thickness_factor, base_bar_height, self.bar_width * 1.2]
         )
         apply_material(self.bar_base.ref_obj.children[0], 'color2')
 
@@ -176,20 +190,84 @@ class DrawnAgent(Blobject):
         self.value_bar.move_to(
             start_time = appear_time + OBJECT_APPEARANCE_TIME / FRAME_RATE,
             new_scale = [
-                BAR_WIDTH,
+                self.bar_width * thickness_factor,
                 height,
                 1
             ]
         )
-        self.surplus_bar.move_to(
+        '''self.surplus_bar.move_to(
             start_time = appear_time + OBJECT_APPEARANCE_TIME / FRAME_RATE,
             new_location = add_lists_by_element(self.bar_loc, [0, height, 0]),
-            new_scale = [BAR_WIDTH, 0, 1]
-        )
+            new_scale = [self.bar_width * thickness_factor, 0, 1]
+        )'''
         self.bar_cap.move_to(
             start_time = appear_time + OBJECT_APPEARANCE_TIME / FRAME_RATE,
             new_location = add_lists_by_element(self.bar_loc, [0, height, 0]),
-            new_scale = [BAR_WIDTH, cap_scale_y, 1]
+            new_scale = [self.bar_width * thickness_factor, cap_scale_y, 1]
+        )
+
+    def change_thickness(self, new_thickness = None, start_time = None):
+
+        #Change x and y for cap
+        #Change cap position to keep top in same spot
+        prev_cap_scale = self.bar_cap.ref_obj.scale[0]
+        new_scale = self.bar_width * new_thickness
+        self.bar_cap.move_to(
+            new_scale = [
+                new_scale,
+                new_scale,
+                1
+            ],
+            displacement = [0, CAP_OBJECT_HEIGHT * (prev_cap_scale - new_scale), 0],
+            start_time = start_time
+        )
+
+        prev_bar_scale_y = self.value_bar.ref_obj.scale[1]
+
+        height_boost = CAP_OBJECT_HEIGHT * (prev_cap_scale - new_scale)
+
+        self.value_bar.move_to(
+            new_scale = [
+                new_scale,
+                prev_bar_scale_y + height_boost,
+                1
+            ],
+            start_time = start_time
+        )
+
+        #Change thickness of surplus indicators
+        self.surplus_bar.move_to(
+            new_scale = [
+                new_scale,
+                self.surplus_bar.ref_obj.scale[1],
+                self.surplus_bar.ref_obj.scale[2]
+            ],
+            displacement = [0, height_boost, 0],
+            start_time = start_time
+        )
+        if self.extra_top_cap != None:
+            self.extra_top_cap.move_to(
+                new_scale = [
+                    new_scale,
+                    self.extra_top_cap.ref_obj.scale[1],
+                    self.extra_top_cap.ref_obj.scale[2]
+                ],
+                start_time = start_time
+            )
+        if self.extra_bot_cap != None:
+            self.extra_bot_cap.move_to(
+                new_scale = [
+                    new_scale,
+                    self.extra_bot_cap.ref_obj.scale[1],
+                    self.extra_bot_cap.ref_obj.scale[2]
+                ],
+                start_time = start_time
+            )
+
+        #Change thickness of expected price indicators
+        self.expected_price_indicator.move_to(
+            new_scale = new_thickness,
+            start_time = start_time
         )
 
     def add_price_line(self, price = 0, appear_time = None, emote = False):
@@ -198,13 +276,13 @@ class DrawnAgent(Blobject):
 
         #Price line
         price_line_width = 0.01
-        height = MAX_BAR_HEIGHT * price / MAX_PRICE
+        height = self.max_bar_height * price / MAX_PRICE
         self.price_line = import_object(
             'cylinder', 'primitives',
             location = add_lists_by_element(self.bar_loc, [0, height, 0]),
             rotation_euler = [0, math.pi / 2, 0],
             name = 'price_line',
-            scale = [price_line_width, price_line_width, BAR_WIDTH * 1.1]
+            scale = [price_line_width, price_line_width, self.bar_width * 1.1]
         )
         apply_material(self.price_line.ref_obj.children[0], 'color6')
 
@@ -218,7 +296,7 @@ class DrawnAgent(Blobject):
         if start_time == None:
             raise Warning('move_price_line() needs start_time')
 
-        height = MAX_BAR_HEIGHT * price / MAX_PRICE
+        height = self.max_bar_height * price / MAX_PRICE
 
         self.price_line.move_to(
             new_location = add_lists_by_element(self.bar_loc, [0, height, 0]),
@@ -228,23 +306,34 @@ class DrawnAgent(Blobject):
         if emote == True:
             self.price_reaction(price = price, start_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE)
 
-    def add_expected_price(self, price = 0, appear_time = None):
+    def add_expected_price(self, price = None, session_index = None, thickness_factor = 1, appear_time = None):
         if appear_time == None:
             raise Warning('add_expected_price() needs appear_time')
 
+        if price == None and session_index == None:
+            raise Warning('Need price or session index to add expected price indicator')
+        elif session_index != None:
+            price = self.agent.goal_prices[session_index]
+
         #Price line
-        height = MAX_BAR_HEIGHT * price / MAX_PRICE
+        try:
+            height = self.max_bar_height * price / MAX_PRICE
+        except:
+            print(self.max_bar_height)
+            print(price)
+            print(MAX_PRICE)
+            raise()
         l_tri = import_object(
             'rounded_isosceles', 'primitives',
-            location = [- BAR_WIDTH * 1.2, 0, 0],
+            location = [- self.bar_width * 1, 0, 0],
             rotation_euler = [0, 0, -math.pi / 2],
-            scale = 0.1
+            scale = 0.2 * self.bar_width
         )
         r_tri = import_object(
             'rounded_isosceles', 'primitives',
-            location = [BAR_WIDTH * 1.2, 0, 0],
+            location = [self.bar_width * 1, 0, 0],
             rotation_euler = [0, 0, math.pi / 2],
-            scale = 0.1
+            scale = 0.2 * self.bar_width
         )
         for tri in [l_tri, r_tri]:
             apply_material(tri.ref_obj.children[0], 'color2')
@@ -254,6 +343,7 @@ class DrawnAgent(Blobject):
             l_tri, r_tri,
             location = add_lists_by_element(self.bar_loc, [0, height, 0]),
             #rotation_euler = [0, math.pi / 2, 0],
+            scale = thickness_factor,
             name = 'expected_price',
         )
         #apply_material(self.expected_price_indicator.ref_obj.children[0], 'color6')
@@ -268,7 +358,7 @@ class DrawnAgent(Blobject):
         if start_time == None:
             raise Warning('move_expected_price() needs start_time')
 
-        height = MAX_BAR_HEIGHT * price / MAX_PRICE
+        height = self.max_bar_height * price / MAX_PRICE
 
         self.expected_price_indicator.move_to(
             new_location = add_lists_by_element(self.bar_loc, [0, height, 0]),
@@ -276,15 +366,15 @@ class DrawnAgent(Blobject):
         )
 
     def highlight_surplus(self, price = None, start_time = None, end_time = None):
-        cap_height = 0.5 * BAR_WIDTH
+        cap_height = CAP_OBJECT_HEIGHT * self.bar_cap.ref_obj.scale[0]
 
         if self.agent.type == 'buyer':
             if price >= self.agent.price_limit:
-                print('No surplus')
+                self.hide_surplus(start_time = start_time)
             else:
-                price_height = MAX_BAR_HEIGHT * price / MAX_PRICE
+                price_height = self.max_bar_height * price / MAX_PRICE
 
-                height_after_cap = MAX_BAR_HEIGHT * self.agent.price_limit / MAX_PRICE
+                height_after_cap = self.max_bar_height * self.agent.price_limit / MAX_PRICE
                 height = height_after_cap - cap_height
 
 
@@ -292,23 +382,39 @@ class DrawnAgent(Blobject):
                     self.value_bar.move_to(
                         start_frame = start_time * FRAME_RATE - 1,
                         end_frame = start_time * FRAME_RATE,
-                        new_scale = [BAR_WIDTH, price_height, 1]
+                        new_scale = [
+                            self.value_bar.ref_obj.scale[0],
+                            price_height,
+                            1
+                        ]
                     )
                     self.surplus_bar.move_to(
                         start_frame = start_time * FRAME_RATE - 1,
                         end_frame = start_time * FRAME_RATE,
                         new_location = add_lists_by_element(self.bar_loc, [0, price_height, 0]),
-                        new_scale = [BAR_WIDTH, height - price_height, 1]
+                        new_scale = [
+                            self.surplus_bar.ref_obj.scale[0],
+                            height - price_height,
+                            1
+                        ]
                     )
                 else:
                     self.value_bar.move_to(
                         start_frame = start_time * FRAME_RATE,
-                        new_scale = [BAR_WIDTH, price_height, 1]
+                        new_scale = [
+                            self.value_bar.ref_obj.scale[0],
+                            price_height,
+                            1
+                        ]
                     )
-                    cap_scale_y = BAR_WIDTH * (height_after_cap - price_height) / cap_height
+                    cap_scale_y = self.bar_width * (height_after_cap - price_height) / cap_height
                     self.bar_cap.move_to(
                         start_frame = start_time * FRAME_RATE,
-                        new_scale = [BAR_WIDTH, cap_scale_y, 1],
+                        new_scale = [
+                            self.bar_cap.ref_obj.scale[0],
+                            cap_scale_y,
+                            1
+                        ],
                         new_location = add_lists_by_element(self.bar_loc, [0, price_height, 0])
                     )
 
@@ -324,26 +430,33 @@ class DrawnAgent(Blobject):
                         color = BUYER_SURPLUS_COLOR
                     )
 
-
         if self.agent.type == 'seller':
             if price <= self.agent.price_limit:
-                print('No surplus')
+                self.hide_surplus(start_time = start_time)
             else:
-                limit_height = MAX_BAR_HEIGHT * self.agent.price_limit / MAX_PRICE
-                price_height = MAX_BAR_HEIGHT * price / MAX_PRICE
+                limit_height = self.max_bar_height * self.agent.price_limit / MAX_PRICE
+                price_height = self.max_bar_height * price / MAX_PRICE
+
+                surplus_bar_height = price_height - limit_height - 2 * cap_height
+                if surplus_bar_height < 0:
+                    surplus_bar_height = 0
+
+                room_for_caps = price_height - limit_height
+                if room_for_caps < 2 * cap_height:
+                    cap_height = room_for_caps / 2
 
                 if self.extra_top_cap == None:
                     pass
                     self.extra_top_cap = import_object(
                         'bar_cap', 'primitives',
-                        location = self.bar_loc,
-                        scale = [BAR_WIDTH, 0, 1],
+                        location = add_lists_by_element(self.bar_loc, [0, limit_height, 0]),
+                        scale = [self.value_bar.ref_obj.scale[0], 0, 1],
                         name = 'top_cap'
                     )
                     self.extra_bot_cap = import_object(
                         'bar_cap', 'primitives',
-                        location = self.bar_loc,
-                        scale = [BAR_WIDTH, 0, 1],
+                        location = add_lists_by_element(self.bar_loc, [0, limit_height, 0]),
+                        scale = [self.value_bar.ref_obj.scale[0], 0, 1],
                         name = 'bot_cap'
                     )
                     for extra_cap in [self.extra_top_cap, self.extra_bot_cap]:
@@ -355,18 +468,31 @@ class DrawnAgent(Blobject):
 
                 self.extra_top_cap.move_to(
                     start_time = start_time,
-                    new_scale = [BAR_WIDTH, BAR_WIDTH, 1],
+                    new_scale = [
+                        self.value_bar.ref_obj.scale[0],
+                        cap_height / CAP_OBJECT_HEIGHT,
+                        1
+                    ],
                     new_location = add_lists_by_element(self.bar_loc, [0, price_height - cap_height, 0]),
                 )
                 self.extra_bot_cap.move_to(
                     start_time = start_time,
-                    new_scale = [BAR_WIDTH, -BAR_WIDTH, 1],
+                    new_scale = [
+                        self.value_bar.ref_obj.scale[0],
+                        - cap_height / CAP_OBJECT_HEIGHT,
+                        1
+                    ],
                     new_location = add_lists_by_element(self.bar_loc, [0, limit_height + cap_height, 0]),
                 )
+
                 self.surplus_bar.move_to(
                     start_time = start_time,
                     new_location = add_lists_by_element(self.bar_loc, [0, limit_height + cap_height, 0]),
-                    new_scale = [BAR_WIDTH, price_height - limit_height - 2 * cap_height, 1],
+                    new_scale = [
+                        self.value_bar.ref_obj.scale[0],
+                        surplus_bar_height,
+                        1
+                    ],
                 )
 
                 for bobj in [self.surplus_bar, self.extra_top_cap, self.extra_bot_cap]:
@@ -390,7 +516,11 @@ class DrawnAgent(Blobject):
                         piece.move_to(
                             start_time = end_time - OBJECT_APPEARANCE_TIME / FRAME_RATE,
                             new_location = add_lists_by_element(self.bar_loc, [0, limit_height, 0]),
-                            new_scale = [BAR_WIDTH, 0, 1],
+                            new_scale = [
+                                piece.ref_obj.scale[0],
+                                0,
+                                1
+                            ],
                         )
 
     def hide_surplus(self, start_time = None):
@@ -406,7 +536,7 @@ class DrawnAgent(Blobject):
                 )
 
         if self.agent.type == 'seller':
-            limit_height = MAX_BAR_HEIGHT * self.agent.price_limit / MAX_PRICE
+            limit_height = self.max_bar_height * self.agent.price_limit / MAX_PRICE
 
             #Put away
             for piece in [self.extra_top_cap, self.extra_bot_cap, self.surplus_bar]:
@@ -414,7 +544,7 @@ class DrawnAgent(Blobject):
                     piece.move_to(
                         start_time = start_time,
                         new_location = add_lists_by_element(self.bar_loc, [0, limit_height, 0]),
-                        new_scale = [BAR_WIDTH, 0, 1],
+                        new_scale = [piece.ref_obj.scale[0], 0, 0],
                     )
 
     def price_reaction(self, price = None, start_time = None):
@@ -452,7 +582,7 @@ class DrawnAgent(Blobject):
                 'o_slash', 'primitives',
                 location = add_lists_by_element(
                     self.bar_loc,
-                    [0, MAX_BAR_HEIGHT + O_SLASH_SCALE, 0],
+                    [0, self.max_bar_height + O_SLASH_SCALE, 0],
                 ),
                 scale = O_SLASH_SCALE
             )
@@ -487,34 +617,42 @@ class DrawnMarket(Bobject):
         sim = None,
         scale = 5,
         name = 'market',
+        loud = False,
         **kwargs
     ):
         super().__init__(scale = scale, name = name, **kwargs)
 
         if sim == None:
             raise Warning('DrawnMarket needs a market sim to draw')
-        self.sim = sim
+        elif isinstance(sim, str):
+            result = os.path.join(
+                SIM_DIR,
+                sim
+            ) + ".pkl"
+            if loud:
+                print(result)
+            with open(result, 'rb') as input:
+                if loud:
+                    print(input)
+                self.sim = pickle.load(input)
+            if loud:
+                print("Loaded the world")
+        else:
+            self.sim = sim
+
 
         self.drawn_sellers = []
         self.drawn_buyers = []
 
-        max_num_one_kind = 0
-        for list in sim.agents_lists:
-            num_buyers = len([x for x in list if x.type == 'buyer'])
-            num_sellers = len([x for x in list if x.type == 'seller'])
-            max_num_one_kind = max(max_num_one_kind, num_buyers, num_sellers)
-
-        #Complicated function that
-        #modifier = (1.5 - 1 / (2 ** (max_num_one_kind - 5) + 1))
-        modifier = (1 + math.atan(max_num_one_kind - 5) / math.pi )
-        #Wanted to correct the 1/x scaling a bit
-        self.agent_scale = AGENT_BASE_SCALE / max_num_one_kind * modifier
+        self.update_agent_scale(session_index = 0)
 
         self.elapsed_time = 0
 
         good_bobject_model = import_object('rocket', 'misc')
         self.good_object_model = good_bobject_model.ref_obj.children[0]
         good_bobject_model.tweak_colors_recursive()
+
+        self.linked_graph = None
 
     def add_to_blender(self, appear_time = None, **kwargs):
         if appear_time == None:
@@ -540,7 +678,20 @@ class DrawnMarket(Bobject):
             agents = self.sim.agents_lists[0]
         )
 
-    def draw_sellers(self, start_time = None, agents = None):
+    def update_agent_scale(self, session_index = None):
+        max_num_one_kind = 0
+        list = self.sim.agents_lists[session_index]
+        num_buyers = len([x for x in list if x.type == 'buyer'])
+        num_sellers = len([x for x in list if x.type == 'seller'])
+        max_num_one_kind = max(max_num_one_kind, num_buyers, num_sellers)
+
+        #Complicated function that
+        #modifier = (1.5 - 1 / (2 ** (max_num_one_kind - 5) + 1))
+        modifier = (1 + math.atan(max_num_one_kind - 5) / math.pi )
+        #Wanted to correct the 1/x scaling a bit
+        self.agent_scale = AGENT_BASE_SCALE / max_num_one_kind * modifier
+
+    def draw_sellers(self, start_time = None, agents = None, session_index = 0):
         sellers = []
         for agent in agents:
             if agent.type == 'seller':
@@ -585,20 +736,28 @@ class DrawnMarket(Bobject):
                 )
                 seller.make_display(appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE)
                 seller.add_expected_price(
-                    price = seller.agent.goal_prices[0],
+                    price = seller.agent.goal_prices[session_index],
                     appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
                 )
                 seller.anchor = anchor
 
 
-            self.drawn_sellers.append(seller)
+                self.drawn_sellers.append(seller)
 
             if seller in sellers_to_move:
-                raise Warning('Not implemented!')
+                #raise Warning('Not implemented!')
+                seller.anchor.move_to(
+                    new_angle = [0, 0, math.pi / 2 - (i + 1) * angle],
+                    start_time = start_time
+                )
+                seller.move_to(
+                    new_scale = self.agent_scale,
+                    start_time = start_time
+                )
             if seller in sellers_to_remove:
                 raise Warning('Not implemented!')
 
-    def draw_buyers(self, start_time = None, agents = None):
+    def draw_buyers(self, start_time = None, agents = None, session_index = 0):
         buyers = []
         for agent in agents:
             if agent.type == 'buyer':
@@ -622,7 +781,7 @@ class DrawnMarket(Bobject):
                     self.agent_scale * AGENT_HEIGHT_FACTOR
                 ]
                 min_dist = math.inf
-                for agent in agents_already_drawn + buyers_to_add:
+                for agent in self.drawn_buyers + buyers_to_add:
                     dist = vec_len(add_lists_by_element(
                         location,
                         agent.ref_obj.location,
@@ -645,13 +804,19 @@ class DrawnMarket(Bobject):
                 )
             )
 
+        for agent in self.drawn_buyers:
+            agent.move_to(
+                new_scale = self.agent_scale,
+                start_time = start_time
+            )
+
         for i, buyer in enumerate(buyers_to_add):
             if buyer in buyers_to_add:
                 self.add_subbobject(buyer)
                 buyer.add_to_blender(appear_time = start_time)
                 buyer.make_display(appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE)
                 buyer.add_expected_price(
-                    price = buyer.agent.goal_prices[0],
+                    price = buyer.agent.goal_prices[session_index],
                     appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
                 )
                 self.drawn_buyers.append(buyer)
@@ -787,7 +952,6 @@ class DrawnMarket(Bobject):
                         new_location = location
                     )
 
-
                 else:
                     location = drawn_buyer.ref_obj.location
                     angle = None
@@ -810,6 +974,36 @@ class DrawnMarket(Bobject):
                         start_time = self.elapsed_time + ROUND_MOVE_DURATION,
                         #end_time = self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH * 2
                     )
+                    if self.linked_graph != None:
+                        g = self.linked_graph
+                        displayed = g.displayed_buyer_bobjects + g.displayed_seller_bobjects
+                        for drawn_agent in displayed:
+                            #print(drawn_agent.agent)
+                            ##print(drawn_seller_to_meet.agent)
+                            #print(drawn_buyer.agent)
+                            #print()
+                            if drawn_agent.agent == drawn_seller_to_meet.agent or \
+                                    drawn_agent.agent == drawn_buyer.agent:
+                                #print()
+                                #print("AGENTS MATCH")
+                                #print()
+                                meetings = [x for x in drawn_agent.agent.meetings if \
+                                           x.transaction_price != None and x.session_index == session_index]
+                                if len(meetings) == 1:
+                                    drawn_agent.highlight_surplus(
+                                        price = meetings[0].transaction_price,
+                                        start_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                                    )
+                                elif len(meetings) > 1:
+                                    raise Warning('There is more than one successful meeting for this agent and session?')
+
+
+                        '''for agent in self.linked_graph.agents
+
+                        self.linked_graph.highlight_surpluses(
+                            index = session_index,
+                            start_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                        )'''
 
                     #Hand off good
                     good_sold = drawn_seller_to_meet.good
@@ -857,10 +1051,6 @@ class DrawnMarket(Bobject):
 
             self.elapsed_time += ROUND_MOVE_DURATION
 
-
-            ##Animate sales
-            pass
-
             ##pause
             self.elapsed_time += PAUSE_LENGTH
 
@@ -898,6 +1088,8 @@ class DrawnMarket(Bobject):
                 )
             drawn_buyer.was_just_meeting_seller = False
 
+
+
         #Consume/celebration animation?
         pass
 
@@ -917,6 +1109,14 @@ class DrawnMarket(Bobject):
                 drawn_buyer.good.disappear(disappear_time = self.elapsed_time)
                 #drawn_buyer.good = None
 
+        if self.linked_graph != None:
+            self.linked_graph.move_expected_prices(
+                index = session_index + 1,
+                start_time = self.elapsed_time
+            )
+            self.linked_graph.hide_surpluses(
+                start_time = self.elapsed_time
+            )
 
         #pause
         self.elapsed_time += PAUSE_LENGTH
@@ -925,21 +1125,274 @@ class DrawnMarket(Bobject):
         self.elapsed_time += start_time
 
         for i, session in enumerate(self.sim.sessions):
+            self.update_agent_scale(session_index = i)
+            self.draw_sellers(
+                start_time = self.elapsed_time,
+                agents = self.sim.agents_lists[i],
+                session_index = i
+            )
+            self.draw_buyers(
+                start_time = self.elapsed_time,
+                agents = self.sim.agents_lists[i],
+                session_index = i
+            )
+            if self.linked_graph != None:
+                '''graphed_buyers = [x.agent for x in self.linked_graph.buyer_bobjects]
+                graphed_sellers = [x.agent for x in self.linked_graph.seller_bobjects]
+                for agent in self.sim.agents_lists[-1]:
+                    if agent not in graphed_buyers + graphed_sellers:
+                        self.linked_graph.add_agent(agent = agent)'''
+                self.linked_graph.update_agent_display(
+                    start_time = self.elapsed_time,
+                    session_index = i
+                )
             self.animate_session(session = session, session_index = i)
 
 class MarketGraph(GraphBobject):
     """docstring for MarketGraph."""
 
-    def __init__(self, **kwargs):
-        super().__init__(self, **kwargs)
+    def __init__(self, sim = None, loud = False, display_arrangement = 'buyer_seller', *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def add_agent(agent = None, start_time = None):
-        pass
+        if sim == None:
+            raise Warning('MarketGraph needs a market sim to draw')
+        elif isinstance(sim, str):
+            result = os.path.join(
+                SIM_DIR,
+                sim
+            ) + ".pkl"
+            if loud:
+                print(result)
+            with open(result, 'rb') as input:
+                if loud:
+                    print(input)
+                self.sim = pickle.load(input)
+            if loud:
+                print("Loaded the world")
+        else:
+            self.sim = sim
 
-        #Add drawn_agent
-        #hide/delete blob
-        #sort relative to other agents
-        #place and scale graph appropriately
+        self.display_arrangement = display_arrangement
+        initial_agents = self.sim.agents_lists[0]
+        if self.display_arrangement == 'buyer_seller':
+            self.num_initial_displays = len(initial_agents)
+        else:
+            num_buyers = len([x for x in initial_agents if x.type == 'buyer'])
+            num_sellers = len([x for x in initial_agents if x.type == 'seller'])
+            self.num_initial_displays = max(num_buyers, num_sellers)
+
+        self.display_width = self.x_range[1] / self.num_initial_displays
+
+        self.bar_to_space_ratio = 0.8
+
+        self.buyer_bobjects = []
+        self.seller_bobjects = []
+        for agent in initial_agents:
+            self.add_agent(agent = agent)
+        self.displayed_buyer_bobjects = []
+        self.displayed_seller_bobjects = []
+
+    def add_agent(self, agent = None):
+        bar_width = self.bar_to_space_ratio * self.display_width / 2
+        new_agent = DrawnAgent(
+            agent = agent,
+            display_mode = 'graph',
+            bar_width = bar_width,
+            max_bar_height = self.y_range[1]
+        )
+        self.add_subbobject(new_agent)
+
+        if agent.type == 'buyer':
+            self.buyer_bobjects.append(new_agent)
+        elif agent.type == 'seller':
+            self.seller_bobjects.append(new_agent)
+
+        return new_agent
+
+    def update_agent_display(self, start_time = None, mode = None, session_index = None):
+        if mode == None:
+            mode = self.display_arrangement
+        else:
+            self.display_arrangement = mode
+
+        if session_index == None:
+            raise Warning('Need session index to update agent display')
+
+        #current_sellers = [x for x in self.sim.agents_lists[i] if x.type = 'seller']
+        #current_buyers = [x for x in self.sim.agents_lists[i] if x.type = 'buyer']
+        current_agents = self.sim.agents_lists[session_index]
+        drawn_agents = [x.agent for x in self.seller_bobjects + self.buyer_bobjects]
+        #print()
+        #print(current_agents)
+        #print(drawn_agents)
+        for agent in current_agents:
+            if agent not in drawn_agents:
+                new_drawn_agent = self.add_agent(agent = agent)
+                new_drawn_agent.add_to_blender(appear_time = start_time)
+
+        #print([x.agent for x in self.displayed_seller_bobjects])
+        #print()
+
+        new_seller_displays = [x for x in self.seller_bobjects if x not in self.displayed_seller_bobjects]
+        new_buyer_displays = [x for x in self.buyer_bobjects if x not in self.displayed_buyer_bobjects]
+        displays_to_delete = [x for x in self.displayed_seller_bobjects if x not in self.seller_bobjects] + \
+                                [x for x in self.displayed_buyer_bobjects if x not in self.buyer_bobjects]
+
+        #Update self.bar_width
+        if mode == 'buyer_seller':
+            current_num = len(self.buyer_bobjects + self.seller_bobjects)
+        elif mode == 'superimposed' or mode == 'stacked':
+            current_num = max(len(self.buyer_bobjects), len(self.seller_bobjects))
+
+        thickness_factor = self.num_initial_displays / current_num
+
+        #Make new displays
+        for display in new_seller_displays:
+            #Delay make_display so the bobject will be in place before the bar
+            #actually appears
+            display.make_display(
+                thickness_factor = thickness_factor,
+                appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
+            )
+            self.displayed_seller_bobjects.append(display)
+            display.add_expected_price(
+                appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE,
+                session_index = session_index,
+                thickness_factor = thickness_factor,
+            )
+        for display in new_buyer_displays:
+            #Delay make_display so the bobject will be in place before the bar
+            #actually appears
+            display.make_display(
+                thickness_factor = thickness_factor,
+                appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
+            )
+            self.displayed_buyer_bobjects.append(display)
+            display.add_expected_price(
+                appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE,
+                session_index = session_index,
+                thickness_factor = thickness_factor,
+            )
+
+        #print(len(self.agent_bobjects))
+
+        ordered_seller_displays = sorted(
+            self.displayed_seller_bobjects,
+            key = lambda x: x.agent.price_limit
+        )
+        sort_direction = -1
+        if mode == 'buyer_seller':
+            sort_direction = 1
+        ordered_buyer_displays = sorted(
+            self.displayed_buyer_bobjects,
+            key = lambda x: sort_direction * x.agent.price_limit
+        )
+
+        #space_width = (graph.x_range[1] - num_bars * bar_width) / (num_bars + 1)
+        #x = (1 + i) * space_width + bar_width * (0.5 + i),
+        #bar_to_space_ratio = 1
+        #display_width = self.x_range[1] / len(ordered_displays)
+        if mode == 'buyer_seller':
+            current_num = len(ordered_buyer_displays + ordered_seller_displays)
+            for i, bar in enumerate(ordered_buyer_displays + ordered_seller_displays):
+                new_x = (i + 0.5) * self.display_width * self.num_initial_displays / current_num
+                bar.move_to(
+                    new_location = [new_x, 0, 0],
+                    start_time = start_time
+                )
+                if bar not in new_buyer_displays + new_seller_displays:
+                    bar.change_thickness(
+                        new_thickness = self.num_initial_displays / current_num,
+                        start_time = start_time
+                    )
+        if mode == 'superimposed':
+            current_num = max(len(ordered_buyer_displays), len(ordered_seller_displays))
+            for i, bar in enumerate(ordered_buyer_displays):
+                new_x = (i + 0.5) * self.display_width * self.num_initial_displays / current_num
+                bar.move_to(
+                    new_location = [new_x, 0, -0.15],
+                    start_time = start_time
+                )
+                if bar not in new_buyer_displays:
+                    bar.change_thickness(
+                        new_thickness = self.num_initial_displays / current_num,
+                        start_time = start_time
+                    )
+            for i, bar in enumerate(ordered_seller_displays):
+                new_x = (i + 0.5) * self.display_width * self.num_initial_displays / current_num
+                bar.move_to(
+                    new_location = [new_x, 0, 0],
+                    start_time = start_time
+                )
+                if bar not in new_seller_displays:
+                    bar.change_thickness(
+                        new_thickness = self.num_initial_displays / current_num,
+                        start_time = start_time
+                    )
+        if mode == 'stacked':
+            current_num = max(len(ordered_buyer_displays), len(ordered_seller_displays))
+            for i, bar in enumerate(ordered_buyer_displays):
+                new_x = (i + 0.5) * self.display_width * self.num_initial_displays / current_num
+                bar.move_to(
+                    new_location = [new_x, self.y_range[1] * 1.1, 0],
+                    start_time = start_time
+                )
+                if bar not in new_buyer_displays:
+                    bar.change_thickness(
+                        new_thickness = self.num_initial_displays / current_num,
+                        start_time = start_time
+                    )
+            for i, bar in enumerate(ordered_seller_displays):
+                new_x = (i + 0.5) * self.display_width * self.num_initial_displays / current_num
+                bar.move_to(
+                    new_location = [new_x, 0, 0],
+                    start_time = start_time
+                )
+                if bar not in new_seller_displays:# and session_index > 0:
+                    bar.change_thickness(
+                        new_thickness = self.num_initial_displays / current_num,
+                        start_time = start_time
+                    )
+
+    def add_expected_prices(self, index = None, start_time = None):
+        displayed = self.displayed_buyer_bobjects + self.displayed_seller_bobjects
+        for drawn_agent in displayed:
+            price = drawn_agent.agent.goal_prices[index]
+            drawn_agent.add_expected_price(price = price, appear_time = start_time)
+
+    def move_expected_prices(self, index = None, start_time = None):
+        displayed = self.displayed_buyer_bobjects + self.displayed_seller_bobjects
+        for drawn_agent in displayed:
+            price = drawn_agent.agent.goal_prices[index]
+            drawn_agent.move_expected_price(price = price, start_time = start_time)
+
+    def highlight_surpluses(self, index = None, start_time = None):
+        displayed = self.displayed_buyer_bobjects + self.displayed_seller_bobjects
+        for drawn_agent in displayed:
+            #price = drawn_agent.agent.goal_prices[index]
+            meetings = [x for x in drawn_agent.agent.meetings if \
+                       x.transaction_price != None and x.session_index == index]
+            if len(meetings) == 1:
+                drawn_agent.highlight_surplus(
+                    price = meetings[0].transaction_price,
+                    start_time = start_time
+                )
+            elif len(meetings) > 1:
+                raise Warning('There is more than one successful meeting for this agent and session?')
+
+    def hide_surpluses(self, start_time = None):
+        displayed = self.displayed_buyer_bobjects + self.displayed_seller_bobjects
+        for drawn_agent in displayed:
+            drawn_agent.hide_surplus(start_time = start_time)
+
+        #Add drawn_agent (check)
+        #hide/delete blob (check)
+        #sort relative to other agents (check)
+        #place bar and scale graph appropriately (check)
         #scale bar (esp cap) appropriately, likely making BAR_WIDTH an argument
-        #rather than a constant
-        #May have to edit change_window()
+        #rather than a constant (check)
+
+
+        #Separate buyer/seller graphs, figure out how to combine
+        #Test addition of agents (also for actual market), possily make scaling dynamic?
+        #Show expectation and surplus

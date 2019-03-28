@@ -227,19 +227,25 @@ def join_by_material(obj_list):
                 bpy.context.scene.objects.active = shape
         bpy.ops.object.join()
 
-def link_descendants(obj, unlink = False):
+def link_descendants(obj, unlink = False, top_level = True):
     #If children exist, link those too
     #Will break if imported children were linked in add_to_blender
     #(if their object name in blender is the same as the filename)
+
+    if unlink == True and top_level == True:
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select = True
+
     obj_names = [x.name for x in bpy.data.objects]
     for child in obj.children:
         if unlink == False:
             if child.name not in bpy.context.scene.objects:
                 bpy.context.scene.objects.link(child)
         else:
-            child.selected = True
-            bpy.ops.objects.delete()
-        link_descendants(child, unlink = unlink)
+            child.select = True
+        link_descendants(child, unlink = unlink, top_level = False)
+    if unlink == True:
+        bpy.ops.object.delete()
 
 def append_descendants(obj, lst, type_req = None):
     for child in obj.children:

@@ -2,15 +2,19 @@
 from random import random, randrange, choice, gauss, uniform
 from copy import copy
 
-#import pickle
+import imp
+import helpers
+imp.reload(helpers)
+from helpers import *
 
+import pickle
 
 PRICE_ADJUST_MODE = 'chance'
-PRICE_ADJUST_CHANCE = 0.9
+PRICE_ADJUST_CHANCE = 0.5
 PRICE_ADJUST_MEAN = 1
 PRICE_ADJUST_DEV = 0.1
 PRICE_CONCESSION = PRICE_ADJUST_MEAN
-MAX_PRICE = 30
+MAX_PRICE = 50
 
 class Agent(object):
     """docstring for Agent."""
@@ -41,6 +45,7 @@ class Agent(object):
                 initial_price = max(initial_price, self.price_limit)
 
         self.goal_prices = [initial_price] #initial value
+        self.meetings = []
 
     def adjust_price(self, success = None, set_price = None):
         if set_price != None:
@@ -73,11 +78,17 @@ class Meeting(object):
         buyer = None,
         seller = None,
         interaction_mode = None,
-        concession_size = 0
+        concession_size = 0,
+        session_index = None
     ):
         super().__init__()
         self.buyer = buyer
         self.seller = seller
+        self.buyer.meetings.append(self)
+        self.seller.meetings.append(self)
+        self.session_index = session_index
+        if self.session_index == None:
+            raise Warning('Meeting needs session index')
 
         if self.seller == None or self.buyer == None:
             raise Warning('Meeting is missing a buyer or a seller')
@@ -127,9 +138,13 @@ class Session(object):
         interaction_mode = None,
         session_mode = None,
         trim_participants = False,
+        index = None
         #meetings = []
     ):
         super().__init__()
+        self.index = index
+        if self.index == None:
+            raise Warning('Session needs index')
         self.buyers = buyers
         self.sellers = sellers
         self.num_sellers = len(self.sellers)
@@ -158,7 +173,8 @@ class Session(object):
                     Meeting(
                         buyer = buyer,
                         seller = seller,
-                        interaction_mode = self.interaction_mode
+                        interaction_mode = self.interaction_mode,
+                        session_index = self.index
                     )
                 )
 
@@ -242,7 +258,8 @@ class Session(object):
                         Meeting(
                             buyer = buyer,
                             seller = seller,
-                            interaction_mode = self.interaction_mode
+                            interaction_mode = self.interaction_mode,
+                            session_index = self.index
                         )
                     )
 
@@ -275,7 +292,7 @@ class Session(object):
             #price even when they never got a chance, but that will be fairly rare.
             #Main point is to make sure agents who have failed do end up
             #adjusting price
-            print(len(self.rounds))
+            #print(len(self.rounds))
             for buyer in buyers_this_round:
                 disqualified.append(buyer)
             for seller in sellers_this_round:
@@ -365,7 +382,8 @@ class Session(object):
                                 buyer = buyer,
                                 seller = seller,
                                 interaction_mode = self.interaction_mode,
-                                concession_size = PRICE_CONCESSION
+                                concession_size = PRICE_CONCESSION,
+                                session_index = self.index
                             )
                         )
 
@@ -405,7 +423,7 @@ class Session(object):
                     agent.adjust_price(success = False)
 
                 self.rounds = self.rounds + concession_rounds
-                print(len(self.rounds))
+                #print(len(self.rounds))
 
 
 
@@ -434,11 +452,13 @@ class Market(object):
         initial_agents = None,
         num_initial_buyers = 0,
         num_initial_sellers = 0,
+        buyer_limits = [],
+        seller_limits = [],
         price_range = [0, MAX_PRICE],
         initial_price = None,
         interaction_mode = 'negotiate',
         session_mode = 'rounds',
-        fluid_sellers = True
+        fluid_sellers = True,
     ):
         super().__init__()
         self.price_range = price_range
@@ -454,10 +474,16 @@ class Market(object):
 
         self.agents_lists = []
         if initial_agents == None:
-            self.generate_agents(
-                num_sellers = num_initial_sellers,
-                num_buyers = num_initial_buyers
-            )
+            if len(buyer_limits) > 0 and len(seller_limits) > 0:
+                self.generate_agents(
+                    buyer_limits = buyer_limits,
+                    seller_limits = seller_limits
+                )
+            else:
+                self.generate_agents(
+                    num_sellers = num_initial_sellers,
+                    num_buyers = num_initial_buyers
+                )
         else:
             self.agents_lists.append(initial_agents)
 
@@ -484,28 +510,53 @@ class Market(object):
             #return math.floor(x ** 3 / self.price_range[1] ** 2)
             pass
 
-    def generate_agents(self, num_buyers = None, num_sellers = None):
+    def generate_agents(
+        self,
+        num_buyers = None,
+        num_sellers = None,
+        buyer_limits = None,
+        seller_limits = None
+    ):
         new_agent_list = []
-        for i in range(num_buyers):
-            new_buyer = Agent(
-                type = 'buyer',
-                price_limit = self.get_point_on_demand_curve(shape = 'linear'),
-                initial_price = self.initial_price,
-                interaction_mode = self.interaction_mode
-            )
-            new_agent_list.append(new_buyer)
-        for i in range(num_sellers):
-            new_seller = Agent(
-                type = 'seller',
-                price_limit = self.get_point_on_supply_curve(shape = 'linear'),
-                initial_price = self.initial_price,
-                interaction_mode = self.interaction_mode
-            )
-            new_agent_list.append(new_seller)
+        if num_buyers != None:
+            for i in range(num_buyers):
+                new_buyer = Agent(
+                    type = 'buyer',
+                    price_limit = self.get_point_on_demand_curve(shape = 'linear'),
+                    initial_price = self.initial_price,
+                    interaction_mode = self.interaction_mode
+                )
+                new_agent_list.append(new_buyer)
+            for i in range(num_sellers):
+                new_seller = Agent(
+                    type = 'seller',
+                    price_limit = self.get_point_on_supply_curve(shape = 'linear'),
+                    initial_price = self.initial_price,
+                    interaction_mode = self.interaction_mode
+                )
+                new_agent_list.append(new_seller)
+        elif buyer_limits != None:
+            for limit in buyer_limits:
+                new_buyer = Agent(
+                    type = 'buyer',
+                    interaction_mode = self.interaction_mode,
+                    initial_price = self.initial_price,
+                    price_limit = limit
+                )
+                new_agent_list.append(new_buyer)
+            for limit in seller_limits:
+                new_seller = Agent(
+                    type = 'seller',
+                    interaction_mode = self.interaction_mode,
+                    initial_price = self.initial_price,
+                    price_limit = limit
+                )
+                new_agent_list.append(new_seller)
 
         self.agents_lists.append(new_agent_list)
 
-    def new_session(self, session_mode = None):
+    def new_session(self, session_mode = None, index = None, new_agents = [],
+                        save = False, filename = None, filename_seed = None):
         if session_mode == None:
             session_mode = self.session_mode
 
@@ -516,7 +567,15 @@ class Market(object):
         #This is done so sellers can be drawn as non-participants, and their
         #numbers can be manually changed.
         while len(self.agents_lists) <= len(self.sessions):
-            self.agents_lists.append(self.agents_lists[-1])
+            self.agents_lists.append(list(self.agents_lists[-1]))
+
+        for agent in new_agents:
+            for j in range(index):
+                agent.goal_prices.insert(0, None)
+
+        print(' Num agents ' + str(len(self.agents_lists[-1])))
+        self.agents_lists[-1] += new_agents
+        print(' Num agents ' + str(len(self.agents_lists[-1])))
 
         buyers = []
         sellers = []
@@ -547,6 +606,7 @@ class Market(object):
                 sellers = sellers,
                 interaction_mode = self.interaction_mode,
                 session_mode = session_mode,
+                index = index
                 #meetings = []
                 #For some reason, the default meetings value doesn't work,
                 #It uses the meetings from the previous sim unless the
@@ -555,3 +615,43 @@ class Market(object):
         )
         '''for agent in self.agents:
             print(len(agent.goal_prices))'''
+
+        if save == True:
+            self.save_sim_result(filename, filename_seed)
+
+    def save_sim_result(self, filename, filename_seed):
+        if filename != None:
+            name = filename
+        elif filename_seed != None:
+            k = 0
+            directory = os.fsencode(SIM_DIR)
+            while k <= len(os.listdir(directory)):
+                #print('looking in dir')
+                name_to_check = str(filename_seed) + '_' + str(k)
+                already_exists = False
+                for existing_file in os.listdir(directory):
+                    existing_file_name = os.fsdecode(existing_file)[:-4]
+                    #print(name_to_check)
+                    #print(existing_file_name)
+                    if existing_file_name == name_to_check:
+                        already_exists = True
+                        #print(already_exists)
+                if already_exists:
+                    k += 1
+                else:
+                    name = name_to_check
+                    break
+        else:
+            now = datetime.datetime.now()
+            name = "MARKET" + now.strftime('%Y%m%dT%H%M%S')
+        #name = 'test'
+        result = os.path.join(
+            SIM_DIR,
+            name
+        ) + ".pkl"
+        if not os.path.exists(result):
+            print("Writing simulation to %s" % (result))
+            with open(result, "wb") as outfile:
+                pickle.dump(self, outfile, pickle.HIGHEST_PROTOCOL)
+        else:
+            raise Warning(str(result) + " already exists")

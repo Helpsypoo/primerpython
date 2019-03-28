@@ -72,8 +72,6 @@ imp.reload(market_sim)
 import drawn_market
 imp.reload(drawn_market)
 
-from helpers import *
-
 def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = True):
     #clear objects and materials
     #Reading the homefile would likely by faster, but it
@@ -381,59 +379,70 @@ def test():
 
     d_agent.highlight_surplus(price = 25, start_time = 13, end_time = 15)'''
 
-    sim = market_sim.Market(
-        num_initial_buyers = 20,
-        num_initial_sellers = 20,
-        #interaction_mode = 'negotiate',
-        #interaction_mode = 'walk',
-        interaction_mode = 'seller_asks_buyer_decides',
-        initial_price = 15,
-        session_mode = 'rounds_w_concessions',
-        #session_mode = 'rounds',
-        #session_mode = 'one_shot',
-        fluid_sellers = True
-    )
-    num_sessions = 20
-    for i in range(num_sessions):
-        print("Running session " + str(i))
-        sim.new_session()
-        #print(sim.sessions[-1])
+    new_sim = True
+    if new_sim:
+        sim = market_sim.Market(
+            #num_initial_buyers = 1,
+            #num_initial_sellers = 1,
+            #interaction_mode = 'negotiate',
+            #interaction_mode = 'walk',
+            buyer_limits = [40, 35],
+            seller_limits = [27, 22],
+            interaction_mode = 'seller_asks_buyer_decides',
+            initial_price = 30,
+            session_mode = 'rounds_w_concessions',
+            #session_mode = 'rounds',
+            #session_mode = 'one_shot',
+            fluid_sellers = True
+        )
+        num_sessions = 10
+        for i in range(num_sessions):
+            new_agents = []
+            '''if i == 2:
+                new_seller = market_sim.Agent(
+                    type = 'seller',
+                    interaction_mode = sim.interaction_mode,
+                    initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
+                    price_limit = 29
+                )
+                new_agents.append(new_seller)
+            if i == 3:
+                new_buyer = market_sim.Agent(
+                    type = 'buyer',
+                    interaction_mode = sim.interaction_mode,
+                    initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
+                    price_limit = 29
+                )
+                new_agents.append(new_buyer)'''
+            if i > 0:
+                new_seller = market_sim.Agent(
+                    type = 'seller',
+                    interaction_mode = sim.interaction_mode,
+                    initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
+                    price_limit = 4 + 2 * i
+                )
+                new_agents.append(new_seller)
+                new_buyer = market_sim.Agent(
+                    type = 'buyer',
+                    interaction_mode = sim.interaction_mode,
+                    initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
+                    price_limit = 50 - 2 * i
+                )
+                new_agents.append(new_buyer)
+            print("Running session " + str(i))
+            save = False
+            if i == num_sessions - 1:
+                save = True
+            sim.new_session(save = save, index = i, new_agents = new_agents)
+            #print(sim.sessions[-1])
+    else:
+        #Three total
+        #sim = 'MARKET20190327T161915'
+        #12 total
+        sim = 'MARKET20190327T222513'
 
-    for i, session in enumerate(sim.sessions):
-        print('Session ' + str(i))
-        print(' Completed transactions: ' + str(session.num_transactions) + ' Sellers: ' + str(session.num_sellers) + ' Price: ' + str(session.avg_price))
-
-        ordered_bids = sorted([x.goal_prices[i] for x in session.buyers])
-        #ordered_bids.reverse()
-        #print(ordered_bids)
-        ordered_asks = sorted([x.goal_prices[i] for x in session.sellers])
-        #print(ordered_asks)
-
-        goal_prices = []
-        for round in session.rounds:
-            goal_prices = []
-            for transaction in round:
-                #print(transaction.transaction_price)
-                try:
-                    goal_prices.append([transaction.buyer.goal_prices[i], transaction.seller.goal_prices[i]])
-                except:
-                    print(i)
-                    print(len(transaction.buyer.goal_prices))
-                    print(len(transaction.seller.goal_prices))
-                    raise()
-            print(' ' + str(goal_prices))
-
-        '''for agent in sim.agents:
-            print(len(agent.goal_prices))'''
-
-    ordered_bids = sorted([x.price_limit for x in sim.agents_lists[-1] if x.type == 'buyer'])
-    ordered_bids.reverse()
-    print(ordered_bids)
-    ordered_asks = sorted([x.price_limit for x in sim.agents_lists[-1] if x.type == 'seller'])
-    print(ordered_asks)
-
-
-    '''#print('baanasdf')
+    '''
+    #print('baanasdf')
     for i, [bid, ask] in enumerate(zip(ordered_bids, ordered_asks)):
         if bid >= ask:
             continue
@@ -441,14 +450,93 @@ def test():
             print(i-1, ordered_bids[i-1], ordered_asks[i-1])
             print(i, bid, ask)
             print(i+1, ordered_bids[i+1], ordered_asks[i+1])
-            break'''
+            break
+    '''
+
+    show_graph = True
+    if show_graph:
+        graph = drawn_market.MarketGraph(
+            arrows = False,
+            padding = 0,
+            centered = True,
+            sim = sim,
+            display_arrangement = 'stacked'
+        )
+        graph.add_to_blender(appear_time = 0)
+        #graph.add_agent(agent = sim.agents_lists[0][0], start_time = 0)
+        #graph.update_agent_display(start_time = 5, session_index = 0)
+        #graph.display_arrangement = 'superimposed'
+        #graph.update_agent_display(start_time = 3)
+
+        #graph.add_expected_prices(index = 0, start_time = 6)
+
+        #for i in range(num_sessions):
+        #    graph.highlight_surpluses(index = i + 1, start_time = 7 + i)
+        #    graph.move_expected_prices(index = i + 1, start_time = 7 + i + 0.5)
+        #    graph.hide_surpluses(start_time = 5 + i + 0.5)
 
     animate = True
     if animate:
-        market = drawn_market.DrawnMarket(sim = sim)
+        if show_graph:
+            sim = graph.sim
+        market = drawn_market.DrawnMarket(
+            sim = sim,
+            location = [-6, 0, 0]
+        )
+        if show_graph:
+            market.linked_graph = graph
         market.add_to_blender(appear_time = 0)
+        market.animate_sessions(start_time = 7)
 
-        market.animate_sessions(start_time = 4)
+    #print()
+    #print()
+    #for list in market.sim.agents_lists:
+    #    print(' ' + str(list))
+    #print()
+    #print()
+    #print([x.agent for x in graph.buyer_bobjects + graph.seller_bobjects])
+    #print()
+    #print([x.agent for x in market.drawn_buyers + market.drawn_sellers])
+
+    summary = False
+    if summary and new_sim:
+        try:
+            iterable = enumerate(sim.sessions)
+        except:
+            iterable = enumerate(market.sim.sessions)
+
+        for i, session in iterable:
+            print('Session ' + str(i))
+            print(' Completed transactions: ' + str(session.num_transactions) + ' Sellers: ' + str(session.num_sellers) + ' Price: ' + str(session.avg_price))
+
+            ordered_bids = sorted([x.goal_prices[i] for x in session.buyers])
+            ordered_bids.reverse()
+            print(' New banana ' + str(ordered_bids))
+            ordered_asks = sorted([x.goal_prices[i] for x in session.sellers])
+            print(' New banana ' + str(ordered_asks))
+
+            goal_prices = []
+            for round in session.rounds:
+                goal_prices = []
+                for transaction in round:
+                    #print(transaction.transaction_price)
+                    try:
+                        goal_prices.append([transaction.buyer.goal_prices[i], transaction.seller.goal_prices[i]])
+                    except:
+                        print(i)
+                        print(len(transaction.buyer.goal_prices))
+                        print(len(transaction.seller.goal_prices))
+                        raise()
+                print(' ' + str(goal_prices))
+
+            '''for agent in sim.agents:
+                print(len(agent.goal_prices))'''
+
+        ordered_bids = sorted([x.price_limit for x in sim.agents_lists[-1] if x.type == 'buyer'])
+        ordered_bids.reverse()
+        print(ordered_bids)
+        ordered_asks = sorted([x.price_limit for x in sim.agents_lists[-1] if x.type == 'seller'])
+        print(ordered_asks)
 
 def main():
     """Use this as a test scene"""
