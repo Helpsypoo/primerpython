@@ -122,7 +122,6 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = 
     #render.
     scn.view_settings.view_transform = 'Raw'
 
-
     scn.gravity = (0, 0, -9.81)
 
     bpy.ops.world.new()
@@ -379,15 +378,15 @@ def test():
 
     d_agent.highlight_surplus(price = 25, start_time = 13, end_time = 15)'''
 
-    new_sim = True
+    new_sim = False
     if new_sim:
         sim = market_sim.Market(
             #num_initial_buyers = 1,
             #num_initial_sellers = 1,
             #interaction_mode = 'negotiate',
             #interaction_mode = 'walk',
-            buyer_limits = [40, 35],
-            seller_limits = [27, 22],
+            buyer_limits = [40],
+            seller_limits = [20],
             interaction_mode = 'seller_asks_buyer_decides',
             initial_price = 30,
             session_mode = 'rounds_w_concessions',
@@ -395,7 +394,7 @@ def test():
             #session_mode = 'one_shot',
             fluid_sellers = True
         )
-        num_sessions = 10
+        num_sessions = 5
         for i in range(num_sessions):
             new_agents = []
             '''if i == 2:
@@ -414,7 +413,7 @@ def test():
                     price_limit = 29
                 )
                 new_agents.append(new_buyer)'''
-            if i > 0:
+            '''if i > 0:
                 new_seller = market_sim.Agent(
                     type = 'seller',
                     interaction_mode = sim.interaction_mode,
@@ -428,18 +427,24 @@ def test():
                     initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
                     price_limit = 50 - 2 * i
                 )
-                new_agents.append(new_buyer)
+                new_agents.append(new_buyer)'''
             print("Running session " + str(i))
             save = False
             if i == num_sessions - 1:
                 save = True
-            sim.new_session(save = save, index = i, new_agents = new_agents)
+            sim.new_session(save = save, new_agents = new_agents)
             #print(sim.sessions[-1])
     else:
         #Three total
         #sim = 'MARKET20190327T161915'
         #12 total
-        sim = 'MARKET20190327T222513'
+        #sim = 'MARKET20190327T222513'
+        #1 on 1
+        #sim = 'MARKET20190328T165425'
+        #2 on 1
+        #sim = 'MARKET20190329T150237'
+        #2 on 3
+        sim = 'MARKET20190329T154933'
 
     '''
     #print('baanasdf')
@@ -460,8 +465,31 @@ def test():
             padding = 0,
             centered = True,
             sim = sim,
-            display_arrangement = 'stacked'
+            location = [6, 0, 0],
+            scale = 0.5,
+            display_arrangement = 'buyer_seller',
+            show_axes = False
         )
+
+
+        num_sessions = 30
+        for i in range(num_sessions):
+            new_agents = []
+            if i == 0:
+                new_agents.append(
+                    market_sim.Agent(
+                        type = 'buyer',
+                        interaction_mode = graph.sim.interaction_mode,
+                        initial_price = graph.sim.sessions[-1].rounds[-1][-1].transaction_price,
+                        price_limit = 20
+                    )
+                )
+            print("Running session " + str(i))
+            save = False
+            if i == num_sessions - 1:
+                save = True
+            graph.sim.new_session(save = save, new_agents = new_agents)
+
         graph.add_to_blender(appear_time = 0)
         #graph.add_agent(agent = sim.agents_lists[0][0], start_time = 0)
         #graph.update_agent_display(start_time = 5, session_index = 0)

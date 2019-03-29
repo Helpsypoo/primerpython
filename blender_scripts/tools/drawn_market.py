@@ -30,6 +30,7 @@ DEFAULT_MAX_BAR_HEIGHT = 1.6
 MAX_PRICE = market_sim.MAX_PRICE
 BAR_THICKNESS = 0.08
 BAR_BASE_LIP = 0.01
+BAR_BASE_LENGTH_FACTOR = 1.3
 O_SLASH_SCALE = 0.5
 CAP_OBJECT_HEIGHT = 0.5
 
@@ -159,7 +160,11 @@ class DrawnAgent(Blobject):
             location = add_lists_by_element(self.bar_loc, [0, 0, -BAR_THICKNESS]),
             rotation_euler = [0, math.pi / 2, 0],
             name = 'bar_base',
-            scale = [(BAR_THICKNESS + 2 * BAR_BASE_LIP) * thickness_factor, base_bar_height, self.bar_width * 1.2]
+            scale = [
+                (BAR_THICKNESS + 2 * BAR_BASE_LIP),
+                base_bar_height,
+                self.bar_width * BAR_BASE_LENGTH_FACTOR * thickness_factor
+            ]
         )
         apply_material(self.bar_base.ref_obj.children[0], 'color2')
 
@@ -212,6 +217,7 @@ class DrawnAgent(Blobject):
         #Change cap position to keep top in same spot
         prev_cap_scale = self.bar_cap.ref_obj.scale[0]
         new_scale = self.bar_width * new_thickness
+
         self.bar_cap.move_to(
             new_scale = [
                 new_scale,
@@ -270,6 +276,17 @@ class DrawnAgent(Blobject):
             start_time = start_time
         )
 
+        #Aaaand the base
+        self.bar_base.move_to(
+            new_scale = [
+                self.bar_base.ref_obj.scale[0],
+                self.bar_base.ref_obj.scale[1],
+                self.bar_width * BAR_BASE_LENGTH_FACTOR * new_thickness,
+            ],
+            start_time = start_time
+        )
+
+
     def add_price_line(self, price = 0, appear_time = None, emote = False):
         if appear_time == None:
             raise Warning('add_price_line() needs appear_time')
@@ -325,15 +342,15 @@ class DrawnAgent(Blobject):
             raise()
         l_tri = import_object(
             'rounded_isosceles', 'primitives',
-            location = [- self.bar_width * 1, 0, 0],
+            location = [- self.bar_width * 1.05, 0, 0],
             rotation_euler = [0, 0, -math.pi / 2],
-            scale = 0.2 * self.bar_width
+            scale = 0.15 * self.bar_width
         )
         r_tri = import_object(
             'rounded_isosceles', 'primitives',
-            location = [self.bar_width * 1, 0, 0],
+            location = [self.bar_width * 1.05, 0, 0],
             rotation_euler = [0, 0, math.pi / 2],
-            scale = 0.2 * self.bar_width
+            scale = 0.15 * self.bar_width
         )
         for tri in [l_tri, r_tri]:
             apply_material(tri.ref_obj.children[0], 'color2')
@@ -377,8 +394,7 @@ class DrawnAgent(Blobject):
                 height_after_cap = self.max_bar_height * self.agent.price_limit / MAX_PRICE
                 height = height_after_cap - cap_height
 
-
-                if height - price_height >= 0:
+                if height >= price_height:
                     self.value_bar.move_to(
                         start_frame = start_time * FRAME_RATE - 1,
                         end_frame = start_time * FRAME_RATE,
@@ -398,7 +414,22 @@ class DrawnAgent(Blobject):
                             1
                         ]
                     )
+
+                    duration_time = None
+                    if end_time != None:
+                        duration_time = end_time - start_time
+                    for bobj in [self.surplus_bar, self.bar_cap]:
+                        bobj.color_shift(
+                            start_time = start_time,
+                            duration_time = duration_time,
+                            color = BUYER_SURPLUS_COLOR
+                        )
+
+
                 else:
+                    #height = price_height
+                    #cap_height = height_after_cap - height
+
                     self.value_bar.move_to(
                         start_frame = start_time * FRAME_RATE,
                         new_scale = [
@@ -407,28 +438,29 @@ class DrawnAgent(Blobject):
                             1
                         ]
                     )
-                    cap_scale_y = self.bar_width * (height_after_cap - price_height) / cap_height
+                    #cap_scale_y = self.bar_width *  / cap_height
                     self.bar_cap.move_to(
                         start_frame = start_time * FRAME_RATE,
                         new_scale = [
                             self.bar_cap.ref_obj.scale[0],
-                            cap_scale_y,
+                            self.bar_cap.ref_obj.scale[0] * (height_after_cap - price_height) / cap_height ,
                             1
                         ],
                         new_location = add_lists_by_element(self.bar_loc, [0, price_height, 0])
                     )
 
 
-
-                duration_time = None
-                if end_time != None:
-                    duration_time = end_time - start_time
-                for bobj in [self.surplus_bar, self.bar_cap]:
-                    bobj.color_shift(
-                        start_time = start_time,
-                        duration_time = duration_time,
-                        color = BUYER_SURPLUS_COLOR
-                    )
+                    #Copied code from other part of this if-else, but just
+                    #coloring the bar cap
+                    duration_time = None
+                    if end_time != None:
+                        duration_time = end_time - start_time
+                    for bobj in [self.bar_cap]:
+                        bobj.color_shift(
+                            start_time = start_time,
+                            duration_time = duration_time,
+                            color = BUYER_SURPLUS_COLOR
+                        )
 
         if self.agent.type == 'seller':
             if price <= self.agent.price_limit:
@@ -534,6 +566,29 @@ class DrawnAgent(Blobject):
                     duration_time = duration_time,
                     color = BUYER_BAR_COLOR
                 )
+
+        if self.agent.type == 'buyer':
+            limit_height = self.max_bar_height * self.agent.price_limit / MAX_PRICE
+            goal_cap_height = CAP_OBJECT_HEIGHT * self.bar_cap.ref_obj.scale[0]
+            bar_height = limit_height - goal_cap_height
+
+            self.bar_cap.move_to(
+                new_location = add_lists_by_element(self.bar_loc, [0, bar_height, 0]),
+                new_scale = [
+                    self.bar_cap.ref_obj.scale[0], #Keep x scale the same
+                    self.bar_cap.ref_obj.scale[0], #And make y copy x
+                    1
+                ],
+                start_time = start_time
+            )
+            self.value_bar.move_to(
+                new_scale = [
+                    self.value_bar.ref_obj.scale[0],
+                    bar_height,
+                    1
+                ],
+                start_time = start_time
+            )
 
         if self.agent.type == 'seller':
             limit_height = self.max_bar_height * self.agent.price_limit / MAX_PRICE

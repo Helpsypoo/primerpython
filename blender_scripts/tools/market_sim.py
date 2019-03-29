@@ -9,10 +9,10 @@ from helpers import *
 
 import pickle
 
-PRICE_ADJUST_MODE = 'chance'
-PRICE_ADJUST_CHANCE = 0.5
-PRICE_ADJUST_MEAN = 1
-PRICE_ADJUST_DEV = 0.1
+PRICE_ADJUST_MODE = 'gauss'
+PRICE_ADJUST_CHANCE = 1
+PRICE_ADJUST_MEAN = 2
+PRICE_ADJUST_DEV = 0.5
 PRICE_CONCESSION = PRICE_ADJUST_MEAN
 MAX_PRICE = 50
 
@@ -559,6 +559,9 @@ class Market(object):
                         save = False, filename = None, filename_seed = None):
         if session_mode == None:
             session_mode = self.session_mode
+
+        if index == None:
+            index = len(self.sessions)
 
         #There is a new list of eligible agents for each session.
         #This might be predetermined before init of market sim, but if not,

@@ -33,11 +33,15 @@ class GraphBobject(Bobject):
         high_res_curve_indices = [0], #by default, make the first curve high res
         include_y = True,
         padding = GRAPH_PADDING,
+        show_axes = True,
         **kwargs
     ):
         print('Initializing graph bobject')
         if 'name' not in kwargs:
             kwargs['name'] = 'graph'
+
+        self.show_axes = show_axes
+
         #Discrete functions usually use few points, but if they are animated
         #with highlight points, it's helpful to have more points.
         self.high_res_curve_indices = high_res_curve_indices
@@ -1433,7 +1437,8 @@ class GraphBobject(Bobject):
             )
 
     def add_to_blender(self, curve_colors = 'same', **kwargs):
-        self.add_axes()
+        if self.show_axes:
+            self.add_axes()
         if len(self.functions) > 0:
             if self.overlay_functions == True:
                 self.add_all_function_curves(curve_colors = curve_colors)
