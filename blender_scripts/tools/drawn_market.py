@@ -69,9 +69,10 @@ class DrawnAgent(Blobject):
         if self.agent.type == 'buyer':
             self.mat_string = BUYER_MAT
 
+        if 'wiggle' not in kwargs:
+            kwargs['wiggle'] = True
         super().__init__(
             mat = self.mat_string,
-            wiggle = True,
             **kwargs
         )
 
@@ -94,14 +95,16 @@ class DrawnAgent(Blobject):
             bleb = self.ref_obj.children[0]
             link_descendants(bleb, unlink = True)
 
-    def make_display(self, thickness_factor = 1, appear_time = None):
+    def make_display(self, thickness_factor = 1, appear_time = None, no_rot = False):
         if appear_time == None:
             raise Warning('make_display() needs appear_time')
 
         display_bobjects = []
 
         if self.display_mode == 'camera_left':
-            self.bar_loc = [-1.5, -0.8, 0]
+            self.bar_loc = [-1.25, -0.8, 0]
+        elif self.display_mode == 'camera_right':
+            self.bar_loc = [1.25, -0.8, 0]
         elif self.display_mode == 'above':
             self.bar_loc = [0, 1, 0]
         elif self.display_mode == 'table':
@@ -185,9 +188,10 @@ class DrawnAgent(Blobject):
         )
 
         constraint = self.display_container.ref_obj.constraints.new('CHILD_OF')
-        #constraint.use_rotation_x = False
-        #constraint.use_rotation_y = False
-        #constraint.use_rotation_z = False
+        if no_rot == True:
+            constraint.use_rotation_x = False
+            constraint.use_rotation_y = False
+            constraint.use_rotation_z = False
         #constraint.influence = 1
         constraint.target = self.ref_obj
 
@@ -371,7 +375,7 @@ class DrawnAgent(Blobject):
             subbobject_timing = OBJECT_APPEARANCE_TIME
         )
 
-    def move_expected_price(self, price = 0, start_time = None):
+    def move_expected_price(self, price = 0, start_time = None, **kwargs):
         if start_time == None:
             raise Warning('move_expected_price() needs start_time')
 
@@ -379,7 +383,8 @@ class DrawnAgent(Blobject):
 
         self.expected_price_indicator.move_to(
             new_location = add_lists_by_element(self.bar_loc, [0, height, 0]),
-            start_time = start_time
+            start_time = start_time,
+            **kwargs
         )
 
     def highlight_surplus(self, price = None, start_time = None, end_time = None):

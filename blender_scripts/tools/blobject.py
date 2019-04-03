@@ -941,6 +941,223 @@ class Blobject(Bobject):
             eye_bone.rotation_quaternion = init_eye_rot
             eye_bone.keyframe_insert(data_path = 'rotation_quaternion', frame = end_frame)'''
 
+    def nod_yes(
+        self,
+        start_time = None,
+        end_time = None,
+        attack = 0,
+        decay = 0
+    ):
+        if start_time == None:
+            raise Warning('Need start time for wince')
+
+        if end_time == None:
+            raise Warning('Need end time for wince')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        default_attack = OBJECT_APPEARANCE_TIME / 2
+
+        if attack == None:
+            if end_time == None:
+                attack = default_attack / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = default_attack / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = default_attack / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = default_attack / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+        #Head
+        head = self.ref_obj.children[0].pose.bones[3]
+        initial = list(head.rotation_quaternion)
+
+        head_up = [1, 0.1, 0, -0.1]
+        head_down = [1, 0, 0, 0.05]
+
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+
+        #Shakes
+        still_time = end_frame - start_frame - attack_frames - decay_frames
+        num_shakes = math.floor(2 * still_time / OBJECT_APPEARANCE_TIME)
+        for i in range(num_shakes):
+            '''head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + still_time / 3
+            )'''
+            if i % 2 == 0:
+                head.rotation_quaternion = head_up
+            else:
+                head.rotation_quaternion = head_down
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + (1 + i) * OBJECT_APPEARANCE_TIME / 2
+            )
+
+            '''head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + 2 * still_time / 3 + 1 * OBJECT_APPEARANCE_TIME
+            )
+            head.rotation_quaternion = head_back_right
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + 2 * still_time / 3 + 2 * OBJECT_APPEARANCE_TIME
+            )'''
+
+
+
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = end_frame - decay_frames
+        )
+        head.rotation_quaternion = initial
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = end_frame
+        )
+
+    def shake_no(
+        self,
+        start_time = None,
+        end_time = None,
+        attack = 0,
+        decay = 0
+    ):
+        if start_time == None:
+            raise Warning('Need start time for wince')
+
+        if end_time == None:
+            raise Warning('Need end time for wince')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        default_attack = OBJECT_APPEARANCE_TIME / 2
+
+        if attack == None:
+            if end_time == None:
+                attack = default_attack / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = default_attack / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = default_attack / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = default_attack / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+        #Head
+        head = self.ref_obj.children[0].pose.bones[3]
+        initial = list(head.rotation_quaternion)
+
+        head_left = [1, 0, 0.2, 0]
+        head_right = [1, 0, -0.1, 0]
+
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+
+        #Shakes
+        still_time = end_frame - start_frame - attack_frames - decay_frames
+        num_shakes = math.floor(2 * still_time / OBJECT_APPEARANCE_TIME)
+        for i in range(num_shakes):
+            '''head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + still_time / 3
+            )'''
+            if i % 2 == 0:
+                head.rotation_quaternion = head_left
+            else:
+                head.rotation_quaternion = head_right
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + (1 + i) * OBJECT_APPEARANCE_TIME / 2
+            )
+
+            '''head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + 2 * still_time / 3 + 1 * OBJECT_APPEARANCE_TIME
+            )
+            head.rotation_quaternion = head_back_right
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + 2 * still_time / 3 + 2 * OBJECT_APPEARANCE_TIME
+            )'''
+
+
+
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = end_frame - decay_frames
+        )
+        head.rotation_quaternion = initial
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = end_frame
+        )
+
+        '''#Eyes
+        eyes = [
+            self.ref_obj.children[0].children[-2],
+            self.ref_obj.children[0].children[-3],
+        ]
+        for eye in eyes:
+            init_eye_scale = list(eye.scale)
+            init_eye_rot = list(eye.rotation_euler)
+
+            eye.keyframe_insert(data_path = 'scale', frame = start_frame)
+            eye.scale = [1, 0.3, 0.3]
+            eye.keyframe_insert(data_path = 'scale', frame = start_frame + attack_frames)
+            eye.keyframe_insert(data_path = 'scale', frame = end_frame - decay_frames)
+            eye.scale = init_eye_scale
+            eye.keyframe_insert(data_path = 'scale', frame = end_frame)
+
+            eye.keyframe_insert(data_path = 'rotation_euler', frame = start_frame)
+            if eye == eyes[1]:
+                eye.rotation_euler = [0, -20 * math.pi / 180, 0]
+            else:
+                eye.rotation_euler = [0, 20 * math.pi / 180, 0]
+            eye.keyframe_insert(data_path = 'rotation_euler', frame = start_frame + attack_frames)
+            eye.keyframe_insert(data_path = 'rotation_euler', frame = end_frame - decay_frames)
+            eye.rotation_euler = init_eye_rot
+            eye.keyframe_insert(data_path = 'rotation_euler', frame = end_frame)'''
+
+        '''leye = self.ref_obj.children[0].pose.bones[5]
+        reye = self.ref_obj.children[0].pose.bones[6]
+
+        for eye_bone in [leye, reye]:
+            eye_bone.keyframe_insert(data_path = 'rotation_quaternion', frame = start_frame)
+            if eye_bone == leye:
+                eye.rotation_quaternion = [1, 0, 0.1, 0]
+            else:
+                eye.rotation_quaternion = [1, 0, -0.1, 0]
+            eye_bone.keyframe_insert(data_path = 'rotation_quaternion', frame = start_frame + attack_frames)
+            eye_bone.keyframe_insert(data_path = 'rotation_quaternion', frame = end_frame - decay_frames)
+            eye_bone.rotation_quaternion = init_eye_rot
+            eye_bone.keyframe_insert(data_path = 'rotation_quaternion', frame = end_frame)'''
 
     def hold_object(
         self,

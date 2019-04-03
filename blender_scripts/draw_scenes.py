@@ -63,8 +63,8 @@ import blobject
 imp.reload(blobject)
 from blobject import Blobject
 
-import scds
-imp.reload(scds)
+import supply_and_demand
+imp.reload(supply_and_demand)
 
 import market_sim
 imp.reload(market_sim)
@@ -571,23 +571,9 @@ def main():
     #tex_test()
     """"""
 
-    test()
+    #test()
     #draw_scenes_from_file(scds, clear = False)
-    #draw_scenes_from_file(inclusive_fitness)
-    """initialize_blender()
-    o = tex_bobject.TexBobject(
-        '\\oslash',
-        centered = True
-    )
-    o.add_to_blender(appear_time = 0)"""
-
-    '''tournament = centipede.Tournament(
-        initial_players = 'spread',
-        mutation_chance = 0
-    )
-    for i in range(5000):
-        tournament.play_round()
-    tournament.print_stats()'''
+    draw_scenes_from_file(supply_and_demand)
 
     print_time_report()
     finish_noise()
