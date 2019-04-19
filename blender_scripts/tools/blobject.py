@@ -1,3 +1,7 @@
+import imp
+
+import bobject
+imp.reload(bobject)
 from bobject import Bobject
 
 #import helpers
@@ -1320,10 +1324,10 @@ class Blobject(Bobject):
         decay = None
     ):
         if start_time == None:
-            raise Warning('Need start time for hold_object')
+            raise Warning('Need start time for hide_mouth')
 
         if end_time != None:
-            raise Warning('End time not implemented for show_mouth')
+            raise Warning('End time not implemented for hide_mouth')
 
         start_frame = start_time * FRAME_RATE
         end_frame = None

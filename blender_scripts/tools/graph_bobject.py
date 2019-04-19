@@ -34,6 +34,7 @@ class GraphBobject(Bobject):
         include_y = True,
         padding = GRAPH_PADDING,
         show_axes = True,
+        show_functions = True,
         **kwargs
     ):
         print('Initializing graph bobject')
@@ -41,6 +42,7 @@ class GraphBobject(Bobject):
             kwargs['name'] = 'graph'
 
         self.show_axes = show_axes
+        self.show_functions = show_functions
 
         #Discrete functions usually use few points, but if they are animated
         #with highlight points, it's helpful to have more points.
@@ -1439,11 +1441,12 @@ class GraphBobject(Bobject):
     def add_to_blender(self, curve_colors = 'same', **kwargs):
         if self.show_axes:
             self.add_axes()
-        if len(self.functions) > 0:
-            if self.overlay_functions == True:
-                self.add_all_function_curves(curve_colors = curve_colors)
-            else:
-                self.add_function_curve(index = 0)
+        if self.show_functions:
+            if len(self.functions) > 0:
+                if self.overlay_functions == True:
+                    self.add_all_function_curves(curve_colors = curve_colors)
+                else:
+                    self.add_function_curve(index = 0)
         super().add_to_blender(**kwargs)
 
     def move_to(

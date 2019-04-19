@@ -9,9 +9,9 @@ from helpers import *
 
 import pickle
 
-PRICE_ADJUST_MODE = 'gauss'
+PRICE_ADJUST_MODE = 'chance'
 PRICE_ADJUST_CHANCE = 1
-PRICE_ADJUST_MEAN = 2
+PRICE_ADJUST_MEAN = 1
 PRICE_ADJUST_DEV = 0.5
 PRICE_CONCESSION = PRICE_ADJUST_MEAN
 MAX_PRICE = 50
@@ -47,30 +47,43 @@ class Agent(object):
         self.goal_prices = [initial_price] #initial value
         self.meetings = []
 
-    def adjust_price(self, success = None, set_price = None):
-        if set_price != None:
-            self.goal_prices.append(set_price)
+    def adjust_price(self, success = None, set_price = None, edit_last = False):
+        if edit_last == False:
+            if set_price != None:
+                if self.type == 'buyer': #and self.interaction_mode != 'seller_asks_buyer_decides':
+                    self.goal_prices.append(min(set_price, self.price_limit))
+                if self.type == 'seller':
+                    self.goal_prices.append(max(set_price, self.price_limit))
+            else:
+                if success == None:
+                    raise Warning('Need to know outcome to adjust price')
+                if PRICE_ADJUST_MODE == 'gauss':
+                    #1, with just a touch of variability to avoid weird states
+                    adjust_amount = gauss(PRICE_ADJUST_MEAN, PRICE_ADJUST_DEV)
+                if PRICE_ADJUST_MODE == 'chance':
+                    if random() < PRICE_ADJUST_CHANCE:
+                        adjust_amount = PRICE_ADJUST_MEAN
+                    else:
+                        adjust_amount = 0
+                if success == True:
+                    if self.type == 'buyer': #and self.interaction_mode != 'seller_asks_buyer_decides':
+                        self.goal_prices.append(self.goal_prices[-1] - adjust_amount)
+                    if self.type == 'seller':
+                        self.goal_prices.append(self.goal_prices[-1] + adjust_amount)
+                if success == False:
+                    if self.type == 'buyer': #and self.interaction_mode != 'seller_asks_buyer_decides':
+                        self.goal_prices.append(min(self.goal_prices[-1] + adjust_amount, self.price_limit))
+                    if self.type == 'seller':
+                        self.goal_prices.append(max(self.goal_prices[-1] - adjust_amount, self.price_limit))
         else:
-            if success == None:
-                raise Warning('Need to know outcome to adjust price')
-            if PRICE_ADJUST_MODE == 'gauss':
-                #1, with just a touch of variability to avoid weird states
-                adjust_amount = gauss(PRICE_ADJUST_MEAN, PRICE_ADJUST_DEV)
-            if PRICE_ADJUST_MODE == 'chance':
-                if random() < PRICE_ADJUST_CHANCE:
-                    adjust_amount = PRICE_ADJUST_MEAN
-                else:
-                    adjust_amount = 0
-            if success == True:
+            if set_price != None:
                 if self.type == 'buyer': #and self.interaction_mode != 'seller_asks_buyer_decides':
-                    self.goal_prices.append(self.goal_prices[-1] - adjust_amount)
+                    self.goal_prices[-1] = min(set_price, self.price_limit)
                 if self.type == 'seller':
-                    self.goal_prices.append(self.goal_prices[-1] + adjust_amount)
-            if success == False:
-                if self.type == 'buyer': #and self.interaction_mode != 'seller_asks_buyer_decides':
-                    self.goal_prices.append(min(self.goal_prices[-1] + adjust_amount, self.price_limit))
-                if self.type == 'seller':
-                    self.goal_prices.append(max(self.goal_prices[-1] - adjust_amount, self.price_limit))
+                    self.goal_prices[-1] = max(set_price, self.price_limit)
+            else:
+                raise Warning("Hmm. I don't think it makes sense to edit the " + \
+                                "last goal price based on success or failure")
 
 class Meeting(object):
     """docstring for Meeting."""
@@ -235,10 +248,13 @@ class Session(object):
                 for i in range(min(len(buyers_this_round), len(sellers_this_round))):
                     pair_has_been_tried = True
                     j = 0 #debug
+                    no_possible_pairs = False
                     while pair_has_been_tried == True:
                         j+=1 #debug
                         if j > 100:
-                            raise()
+                            #raise Warning('Too many retries')
+                            no_possible_pairs = True
+                            break
                         pair_has_been_tried = False
                         buyer = choice(buyers_this_round)
                         seller = choice(sellers_this_round)
@@ -248,32 +264,36 @@ class Session(object):
                                 #print(' Checking round')
                                 if meeting.buyer == buyer and meeting.seller == seller:
                                     pair_has_been_tried = True
+                                    print(meeting.buyer.goal_prices[-1])
+                                    print(meeting.seller.goal_prices[-1])
                                     print('Oop, need to try another pair')
 
                         if pair_has_been_tried == False:
                             buyers_this_round.remove(buyer)
                             sellers_this_round.remove(seller)
 
-                    round.append(
-                        Meeting(
-                            buyer = buyer,
-                            seller = seller,
-                            interaction_mode = self.interaction_mode,
-                            session_index = self.index
+                    if no_possible_pairs == False:
+                        round.append(
+                            Meeting(
+                                buyer = buyer,
+                                seller = seller,
+                                interaction_mode = self.interaction_mode,
+                                session_index = self.index
+                            )
                         )
-                    )
 
-                    last_price = round[-1].transaction_price
+                        last_price = round[-1].transaction_price
 
-                    if last_price == None:
-                        sellers_next_round.append(seller)
-                        buyers_next_round.append(buyer)
-                    else: #success!
-                        if self.interaction_mode == 'seller_asks_buyer_decides':
-                            buyer.adjust_price(set_price = last_price)
-                        else:
-                            buyer.adjust_price(success = True)
-                        seller.adjust_price(success = True)
+                        if last_price == None:
+                            sellers_next_round.append(seller)
+                            buyers_next_round.append(buyer)
+                        else: #success!
+                            if self.interaction_mode == 'seller_asks_buyer_decides':
+                                #buyer.adjust_price(set_price = last_price)
+                                buyer.adjust_price(success = True)
+                            else:
+                                buyer.adjust_price(success = True)
+                            seller.adjust_price(success = True)
 
 
                 #Put any extras in next round
@@ -358,10 +378,12 @@ class Session(object):
                     for i in range(min(len(buyers_this_round), len(sellers_this_round))):
                         pair_has_been_tried = True
                         j = 0
+                        no_possible_pairs = False
                         while pair_has_been_tried == True:
                             j+=1
                             if j > 100:
-                                raise()
+                                no_possible_pairs = True
+                                break
                             pair_has_been_tried = False
                             buyer = choice(buyers_this_round)
                             seller = choice(sellers_this_round)
@@ -377,24 +399,24 @@ class Session(object):
                                 buyers_this_round.remove(buyer)
                                 sellers_this_round.remove(seller)
 
-                        round.append(
-                            Meeting(
-                                buyer = buyer,
-                                seller = seller,
-                                interaction_mode = self.interaction_mode,
-                                concession_size = PRICE_CONCESSION,
-                                session_index = self.index
+                        if no_possible_pairs == False:
+                            round.append(
+                                Meeting(
+                                    buyer = buyer,
+                                    seller = seller,
+                                    interaction_mode = self.interaction_mode,
+                                    concession_size = PRICE_CONCESSION,
+                                    session_index = self.index
+                                )
                             )
-                        )
+                            last_price = round[-1].transaction_price
 
-                        last_price = round[-1].transaction_price
-
-                        if last_price == None:
-                            buyers_next_round.append(buyer)
-                            sellers_next_round.append(seller)
-                        else: #success!
-                            buyer.adjust_price(set_price = last_price)
-                            seller.adjust_price(set_price = last_price)
+                            if last_price == None:
+                                buyers_next_round.append(buyer)
+                                sellers_next_round.append(seller)
+                            else: #success!
+                                buyer.adjust_price(set_price = last_price)
+                                seller.adjust_price(set_price = last_price)
 
                     #Put any extras in next round
                     for buyer in buyers_this_round:
@@ -444,6 +466,8 @@ class Session(object):
             self.avg_price = total_price / self.num_transactions
         else:
             self.avg_price = None
+        #Jankopotamus
+        self.next_expected_price = self.avg_price
 
 class Market(object):
     """docstring for Market."""
@@ -586,7 +610,7 @@ class Market(object):
         if len(self.sessions) == 0:
             expected_price = self.initial_price
         else:
-            expected_price = self.sessions[-1].avg_price
+            expected_price = self.sessions[-1].next_expected_price
 
         #Sorts agents into buyers and sellers. Could be more generalized and
         #make all agents able to buy or sell. Not now, though.

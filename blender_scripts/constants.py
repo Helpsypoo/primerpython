@@ -183,7 +183,7 @@ CAMERA_ANGLE = (0, 0, 0)
 '''
 Text constants
 '''
-SPACE_BETWEEN_EXPRESSIONS = 0.1 #For text svgs  #0.45 For actual tex_bobjects
+SPACE_BETWEEN_EXPRESSIONS = 0.45 #0.1 For text svgs  #0.45 For actual tex_bobjects
 TEX_LOCAL_SCALE_UP = 260 #Value that makes line height about 1 Blender Unit
 
 '''

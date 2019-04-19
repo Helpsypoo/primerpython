@@ -42,7 +42,7 @@ BUYER_Y_MIN = -0.7
 AGENT_BASE_SCALE = 0.6
 AGENT_HEIGHT_FACTOR = 0.8
 
-PAUSE_LENGTH = 1
+PAUSE_LENGTH = 1.5
 ROUND_MOVE_DURATION = 0.5
 
 class DrawnAgent(Blobject):
@@ -215,7 +215,7 @@ class DrawnAgent(Blobject):
             new_scale = [self.bar_width * thickness_factor, cap_scale_y, 1]
         )
 
-    def change_thickness(self, new_thickness = None, start_time = None):
+    def change_thickness(self, new_thickness = None, start_time = None, end_time = None):
 
         #Change x and y for cap
         #Change cap position to keep top in same spot
@@ -229,7 +229,8 @@ class DrawnAgent(Blobject):
                 1
             ],
             displacement = [0, CAP_OBJECT_HEIGHT * (prev_cap_scale - new_scale), 0],
-            start_time = start_time
+            start_time = start_time,
+            end_time = end_time
         )
 
         prev_bar_scale_y = self.value_bar.ref_obj.scale[1]
@@ -242,7 +243,8 @@ class DrawnAgent(Blobject):
                 prev_bar_scale_y + height_boost,
                 1
             ],
-            start_time = start_time
+            start_time = start_time,
+            end_time = end_time
         )
 
         #Change thickness of surplus indicators
@@ -253,7 +255,8 @@ class DrawnAgent(Blobject):
                 self.surplus_bar.ref_obj.scale[2]
             ],
             displacement = [0, height_boost, 0],
-            start_time = start_time
+            start_time = start_time,
+            end_time = end_time
         )
         if self.extra_top_cap != None:
             self.extra_top_cap.move_to(
@@ -262,7 +265,8 @@ class DrawnAgent(Blobject):
                     self.extra_top_cap.ref_obj.scale[1],
                     self.extra_top_cap.ref_obj.scale[2]
                 ],
-                start_time = start_time
+                start_time = start_time,
+                end_time = end_time
             )
         if self.extra_bot_cap != None:
             self.extra_bot_cap.move_to(
@@ -271,13 +275,15 @@ class DrawnAgent(Blobject):
                     self.extra_bot_cap.ref_obj.scale[1],
                     self.extra_bot_cap.ref_obj.scale[2]
                 ],
-                start_time = start_time
+                start_time = start_time,
+                end_time = end_time
             )
 
         #Change thickness of expected price indicators
         self.expected_price_indicator.move_to(
             new_scale = new_thickness,
-            start_time = start_time
+            start_time = start_time,
+            end_time = end_time
         )
 
         #Aaaand the base
@@ -287,9 +293,9 @@ class DrawnAgent(Blobject):
                 self.bar_base.ref_obj.scale[1],
                 self.bar_width * BAR_BASE_LENGTH_FACTOR * new_thickness,
             ],
-            start_time = start_time
+            start_time = start_time,
+            end_time = end_time
         )
-
 
     def add_price_line(self, price = 0, appear_time = None, emote = False):
         if appear_time == None:
@@ -387,12 +393,12 @@ class DrawnAgent(Blobject):
             **kwargs
         )
 
-    def highlight_surplus(self, price = None, start_time = None, end_time = None):
+    def highlight_surplus(self, price = None, start_time = None, attack = ROUND_MOVE_DURATION, end_time = None):
         cap_height = CAP_OBJECT_HEIGHT * self.bar_cap.ref_obj.scale[0]
 
         if self.agent.type == 'buyer':
             if price >= self.agent.price_limit:
-                self.hide_surplus(start_time = start_time)
+                self.hide_surplus(start_time = start_time, end_time = start_time + attack)
             else:
                 price_height = self.max_bar_height * price / MAX_PRICE
 
@@ -421,11 +427,17 @@ class DrawnAgent(Blobject):
                     )
 
                     duration_time = None
-                    if end_time != None:
-                        duration_time = end_time - start_time
+                    '''if end_time != None:
+                        duration_time = end_time - start_time'''
+                    #Ew
+                    if attack != None:
+                        shift_time = attack * FRAME_RATE
+                    else:
+                        shift_time = OBJECT_APPEARANCE_TIME
                     for bobj in [self.surplus_bar, self.bar_cap]:
                         bobj.color_shift(
                             start_time = start_time,
+                            shift_time = shift_time,
                             duration_time = duration_time,
                             color = BUYER_SURPLUS_COLOR
                         )
@@ -436,30 +448,34 @@ class DrawnAgent(Blobject):
                     #cap_height = height_after_cap - height
 
                     self.value_bar.move_to(
-                        start_frame = start_time * FRAME_RATE,
+                        #start_frame = start_time * FRAME_RATE,
+                        start_time = start_time,
                         new_scale = [
                             self.value_bar.ref_obj.scale[0],
                             price_height,
                             1
-                        ]
+                        ],
+                        end_time = start_time + attack
                     )
                     #cap_scale_y = self.bar_width *  / cap_height
                     self.bar_cap.move_to(
-                        start_frame = start_time * FRAME_RATE,
+                        #start_frame = start_time * FRAME_RATE,
+                        start_time = start_time,
                         new_scale = [
                             self.bar_cap.ref_obj.scale[0],
                             self.bar_cap.ref_obj.scale[0] * (height_after_cap - price_height) / cap_height ,
                             1
                         ],
-                        new_location = add_lists_by_element(self.bar_loc, [0, price_height, 0])
+                        new_location = add_lists_by_element(self.bar_loc, [0, price_height, 0]),
+                        end_time = start_time + attack
                     )
 
 
                     #Copied code from other part of this if-else, but just
                     #coloring the bar cap
                     duration_time = None
-                    if end_time != None:
-                        duration_time = end_time - start_time
+                    '''if end_time != None:
+                        duration_time = end_time - start_time'''
                     for bobj in [self.bar_cap]:
                         bobj.color_shift(
                             start_time = start_time,
@@ -469,7 +485,7 @@ class DrawnAgent(Blobject):
 
         if self.agent.type == 'seller':
             if price <= self.agent.price_limit:
-                self.hide_surplus(start_time = start_time)
+                self.hide_surplus(start_time = start_time, end_time = start_time + attack)
             else:
                 limit_height = self.max_bar_height * self.agent.price_limit / MAX_PRICE
                 price_height = self.max_bar_height * price / MAX_PRICE
@@ -505,21 +521,23 @@ class DrawnAgent(Blobject):
 
                 self.extra_top_cap.move_to(
                     start_time = start_time,
+                    new_location = add_lists_by_element(self.bar_loc, [0, price_height - cap_height, 0]),
                     new_scale = [
                         self.value_bar.ref_obj.scale[0],
                         cap_height / CAP_OBJECT_HEIGHT,
                         1
                     ],
-                    new_location = add_lists_by_element(self.bar_loc, [0, price_height - cap_height, 0]),
+                    end_time = start_time + attack
                 )
                 self.extra_bot_cap.move_to(
                     start_time = start_time,
+                    new_location = add_lists_by_element(self.bar_loc, [0, limit_height + cap_height, 0]),
                     new_scale = [
                         self.value_bar.ref_obj.scale[0],
                         - cap_height / CAP_OBJECT_HEIGHT,
                         1
                     ],
-                    new_location = add_lists_by_element(self.bar_loc, [0, limit_height + cap_height, 0]),
+                    end_time = start_time + attack
                 )
 
                 self.surplus_bar.move_to(
@@ -530,6 +548,7 @@ class DrawnAgent(Blobject):
                         surplus_bar_height,
                         1
                     ],
+                    end_time = start_time + attack
                 )
 
                 for bobj in [self.surplus_bar, self.extra_top_cap, self.extra_bot_cap]:
@@ -548,7 +567,7 @@ class DrawnAgent(Blobject):
                     )'''
 
                 #Put away
-                if end_time != None:
+                '''if end_time != None:
                     for piece in [self.extra_top_cap, self.extra_bot_cap, self.surplus_bar]:
                         piece.move_to(
                             start_time = end_time - OBJECT_APPEARANCE_TIME / FRAME_RATE,
@@ -558,21 +577,26 @@ class DrawnAgent(Blobject):
                                 0,
                                 1
                             ],
-                        )
+                            end_time = start_time + attack
+                        )'''
 
-    def hide_surplus(self, start_time = None):
+    def hide_surplus(self, start_time = None, end_time = None):
+        '''duration_time = None
+        if end_time != None:
+            duration_time = end_time - start_time'''
+        if end_time != None:
+            shift_time = end_time - start_time
+        else:
+            shift_time = ROUND_MOVE_DURATION
         if self.agent.type == 'buyer':
-            duration_time = None
-            '''if end_time != None:
-                duration_time = end_time - start_time'''
             for bobj in [self.surplus_bar, self.bar_cap]:
                 bobj.color_shift(
                     start_time = start_time,
-                    duration_time = duration_time,
+                    shift_time = shift_time * FRAME_RATE,
+                    duration_time = None,
                     color = BUYER_BAR_COLOR
                 )
 
-        if self.agent.type == 'buyer':
             limit_height = self.max_bar_height * self.agent.price_limit / MAX_PRICE
             goal_cap_height = CAP_OBJECT_HEIGHT * self.bar_cap.ref_obj.scale[0]
             bar_height = limit_height - goal_cap_height
@@ -584,16 +608,19 @@ class DrawnAgent(Blobject):
                     self.bar_cap.ref_obj.scale[0], #And make y copy x
                     1
                 ],
-                start_time = start_time
+                start_time = start_time,
+                end_time = start_time + shift_time
             )
-            self.value_bar.move_to(
-                new_scale = [
-                    self.value_bar.ref_obj.scale[0],
-                    bar_height,
-                    1
-                ],
-                start_time = start_time
-            )
+            if self.value_bar.ref_obj.scale[1] > bar_height:
+                self.value_bar.move_to(
+                    new_scale = [
+                        self.value_bar.ref_obj.scale[0],
+                        bar_height,
+                        1
+                    ],
+                    start_time = start_time,
+                    end_time = start_time + shift_time
+                )
 
         if self.agent.type == 'seller':
             limit_height = self.max_bar_height * self.agent.price_limit / MAX_PRICE
@@ -605,6 +632,7 @@ class DrawnAgent(Blobject):
                         start_time = start_time,
                         new_location = add_lists_by_element(self.bar_loc, [0, limit_height, 0]),
                         new_scale = [piece.ref_obj.scale[0], 0, 0],
+                        end_time = start_time + shift_time
                     )
 
     def price_reaction(self, price = None, start_time = None):
@@ -623,7 +651,7 @@ class DrawnAgent(Blobject):
                 self.angry_eyes(start_time = start_time)
                 self.hide_mouth(start_time = start_time)
 
-    def set_out_good(self, start_time = None, model = None):
+    def set_out_good(self, start_time = None, duration_time = ROUND_MOVE_DURATION, model = None):
         good = DrawnGood(
             object_model = model,
             name = 'good',
@@ -634,9 +662,13 @@ class DrawnAgent(Blobject):
         constraint.target = self.ref_obj
         self.good = good
 
-        good.add_to_blender(appear_time = start_time)
+        good.add_to_blender(
+            appear_time = start_time,
+            transition_time = duration_time * FRAME_RATE
+        )
 
-    def show_o_slash(self, appear_time = None):
+    def show_o_slash(self, appear_time = None, end_time = None):
+
         if self.slash == None:
             self.slash = import_object(
                 'o_slash', 'primitives',
@@ -656,10 +688,14 @@ class DrawnAgent(Blobject):
             )
 
     def hide_o_slash(self, start_time = None, end_time = None):
-        if end_time == None:
-            end_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
-        else:
-            self.slash.disappear(disappear_time = end_time)
+        if start_time == None:
+            start_time = end_time - OBJECT_APPEARANCE_TIME / FRAME_RATE
+        if self.slash != None:
+            #self.slash.disappear(disappear_time = end_time)
+            self.slash.move_to(
+                new_scale = 0,
+                start_time = start_time
+            )
 
 class DrawnGood(Bobject):
     """docstring for DrawnGood."""
@@ -675,6 +711,18 @@ class DrawnMarket(Bobject):
     def __init__(
         self,
         sim = None,
+        phase_durations = {
+            'seller_setup_anim_duration' : ROUND_MOVE_DURATION,
+            'seller_setup_duration' : ROUND_MOVE_DURATION,
+            'round_move_duration' : ROUND_MOVE_DURATION,
+            'pause_before_exchange' : 0,
+            'exchange_duration' : ROUND_MOVE_DURATION,
+            'round_duration' : PAUSE_LENGTH,
+            'buyer_return_anim_duration' : ROUND_MOVE_DURATION,
+            'buyer_return_duration': ROUND_MOVE_DURATION,
+            'price_adjust_anim_duration' : ROUND_MOVE_DURATION,
+            'price_adjust_duration' : ROUND_MOVE_DURATION
+        },
         scale = 5,
         name = 'market',
         loud = False,
@@ -700,6 +748,7 @@ class DrawnMarket(Bobject):
         else:
             self.sim = sim
 
+        self.phase_durations = phase_durations
 
         self.drawn_sellers = []
         self.drawn_buyers = []
@@ -751,7 +800,12 @@ class DrawnMarket(Bobject):
         #Wanted to correct the 1/x scaling a bit
         self.agent_scale = AGENT_BASE_SCALE / max_num_one_kind * modifier
 
-    def draw_sellers(self, start_time = None, agents = None, session_index = 0):
+    def draw_sellers(self, start_time = None, end_time = None, agents = None, session_index = 0):
+        if start_time == None:
+            raise Warning('Need start_time for move_expected_prices')
+        if end_time == None:
+            end_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
+
         sellers = []
         for agent in agents:
             if agent.type == 'seller':
@@ -812,12 +866,18 @@ class DrawnMarket(Bobject):
                 )
                 seller.move_to(
                     new_scale = self.agent_scale,
+                    new_location = [0, 1 - self.agent_scale, self.agent_scale * AGENT_HEIGHT_FACTOR],
                     start_time = start_time
                 )
             if seller in sellers_to_remove:
                 raise Warning('Not implemented!')
 
-    def draw_buyers(self, start_time = None, agents = None, session_index = 0):
+    def draw_buyers(self, start_time = None, end_time = None, agents = None, session_index = 0):
+        if start_time == None:
+            raise Warning('Need start_time for move_expected_prices')
+        if end_time == None:
+            end_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
+
         buyers = []
         for agent in agents:
             if agent.type == 'buyer':
@@ -865,10 +925,17 @@ class DrawnMarket(Bobject):
             )
 
         for agent in self.drawn_buyers:
-            agent.move_to(
-                new_scale = self.agent_scale,
-                start_time = start_time
-            )
+            if agent.ref_obj.scale[0] != self.agent_scale:
+                agent.move_to(
+                    new_scale = self.agent_scale,
+                    new_location = [
+                        agent.ref_obj.location[0],
+                        agent.ref_obj.location[1],
+                        self.agent_scale * AGENT_HEIGHT_FACTOR
+                    ],
+                    start_time = start_time,
+                    end_time = end_time
+                )
 
         for i, buyer in enumerate(buyers_to_add):
             if buyer in buyers_to_add:
@@ -896,14 +963,18 @@ class DrawnMarket(Bobject):
                 if seller.good == None:
                     seller.set_out_good(
                         start_time = self.elapsed_time,
+                        duration_time = self.phase_durations['seller_setup_anim_duration'],
                         model = self.good_object_model
                     )
 
         #pause
-        self.elapsed_time += PAUSE_LENGTH
+        self.elapsed_time += self.phase_durations['seller_setup_duration']
         #print(len(session.rounds))
         #Animate rounds
-        for round in session.rounds:
+        rounds = [x for x in session.rounds if len(x) > 0]
+        for round in rounds:
+            dur = self.phase_durations['round_move_duration']
+            dur4 = max(dur / 4, 1/60)
             ##Move Buyers
             for drawn_buyer in self.drawn_buyers:
                 seller_to_meet = None
@@ -950,12 +1021,12 @@ class DrawnMarket(Bobject):
 
                     drawn_buyer.move_to(
                         start_time = self.elapsed_time,
-                        end_time = self.elapsed_time + ROUND_MOVE_DURATION / 4,
+                        end_time = self.elapsed_time + dur4,
                         new_angle = angle
                     )
                     drawn_buyer.move_to(
                         start_time = self.elapsed_time,
-                        end_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                        end_time = self.elapsed_time + dur,
                         new_location = location
                     )
 
@@ -1003,36 +1074,38 @@ class DrawnMarket(Bobject):
 
                     drawn_buyer.move_to(
                         start_time = self.elapsed_time,
-                        end_time = self.elapsed_time + ROUND_MOVE_DURATION / 4,
+                        end_time = self.elapsed_time + dur4,
                         new_angle = angle
                     )
                     drawn_buyer.move_to(
                         start_time = self.elapsed_time,
-                        end_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                        end_time = self.elapsed_time + dur,
                         new_location = location
                     )
 
-                else:
+                '''else:
                     location = drawn_buyer.ref_obj.location
                     angle = None
 
                     drawn_buyer.move_to(
                         start_time = self.elapsed_time,
-                        end_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                        end_time = self.elapsed_time + dur,
                         new_location = location,
                         new_angle = angle
-                    )
+                    )'''
 
+                ex_pause = self.phase_durations['pause_before_exchange']
+                ex_dur = self.phase_durations['exchange_duration']
                 if transaction_price != None:
                     drawn_buyer.highlight_surplus(
                         price = transaction_price,
-                        start_time = self.elapsed_time + ROUND_MOVE_DURATION,
-                        #end_time = self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH * 2
+                        start_time = self.elapsed_time + dur + ex_pause,
+                        attack = ex_dur
                     )
                     drawn_seller_to_meet.highlight_surplus(
                         price = transaction_price,
-                        start_time = self.elapsed_time + ROUND_MOVE_DURATION,
-                        #end_time = self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH * 2
+                        start_time = self.elapsed_time + dur + ex_pause,
+                        attack = ex_dur
                     )
                     if self.linked_graph != None:
                         g = self.linked_graph
@@ -1052,7 +1125,8 @@ class DrawnMarket(Bobject):
                                 if len(meetings) == 1:
                                     drawn_agent.highlight_surplus(
                                         price = meetings[0].transaction_price,
-                                        start_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                                        start_time = self.elapsed_time + dur + ex_pause,
+                                        attack = ex_dur
                                     )
                                 elif len(meetings) > 1:
                                     raise Warning('There is more than one successful meeting for this agent and session?')
@@ -1070,12 +1144,12 @@ class DrawnMarket(Bobject):
                     old_cons = good_sold.ref_obj.constraints[0]
                     old_cons.keyframe_insert(
                         data_path = 'influence',
-                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE
+                        frame = (self.elapsed_time + dur) * FRAME_RATE
                     )
                     old_cons.influence = 0
                     old_cons.keyframe_insert(
                         data_path = 'influence',
-                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE + 1
+                        frame = (self.elapsed_time + dur) * FRAME_RATE + 1
                     )
 
                     new_cons = good_sold.ref_obj.constraints.new('CHILD_OF')
@@ -1084,18 +1158,18 @@ class DrawnMarket(Bobject):
                     new_cons.influence = 0
                     new_cons.keyframe_insert(
                         data_path = 'influence',
-                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE
+                        frame = (self.elapsed_time + dur) * FRAME_RATE
                     )
                     new_cons.influence = 1
                     new_cons.keyframe_insert(
                         data_path = 'influence',
-                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE + 1
+                        frame = (self.elapsed_time + dur) * FRAME_RATE + 1
                     )
 
                     #Turn good_around
                     good_sold.ref_obj.keyframe_insert(
                         data_path = 'rotation_euler',
-                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE
+                        frame = (self.elapsed_time + dur) * FRAME_RATE
                     )
                     good_sold.ref_obj.rotation_euler = [
                         good_sold.ref_obj.rotation_euler[0],
@@ -1104,17 +1178,19 @@ class DrawnMarket(Bobject):
                     ]
                     good_sold.ref_obj.keyframe_insert(
                         data_path = 'rotation_euler',
-                        frame = (self.elapsed_time + ROUND_MOVE_DURATION + PAUSE_LENGTH / 2) * FRAME_RATE + 1
+                        frame = (self.elapsed_time + dur) * FRAME_RATE + 1
                     )
 
                     drawn_seller_to_meet.good = None
 
-            self.elapsed_time += ROUND_MOVE_DURATION
+            #self.elapsed_time += ROUND_MOVE_DURATION
 
             ##pause
-            self.elapsed_time += PAUSE_LENGTH
+            self.elapsed_time += self.phase_durations['round_duration']
 
         #Buyers to lobby
+        dur = self.phase_durations['buyer_return_anim_duration']
+        dur4 = max(dur / 4, 1/60)
         for drawn_buyer in self.drawn_buyers:
             if drawn_buyer.was_just_meeting_seller == True:
                 old_loc = drawn_buyer.ref_obj.location
@@ -1134,7 +1210,7 @@ class DrawnMarket(Bobject):
                 )
                 drawn_buyer.move_to(
                     start_time = self.elapsed_time,
-                    end_time = self.elapsed_time + ROUND_MOVE_DURATION / 4,
+                    end_time = self.elapsed_time + dur4,
                     new_angle = [
                         drawn_buyer.ref_obj.rotation_euler[0],
                         drawn_buyer.ref_obj.rotation_euler[1],
@@ -1143,75 +1219,126 @@ class DrawnMarket(Bobject):
                 )
                 drawn_buyer.move_to(
                     start_time = self.elapsed_time,
-                    end_time = self.elapsed_time + ROUND_MOVE_DURATION,
+                    end_time = self.elapsed_time + dur,
                     new_location = new_loc,
                 )
             drawn_buyer.was_just_meeting_seller = False
 
 
 
+        self.elapsed_time += self.phase_durations['buyer_return_duration']
         #Consume/celebration animation?
         pass
 
         #Adjust prices
-        self.elapsed_time += PAUSE_LENGTH
+        dur = self.phase_durations['price_adjust_anim_duration']
         for drawn_agent in self.drawn_buyers + self.drawn_sellers:
             drawn_agent.move_expected_price(
                 price = drawn_agent.agent.goal_prices[session_index + 1],
-                start_time = self.elapsed_time
+                start_time = self.elapsed_time,
+                end_time = self.elapsed_time + dur
             )
             drawn_agent.hide_surplus(
-                start_time = self.elapsed_time
+                start_time = self.elapsed_time,
+                end_time = self.elapsed_time + dur
             )
         #Put away bought goods
         for drawn_buyer in self.drawn_buyers:
             if drawn_buyer.good != None:
-                drawn_buyer.good.disappear(disappear_time = self.elapsed_time)
+                drawn_buyer.good.disappear(
+                    disappear_time = self.elapsed_time,
+                    duration_frames = dur * FRAME_RATE
+                )
                 #drawn_buyer.good = None
 
         if self.linked_graph != None:
             self.linked_graph.move_expected_prices(
                 index = session_index + 1,
-                start_time = self.elapsed_time
+                start_time = self.elapsed_time,
+                end_time = self.elapsed_time + dur
             )
             self.linked_graph.hide_surpluses(
-                start_time = self.elapsed_time
+                start_time = self.elapsed_time,
+                end_time = self.elapsed_time + dur
             )
 
         #pause
-        self.elapsed_time += PAUSE_LENGTH
+        self.elapsed_time += self.phase_durations['price_adjust_duration']
 
-    def animate_sessions(self, start_time = None):
-        self.elapsed_time += start_time
+    def animate_sessions(
+        self,
+        start_time = None,
+        phase_duration_updates = [],
+        graph_mode_changes = {},
+        first_animated_session = 0,
+        last_animated_session = math.inf
+    ):
+        self.elapsed_time = start_time
 
         for i, session in enumerate(self.sim.sessions):
-            self.update_agent_scale(session_index = i)
-            self.draw_sellers(
-                start_time = self.elapsed_time,
-                agents = self.sim.agents_lists[i],
-                session_index = i
-            )
-            self.draw_buyers(
-                start_time = self.elapsed_time,
-                agents = self.sim.agents_lists[i],
-                session_index = i
-            )
-            if self.linked_graph != None:
-                '''graphed_buyers = [x.agent for x in self.linked_graph.buyer_bobjects]
-                graphed_sellers = [x.agent for x in self.linked_graph.seller_bobjects]
-                for agent in self.sim.agents_lists[-1]:
-                    if agent not in graphed_buyers + graphed_sellers:
-                        self.linked_graph.add_agent(agent = agent)'''
-                self.linked_graph.update_agent_display(
+            if i >= first_animated_session and i < last_animated_session:
+                print('Animating session ' + str(i))
+                for update in phase_duration_updates:
+                    if update[0] == i:
+                        for change in update[1]:
+                            self.phase_durations[change] = update[1][change]
+
+                update_duration = min(
+                    OBJECT_APPEARANCE_TIME / FRAME_RATE,
+                    self.phase_durations['seller_setup_duration']
+                )
+
+                self.update_agent_scale(session_index = i)
+                self.draw_sellers(
                     start_time = self.elapsed_time,
+                    end_time = self.elapsed_time + update_duration,
+                    agents = self.sim.agents_lists[i],
                     session_index = i
                 )
-            self.animate_session(session = session, session_index = i)
+                self.draw_buyers(
+                    start_time = self.elapsed_time,
+                    end_time = self.elapsed_time + update_duration,
+                    agents = self.sim.agents_lists[i],
+                    session_index = i
+                )
+                if self.linked_graph != None:
+
+
+                    if str(i) in graph_mode_changes:
+                        mode = graph_mode_changes[str(i)][0]
+                        delay = graph_mode_changes[str(i)][1]
+                    else:
+                        mode = self.linked_graph.display_arrangement
+                        delay = 0
+
+                    if delay == 0:
+                        self.linked_graph.update_agent_display(
+                            start_time = self.elapsed_time,
+                            end_time = self.elapsed_time + update_duration,
+                            session_index = i,
+                            mode = mode
+                        )
+                    else: #If there's a delay, do two separate updates
+                        self.linked_graph.update_agent_display(
+                            start_time = self.elapsed_time,
+                            end_time = self.elapsed_time + update_duration,
+                            session_index = i,
+                            mode = self.linked_graph.display_arrangement
+                        )
+                        self.linked_graph.update_agent_display(
+                            start_time = self.elapsed_time + delay,
+                            end_time = self.elapsed_time + delay + update_duration,
+                            session_index = i,
+                            mode = mode
+                        )
+
+
+                self.animate_session(session = session, session_index = i)
 
 class MarketGraph(GraphBobject):
     """docstring for MarketGraph."""
 
-    def __init__(self, sim = None, loud = False, display_arrangement = 'buyer_seller', *args, **kwargs):
+    def __init__(self, *args, sim = None, loud = False, display_arrangement = 'buyer_seller', **kwargs):
         super().__init__(*args, **kwargs)
 
         if sim == None:
@@ -1241,7 +1368,7 @@ class MarketGraph(GraphBobject):
             num_sellers = len([x for x in initial_agents if x.type == 'seller'])
             self.num_initial_displays = max(num_buyers, num_sellers)
 
-        self.display_width = self.x_range[1] / self.num_initial_displays
+        self.display_width = self.width / self.num_initial_displays
 
         self.bar_to_space_ratio = 0.8
 
@@ -1258,7 +1385,7 @@ class MarketGraph(GraphBobject):
             agent = agent,
             display_mode = 'graph',
             bar_width = bar_width,
-            max_bar_height = self.y_range[1]
+            max_bar_height = self.height
         )
         self.add_subbobject(new_agent)
 
@@ -1269,11 +1396,16 @@ class MarketGraph(GraphBobject):
 
         return new_agent
 
-    def update_agent_display(self, start_time = None, mode = None, session_index = None):
+    def update_agent_display(self, start_time = None, end_time = None, mode = None, session_index = None):
         if mode == None:
             mode = self.display_arrangement
         else:
             self.display_arrangement = mode
+
+        if start_time == None:
+            raise Warning('Need start_time to update agent display')
+        if end_time == None:
+            end_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
 
         if session_index == None:
             raise Warning('Need session index to update agent display')
@@ -1303,6 +1435,8 @@ class MarketGraph(GraphBobject):
             current_num = len(self.buyer_bobjects + self.seller_bobjects)
         elif mode == 'superimposed' or mode == 'stacked':
             current_num = max(len(self.buyer_bobjects), len(self.seller_bobjects))
+        else:
+            raise Warning(str(mode) + ' is not valid mode')
 
         thickness_factor = self.num_initial_displays / current_num
 
@@ -1335,7 +1469,6 @@ class MarketGraph(GraphBobject):
             )
 
         #print(len(self.agent_bobjects))
-
         ordered_seller_displays = sorted(
             self.displayed_seller_bobjects,
             key = lambda x: x.agent.price_limit
@@ -1358,12 +1491,14 @@ class MarketGraph(GraphBobject):
                 new_x = (i + 0.5) * self.display_width * self.num_initial_displays / current_num
                 bar.move_to(
                     new_location = [new_x, 0, 0],
-                    start_time = start_time
+                    start_time = start_time,
+                    end_time = end_time
                 )
                 if bar not in new_buyer_displays + new_seller_displays:
                     bar.change_thickness(
                         new_thickness = self.num_initial_displays / current_num,
-                        start_time = start_time
+                        start_time = start_time,
+                        end_time = end_time
                     )
         if mode == 'superimposed':
             current_num = max(len(ordered_buyer_displays), len(ordered_seller_displays))
@@ -1371,47 +1506,55 @@ class MarketGraph(GraphBobject):
                 new_x = (i + 0.5) * self.display_width * self.num_initial_displays / current_num
                 bar.move_to(
                     new_location = [new_x, 0, -0.15],
-                    start_time = start_time
+                    start_time = start_time,
+                    end_time = end_time
                 )
                 if bar not in new_buyer_displays:
                     bar.change_thickness(
                         new_thickness = self.num_initial_displays / current_num,
-                        start_time = start_time
+                        start_time = start_time,
+                        end_time = end_time
                     )
             for i, bar in enumerate(ordered_seller_displays):
                 new_x = (i + 0.5) * self.display_width * self.num_initial_displays / current_num
                 bar.move_to(
                     new_location = [new_x, 0, 0],
-                    start_time = start_time
+                    start_time = start_time,
+                    end_time = end_time
                 )
                 if bar not in new_seller_displays:
                     bar.change_thickness(
                         new_thickness = self.num_initial_displays / current_num,
-                        start_time = start_time
+                        start_time = start_time,
+                        end_time = end_time
                     )
         if mode == 'stacked':
             current_num = max(len(ordered_buyer_displays), len(ordered_seller_displays))
             for i, bar in enumerate(ordered_buyer_displays):
                 new_x = (i + 0.5) * self.display_width * self.num_initial_displays / current_num
                 bar.move_to(
-                    new_location = [new_x, self.y_range[1] * 1.1, 0],
-                    start_time = start_time
+                    new_location = [new_x, self.height * 1.1, 0],
+                    start_time = start_time,
+                    end_time = end_time
                 )
                 if bar not in new_buyer_displays:
                     bar.change_thickness(
                         new_thickness = self.num_initial_displays / current_num,
-                        start_time = start_time
+                        start_time = start_time,
+                        end_time = end_time
                     )
             for i, bar in enumerate(ordered_seller_displays):
                 new_x = (i + 0.5) * self.display_width * self.num_initial_displays / current_num
                 bar.move_to(
                     new_location = [new_x, 0, 0],
-                    start_time = start_time
+                    start_time = start_time,
+                    end_time = end_time
                 )
                 if bar not in new_seller_displays:# and session_index > 0:
                     bar.change_thickness(
                         new_thickness = self.num_initial_displays / current_num,
-                        start_time = start_time
+                        start_time = start_time,
+                        end_time = end_time
                     )
 
     def add_expected_prices(self, index = None, start_time = None):
@@ -1420,13 +1563,25 @@ class MarketGraph(GraphBobject):
             price = drawn_agent.agent.goal_prices[index]
             drawn_agent.add_expected_price(price = price, appear_time = start_time)
 
-    def move_expected_prices(self, index = None, start_time = None):
+    def move_expected_prices(self, index = None, start_time = None, end_time = None):
+        if start_time == None:
+            raise Warning('Need start_time for move_expected_prices')
+        if end_time == None:
+            end_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
         displayed = self.displayed_buyer_bobjects + self.displayed_seller_bobjects
         for drawn_agent in displayed:
             price = drawn_agent.agent.goal_prices[index]
-            drawn_agent.move_expected_price(price = price, start_time = start_time)
+            drawn_agent.move_expected_price(
+                price = price,
+                start_time = start_time,
+                end_time = end_time
+            )
 
-    def highlight_surpluses(self, index = None, start_time = None):
+    def highlight_surpluses(self, index = None, start_time = None, end_time = None):
+        if start_time == None:
+            raise Warning('Need start_time for highlight_surpluses')
+        if end_time == None:
+            end_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
         displayed = self.displayed_buyer_bobjects + self.displayed_seller_bobjects
         for drawn_agent in displayed:
             #price = drawn_agent.agent.goal_prices[index]
@@ -1435,15 +1590,20 @@ class MarketGraph(GraphBobject):
             if len(meetings) == 1:
                 drawn_agent.highlight_surplus(
                     price = meetings[0].transaction_price,
-                    start_time = start_time
+                    start_time = start_time,
+                    end_time = end_time
                 )
             elif len(meetings) > 1:
                 raise Warning('There is more than one successful meeting for this agent and session?')
 
-    def hide_surpluses(self, start_time = None):
+    def hide_surpluses(self, start_time = None, end_time = None):
+        if start_time == None:
+            raise Warning('Need start_time for highlight_surpluses')
+        if end_time == None:
+            end_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
         displayed = self.displayed_buyer_bobjects + self.displayed_seller_bobjects
         for drawn_agent in displayed:
-            drawn_agent.hide_surplus(start_time = start_time)
+            drawn_agent.hide_surplus(start_time = start_time, end_time = end_time)
 
         #Add drawn_agent (check)
         #hide/delete blob (check)

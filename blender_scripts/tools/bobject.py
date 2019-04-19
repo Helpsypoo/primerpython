@@ -56,6 +56,8 @@ class Bobject(object):
         self.superbobject = None #Changed when initializing a super
         self.appear_with_super = self.get_from_kwargs('appear_with_super', True)
 
+        self.added_to_blender = False
+
     def get_from_kwargs(self, kwarg_str, default):
         if kwarg_str in self.kwargs:
             return self.kwargs[kwarg_str]
@@ -67,7 +69,8 @@ class Bobject(object):
         bobj.ref_obj.parent = self.ref_obj
         bobj.superbobject = self
 
-    def add_to_blender(self,
+    def add_to_blender(
+        self,
         appear_frame = None,
         appear_time = None,
         animate = True,
@@ -84,68 +87,90 @@ class Bobject(object):
         elif appear_frame == None:
             appear_frame = 0
 
+        if self.added_to_blender == False:
 
-
-        main_obj = self.ref_obj
-        if main_obj.name not in bpy.context.scene.objects:
-            bpy.context.scene.objects.link(main_obj)
-        else:
-            pass
-            #print("Re-adding " + self.name)
-
-        self.appear_frame = appear_frame
-
-        if unhide == True:
-            main_obj.hide = True
-            main_obj.hide_render = True
-            main_obj.keyframe_insert(data_path="hide", frame = appear_frame - 1)
-            main_obj.keyframe_insert(data_path="hide_render", frame = appear_frame - 1)
-            main_obj.hide = False
-            main_obj.keyframe_insert(data_path="hide", frame = appear_frame)
-
-
-            for obj in self.objects:
-                if obj.name not in bpy.context.scene.objects:
-                    bpy.context.scene.objects.link(obj)
-                link_descendants(obj) #Useful for multi-part imports from .blend files
-                hide_self_and_descendants(
-                    obj,
-                    keyframes = True,
-                    frame = appear_frame - 1
-                )
-                hide_self_and_descendants(
-                    obj,
-                    hide = False, #Unhide objects
-                    keyframes = True,
-                    frame = appear_frame
-                )
-
-        if animate == False:
-            if self.superbobject == None:
-                scale_up_frame = appear_frame - transition_time
-            #Might be able to get rid of this once morphing is fixed
+            main_obj = self.ref_obj
+            if main_obj.name not in bpy.context.scene.objects:
+                bpy.context.scene.objects.link(main_obj)
             else:
-                #print(self.superbobject.appear_frame)
-                scale_up_frame = self.superbobject.appear_frame - transition_time
-            #Makes the scale-up happen before the unhiding if we don't want
-            #the bobject to animate in
-        else:
-            scale_up_frame = appear_frame
-        if is_creature == True:
-            duration = MATURATION_TIME
-        else:
-            duration = transition_time
+                pass
+                #print("Re-adding " + self.name)
 
-        main_obj.scale = [0, 0, 0]
-        main_obj.keyframe_insert(data_path="scale", frame = scale_up_frame)
-        main_obj.scale = self.scale
-        main_obj.keyframe_insert(data_path="scale", frame = scale_up_frame + duration)
-        #don't need to do this for contained objects because it happens through
-        #parenting
+            self.appear_frame = appear_frame
 
-        followers = [x for x in self.subbobjects if x.appear_with_super == True]
+            if unhide == True:
+                main_obj.hide = True
+                main_obj.hide_render = True
+                main_obj.keyframe_insert(data_path="hide", frame = appear_frame - 1)
+                main_obj.keyframe_insert(data_path="hide_render", frame = appear_frame - 1)
+                main_obj.hide = False
+                main_obj.keyframe_insert(data_path="hide", frame = appear_frame)
 
-        #appear_frame += subbobject_delay #Just for TexComplex bobjects right now
+
+                for obj in self.objects:
+                    if obj.name not in bpy.context.scene.objects:
+                        bpy.context.scene.objects.link(obj)
+                    link_descendants(obj) #Useful for multi-part imports from .blend files
+                    hide_self_and_descendants(
+                        obj,
+                        keyframes = True,
+                        frame = appear_frame - 1
+                    )
+                    hide_self_and_descendants(
+                        obj,
+                        hide = False, #Unhide objects
+                        keyframes = True,
+                        frame = appear_frame
+                    )
+
+            if animate == False:
+                if self.superbobject == None:
+                    scale_up_frame = appear_frame - transition_time
+                #Might be able to get rid of this once morphing is fixed
+                else:
+                    #print(self.superbobject.appear_frame)
+                    scale_up_frame = self.superbobject.appear_frame - transition_time
+                #Makes the scale-up happen before the unhiding if we don't want
+                #the bobject to animate in
+            else:
+                scale_up_frame = appear_frame
+            if is_creature == True:
+                duration = MATURATION_TIME
+            else:
+                duration = transition_time
+
+            main_obj.scale = [0, 0, 0]
+            main_obj.keyframe_insert(data_path="scale", frame = scale_up_frame)
+            main_obj.scale = self.scale
+            main_obj.keyframe_insert(data_path="scale", frame = scale_up_frame + duration)
+            #don't need to do this for contained objects because it happens through
+            #parenting
+
+            self.added_to_blender = True
+
+        self.add_subbobjects(
+            appear_frame = appear_frame,
+            subbobject_timing = subbobject_timing
+        )
+
+    def add_subbobjects(
+        self,
+        appear_frame = None,
+        appear_time = None,
+        animate = True,
+        transition_time = OBJECT_APPEARANCE_TIME,
+        subbobject_timing = 'start'
+    ):
+        if appear_time != None:
+            if appear_frame != None:
+                raise Warning("You defined both appear frame and appear time. " +\
+                              "Just do one, ya dick.")
+            appear_frame = appear_time * FRAME_RATE
+        elif appear_frame == None:
+            appear_frame = 0
+
+        followers = [x for x in self.subbobjects if x.appear_with_super == True and \
+                            x.added_to_blender == False]
 
         if subbobject_timing == 'start':
             for bobj in followers:
@@ -453,6 +478,54 @@ class Bobject(object):
                 color_gradient['scale'] = [0.2, 0.2, 0]
 
             add_color_gradient_to_mat(mat_copy, color_gradient)
+
+    def wobble(
+        self,
+        axis = 2,
+        max_angle = 2, #degrees
+        frequency = 4, #Hertz
+        start_time = None,
+        end_time = None
+    ):
+        if start_time == None:
+            raise Warning('Need start_time for wobble')
+        if end_time == None:
+            raise Warning('Need end_time for wobble')
+
+        inc = 1 / frequency / 2
+        max_angle_rad = max_angle * math.pi / 180
+
+        time = start_time
+        self.ref_obj.keyframe_insert(
+            data_path = 'rotation_euler',
+            frame = start_time * FRAME_RATE
+        )
+        time += inc
+        self.ref_obj.rotation_euler[axis] += max_angle_rad
+        self.ref_obj.keyframe_insert(
+            data_path = 'rotation_euler',
+            frame = time * FRAME_RATE
+        )
+        while time < end_time - inc:
+            time += inc
+            self.ref_obj.rotation_euler[axis] -= 2 * max_angle_rad
+            self.ref_obj.keyframe_insert(
+                data_path = 'rotation_euler',
+                frame = time * FRAME_RATE
+            )
+            time += inc
+            self.ref_obj.rotation_euler[axis] += 2 * max_angle_rad
+            self.ref_obj.keyframe_insert(
+                data_path = 'rotation_euler',
+                frame = time * FRAME_RATE
+            )
+        time += inc
+        self.ref_obj.rotation_euler[axis] -= max_angle_rad
+        self.ref_obj.keyframe_insert(
+            data_path = 'rotation_euler',
+            frame = time * FRAME_RATE
+        )
+
 
     def tweak_colors_recursive(self, obj = None):
         if obj == None:
