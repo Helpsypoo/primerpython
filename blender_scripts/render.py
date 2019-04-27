@@ -8,6 +8,8 @@ sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scri
 sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts\\tools')
 import helpers
 
+overwrite = True
+
 def render_with_skips(start, stop):
     """
     Take start and stop, and render animation only for animated
@@ -65,11 +67,12 @@ def render_with_skips(start, stop):
 
     for fr in render_range:
         exists = False
-        directory = os.fsencode(filepath)
-        for file in os.listdir(directory):
-            filename = os.fsdecode(file)
-            if ('%04d' % fr) in filename:
-                exists = True
+        if overwrite == False:
+            directory = os.fsencode(filepath)
+            for file in os.listdir(directory):
+                filename = os.fsdecode(file)
+                if ('%04d' % fr) in filename:
+                    exists = True
         if exists == False:
             if fr not in still_frames or fr == render_range[0]:
                 bpy.context.scene.frame_set(fr)

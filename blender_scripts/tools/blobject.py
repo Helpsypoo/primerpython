@@ -591,7 +591,9 @@ class Blobject(Bobject):
         start_time = None,
         end_time = None,
         attack = None,
-        decay = None
+        decay = None,
+        left = True,
+        right = True
     ):
         if start_time == None:
             raise Warning('Need start time for angry_eyes()')
@@ -620,10 +622,14 @@ class Blobject(Bobject):
         decay_frames = decay * FRAME_RATE
 
         #Eyes
-        eyes = [
-            self.ref_obj.children[0].children[-2],
-            self.ref_obj.children[0].children[-3],
-        ]
+        left_eye = self.ref_obj.children[0].children[-2]
+        right_eye = self.ref_obj.children[0].children[-3]
+
+        eyes = []
+        if left == True:
+            eyes.append(left_eye)
+        if right == True:
+            eyes.append(right_eye)
         for eye in eyes:
                 key = eye.data.shape_keys.key_blocks['Key 1']
                 key.keyframe_insert(data_path = 'value', frame = start_frame)

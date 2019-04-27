@@ -10,8 +10,8 @@ from scene import Scene
 
 import bobject
 imp.reload(bobject)
-#import svg_bobject
-#imp.reload(svg_bobject)
+import svg_bobject
+imp.reload(svg_bobject)
 import tex_bobject
 imp.reload(tex_bobject)
 import tex_complex
@@ -58,10 +58,172 @@ class SupplyAndDemand(Scene):
         #self.price_inertia()
         #self.sim_rules_2()
         #self.actual_sim()
-        self.arguing()
+        #self.arguing()
+        #self.whats_good()
+        #self.list_good_things()
+        #self.filler_market()
+        #self.is_it_good()
+        #self.list_requirements()
+        #self.what_is_the_goal()
+        #self.intervention()
+        #self.outro_blob()
+        self.thumbnail()
+        #self.end_card()
 
     def intro(self):
-        pass
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 2.5, 34],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 0],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1, animate = False)
+
+        def demand_curve(x):
+            #Quadratics that contain starting values,
+            #and stays within the needed bounds,
+            #and results in the possibility of all agents transacting if
+            #forced
+            return (x - 17) * (x - 1) / 2.9 + 40
+
+        def supply_curve(x):
+            if x > 9:
+                x = 9 #Just be flat after 9
+            return (x - 4) * (x + 4) / 3.4 + 20
+
+
+        buyer_limits = [demand_curve(x) for x in range(10)]
+        seller_limits = [supply_curve(x) for x in range(10)]
+
+        new_sim = False
+        num_sessions = 20
+
+        if new_sim:
+            sim = market_sim.Market(
+                #num_initial_buyers = 1,
+                #num_initial_sellers = 1,
+                #interaction_mode = 'negotiate',
+                #interaction_mode = 'walk',
+                buyer_limits = [buyer_limits.pop(1)],
+                seller_limits = [seller_limits.pop(4)],
+                interaction_mode = 'seller_asks_buyer_decides',
+                initial_price = 30,
+                session_mode = 'rounds_w_concessions',
+                #session_mode = 'rounds',
+                #session_mode = 'one_shot',
+                fluid_sellers = True
+            )
+            #for i in range(num_sessions):
+            for i in range(num_sessions):
+                new_agents = []
+                print("Running session " + str(i))
+                if i == 2:
+                    new_buyer = market_sim.Agent(
+                        type = 'buyer',
+                        interaction_mode = sim.interaction_mode,
+                        initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
+                        price_limit = buyer_limits.pop(1),
+                    )
+                    new_agents.append(new_buyer)
+                if i == 3:
+                    new_seller = market_sim.Agent(
+                        type = 'seller',
+                        interaction_mode = sim.interaction_mode,
+                        initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
+                        price_limit = seller_limits.pop(3),
+                    )
+                    new_agents.append(new_seller)
+                if i == 4:
+                    new_seller = market_sim.Agent(
+                        type = 'seller',
+                        interaction_mode = sim.interaction_mode,
+                        initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
+                        price_limit = seller_limits.pop(4),
+                        #price_limit = seller_limits.pop(3),
+                    )
+                    new_agents.append(new_seller)
+                if i == 5:
+                    new_buyer = market_sim.Agent(
+                        type = 'buyer',
+                        interaction_mode = sim.interaction_mode,
+                        initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
+                        price_limit = buyer_limits.pop(3),
+                        #price_limit = buyer_limits.pop(6),
+                    )
+                    new_agents.append(new_buyer)
+                if i > 5:
+                    try:
+                        new_buyer = market_sim.Agent(
+                            type = 'buyer',
+                            interaction_mode = sim.interaction_mode,
+                            initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
+                            price_limit = buyer_limits.pop(0),
+                        )
+                        new_agents.append(new_buyer)
+                        new_seller = market_sim.Agent(
+                            type = 'seller',
+                            interaction_mode = sim.interaction_mode,
+                            initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
+                            price_limit = seller_limits.pop(0),
+                        )
+                        new_agents.append(new_seller)
+                    except:
+                        pass
+                save = False
+                if i == num_sessions - 1:
+                    save = True
+                sim.new_session(save = save, new_agents = new_agents)
+        else:
+            sim = 'intro_sim'
+
+        animate = True
+        if animate:
+            market = drawn_market.DrawnMarket(
+                sim = sim,
+                location = [0, 0, 0],
+                rotation_euler = [0, 0, 60 * math.pi / 180],
+                scale = 9.5
+            )
+            #market.add_to_blender(appear_time = 0)
+            unit = 0.4
+            market.phase_durations = {
+                'seller_setup_anim_duration' : unit,
+                'seller_setup_duration' : 3 * unit,
+                'round_move_duration' : unit,
+                'pause_before_exchange' : 0,
+                'exchange_duration' : unit,
+                'round_duration' : 2 * unit,
+                'buyer_return_anim_duration' : unit,
+                'buyer_return_duration': unit,
+                'price_adjust_anim_duration' : unit,
+                'price_adjust_duration' : unit
+            }
+
+            market.add_to_blender(appear_time = 2)
+
+            '''updates = [
+                [
+                    1,
+                    {
+                        'seller_setup_duration': 3 * unit,
+                    }
+                ]
+            ]'''
+
+            market.animate_sessions(
+                start_time = 3,
+                first_animated_session = 1,
+                last_animated_session = 10
+                #phase_duration_updates = updates
+            )
+
+
+        to_disappear = [market]
+        for thing in to_disappear:
+            thing.disappear(disappear_time = 24)
 
     def price_limits(self):
         cam_bobj, cam_swivel = cam_and_swivel(
@@ -150,9 +312,9 @@ class SupplyAndDemand(Scene):
         )
         o.move_to(start_time = b_display_appear_time, new_location = [6, -1, 0])
 
-        b.add_expected_price(appear_time = 55, price = 20)
+        b.add_expected_price(appear_time = 51, price = 20)
 
-        b.move_expected_price(start_time = 55.1, price = 30)
+        b.move_expected_price(start_time = 51.5, price = 30)
         b.nod_yes(start_time = 51.5, end_time = 53)
 
         b.move_expected_price(start_time = 53.5, price = 10)
@@ -174,10 +336,10 @@ class SupplyAndDemand(Scene):
         o.add_expected_price(appear_time = 64.5, price = 40)
 
         o.move_expected_price(start_time = 65.7, price = 30)
-        o.nod_yes(start_time = 66.2, end_time = 18)
+        o.nod_yes(start_time = 66.2, end_time = 68)
 
         o.move_expected_price(start_time = 68, price = 50)
-        o.shake_no(start_time = 68.4, end_time = 21)
+        o.shake_no(start_time = 68.4, end_time = 71)
 
         o.move_expected_price(start_time = 70, price = 40)
 
@@ -230,7 +392,7 @@ class SupplyAndDemand(Scene):
 
         buyer_price_tex.pulse(start_time = 90, duration_time = 2.5)
         mid_price_tex.pulse(start_time = 92.5, duration_time = 2.5)
-        o.dur4(
+        o.highlight_surplus(
             start_time = 96,
             price = 30
         )
@@ -741,27 +903,16 @@ class SupplyAndDemand(Scene):
         )
         cam_swivel.add_to_blender(appear_time = -1, animate = False)
 
-        '''
-        4:01.5 - Sim rules 2 finishes disappearing.
-        4:02 - Actual sim appears
-        4:08 - Move sim over
-        4:09 - Draw linked graph
-        4:10.5 - Start sim
-        4:26.5 - Add second buyer
-        5:15.5 - Add second and third seller
-        '''
-
-
         def demand_curve(x):
             #Quadratics that contain starting values,
             #and stays within the needed bounds,
             #and results in the possibility of all agents transacting if
             #forced
+            if x > 9:
+                x = 9 #Just be flat after 9
             return (x - 17) * (x - 1) / 2.9 + 40
 
         def supply_curve(x):
-            if x > 9:
-                x = 9 #Just be flat after 9
             return (x - 4) * (x + 4) / 3.4 + 20
 
 
@@ -946,7 +1097,7 @@ class SupplyAndDemand(Scene):
                     save = True
                 graph.sim.new_session(save = save, new_agents = new_agents)'''
 
-            graph.add_to_blender(appear_time = 249)
+            graph.add_to_blender(appear_time = 248)
 
         animate = True
         if animate:
@@ -963,8 +1114,8 @@ class SupplyAndDemand(Scene):
             #market.add_to_blender(appear_time = 0)
             unit = 0.3
             market.phase_durations = {
-                'seller_setup_anim_duration' : unit,
-                'seller_setup_duration' : 0,
+                'seller_setup_anim_duration' : 0.5,
+                'seller_setup_duration' : 1.5,
                 'round_move_duration' : unit,
                 'pause_before_exchange' : 0,
                 'exchange_duration' : unit,
@@ -985,7 +1136,15 @@ class SupplyAndDemand(Scene):
                 new_angle = [74 * math.pi / 180, 0, 0],
                 start_time = 248
             )
-
+            updates_1_on_1 = [
+                [
+                    1,
+                    {
+                        'seller_setup_anim_duration' : unit,
+                        'seller_setup_duration' : 0,
+                    }
+                ]
+            ]
             updates_2_on_1 = [
                 [
                     two_one_index,
@@ -1228,9 +1387,10 @@ class SupplyAndDemand(Scene):
 
 
             market.animate_sessions(
-                start_time = 250.5,
+                start_time = 249,
                 first_animated_session = 0,
-                last_animated_session = two_one_index
+                last_animated_session = two_one_index,
+                phase_duration_updates = updates_1_on_1
             )
             market.animate_sessions(
                 start_time = 266.5,
@@ -1517,7 +1677,7 @@ class SupplyAndDemand(Scene):
             end_time = 505
         )
 
-        to_disappear = [graph, market, equil, qseqd]
+        to_disappear = [graph, equil, qseqd]
         for thing in to_disappear:
             thing.disappear(disappear_time = 505)
 
@@ -1579,3 +1739,1159 @@ class SupplyAndDemand(Scene):
 
         r.disappear(disappear_time = 529)
         g.disappear(disappear_time = 529)
+
+    def whats_good(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 2.5, 34],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 0],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1, animate = False)
+
+        def demand_curve(x):
+            #Quadratics that contain starting values,
+            #and stays within the needed bounds,
+            #and results in the possibility of all agents transacting if
+            #forced
+            return (x - 17) * (x - 1) / 2.9 + 40
+
+        def supply_curve(x):
+            if x > 9:
+                x = 9 #Just be flat after 9
+            return (x - 4) * (x + 4) / 3.4 + 20
+
+
+        buyer_limits = [demand_curve(x) for x in range(10)]
+        seller_limits = [supply_curve(x) for x in range(10)]
+
+        new_sim = False
+        num_sessions = 40
+        if new_sim:
+            sim = market_sim.Market(
+                #num_initial_buyers = 1,
+                #num_initial_sellers = 1,
+                #interaction_mode = 'negotiate',
+                #interaction_mode = 'walk',
+                buyer_limits = buyer_limits,
+                seller_limits = seller_limits,
+                interaction_mode = 'seller_asks_buyer_decides',
+                initial_price = 30,
+                session_mode = 'rounds_w_concessions',
+                #session_mode = 'rounds',
+                #session_mode = 'one_shot',
+                fluid_sellers = True
+            )
+            #for i in range(num_sessions):
+            for i in range(num_sessions):
+                new_agents = []
+                print("Running session " + str(i))
+
+                save = False
+                if i == num_sessions - 1:
+                    save = True
+                sim.new_session(save = save, new_agents = new_agents)
+                #print(sim.sessions[-1])
+
+        else:
+            sim = 'surplus_examination'
+
+        show_graph = True
+        if show_graph:
+            graph = drawn_market.MarketGraph(
+                #demand_curve, supply_curve,
+                arrows = False,
+                x_range = 10,
+                y_range = 50,
+                tick_step = [20, 10],
+                x_label = "\\text{Quantity}",
+                y_label = "\\text{Price}",
+                y_label_pos = 'end',
+                padding = 0,
+                centered = True,
+                sim = sim,
+                location = [7, 0, -0.6],
+                rotation_euler = [74 * math.pi / 180, 0, 0],
+                scale = 0.9,
+                display_arrangement = 'superimposed',
+                show_axes = False,
+                #overlay_functions = True,
+            )
+
+            graph.add_to_blender(appear_time = 529.5)
+
+        animate = True
+        if animate:
+            if show_graph:
+                sim = graph.sim
+            market = drawn_market.DrawnMarket(
+                sim = sim,
+                location = [-6, 0, 0],
+                rotation_euler = [0, 0, 60 * math.pi / 180],
+                scale = 6.5
+            )
+            if show_graph:
+                market.linked_graph = graph
+
+            market.add_to_blender(appear_time = 529.5)
+            unit = 2/60
+            updates = [
+                [
+                    0,
+                    {
+                        'seller_setup_anim_duration' : 0.5,
+                        'seller_setup_duration' : 2,
+                        'round_move_duration' : unit,
+                        'pause_before_exchange' : 0,
+                        'exchange_duration' : unit,
+                        'round_duration' : 2 * unit,
+                        'buyer_return_anim_duration' : unit,
+                        'buyer_return_duration': unit,
+                        'price_adjust_anim_duration' : unit,
+                        'price_adjust_duration' : unit
+                    }
+                ],
+                [
+                    1,
+                    {
+                        'seller_setup_anim_duration' : unit,
+                        'seller_setup_duration' : 0,
+                    }
+                ],
+                [
+                    num_sessions - 4,
+                    {
+                        'buyer_return_duration': 1000,
+                    }
+                ]
+            ]
+
+            market.animate_sessions(
+                start_time = 529.5,
+                first_animated_session = 0,
+                last_animated_session = num_sessions - 3, #leaving 3 off
+                phase_duration_updates = updates
+            )
+
+            cam_swivel.move_to(
+                new_location = [4.5, -0.5, 0],
+                start_time = 540,
+                end_time = 541
+            )
+            cam_bobj.move_to(
+                new_location = [0, 2.5, 23],
+                start_time = 540,
+                end_time = 541
+            )
+            market.move_to(
+                new_scale = 0,
+                start_time = 546
+            )
+
+        #point at buyer surpluses
+        scale = 1
+        tail1 = [-3, 7]
+        head1 = [-0.5, 6]
+        #tail2 = [1, 10.7]
+        #head2 = [1, 7.3]
+        surp_arrow1 = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (tail1[0] / scale, tail1[1] / scale, 0),
+                        'head': (head1[0] / scale, head1[1] / scale, 0)
+                    }
+                }
+            ],
+            scale = scale,
+        )
+
+        surp_arrow1.ref_obj.parent = graph.ref_obj
+        surp_arrow1.add_to_blender(appear_time = 546)
+        #surp_arrow1.disappear(disappear_time = 572)
+
+
+        surp = tex_bobject.TexBobject(
+            '\\text{Surplus}\\phantom{no quote}',
+            #centered = True,
+            #location = [-6, 0, 8.5],
+            #rotation_euler = [74 * math.pi / 180, 0, 0],
+            #scale = 2
+        )
+
+        maxs = tex_bobject.TexBobject('\\text{Maximum}')
+
+        line_height = 1
+        max_surp = tex_complex.TexComplex(
+            surp,
+            location = [-6, 8, 0],
+            #rotation_euler = [74 * math.pi / 180, 0, 0],
+            scale = 1,
+            centered = True,
+            multiline = True,
+            line_height = line_height
+        )
+        max_surp.ref_obj.parent = graph.ref_obj
+        max_surp.add_to_blender(appear_time = 546)
+
+        max_surp.add_tex_bobject(maxs, index = 0)
+        max_surp.arrange_tex_bobjects(start_time = 553.5)
+        max_surp.move_to(
+            start_time = 553.5,
+            displacement = [0, line_height, 0]
+        )
+        maxs.add_to_blender(appear_time = 553.5)
+
+        bleb = blobject.Blobject(
+            mat = 'creature_color4',
+            location = [-3.5, 2.5, 0],
+            scale = 2.5,
+            wiggle = True
+        )
+        bleb.ref_obj.parent = graph.ref_obj
+        bleb.add_to_blender(appear_time = 547)
+
+        next_buyer = graph.buyer_bobjects[6]
+        next_buyer.wobble(
+            max_angle = 2,
+            start_time = 563.5,
+            end_time = 564.5
+        )
+        next_seller = graph.seller_bobjects[6]
+        next_seller.wobble(
+            max_angle = -2,
+            start_time = 563.5,
+            end_time = 564.5
+        )
+
+        non_participants = [
+            graph.seller_bobjects[9],
+            graph.seller_bobjects[8],
+            graph.seller_bobjects[7],
+            graph.seller_bobjects[6],
+            graph.buyer_bobjects[9],
+            graph.buyer_bobjects[8],
+            graph.buyer_bobjects[7],
+            graph.buyer_bobjects[6],
+        ]
+        for i, thing in enumerate(non_participants):
+            var = random() / 2
+            thing.move_to(
+                displacement = [10, 0, 0],
+                start_time = 578 + i / 5 + var,
+                end_time = 580 + i / 5 + var
+            )
+
+        bleb.move_to(
+            new_angle = [0, math.pi / 3, 0],
+            start_time = 579
+        )
+
+        '''#Wiggle those willing to transact
+        to_wiggle = [
+            graph.seller_bobjects[0],
+            graph.seller_bobjects[1],
+            graph.buyer_bobjects[0],
+            graph.buyer_bobjects[1],
+        ]
+        for thing in to_wiggle:
+            thing.wobble(
+                start_time = 450.5,
+                end_time = 451.5,
+            )
+
+        #Wiggle suppliers
+        to_wiggle = [
+            graph.seller_bobjects[0],
+            graph.seller_bobjects[1],
+        ]
+        for thing in to_wiggle:
+            thing.wobble(
+                start_time = 455.5,
+                end_time = 456.5,
+            )
+
+        #Wiggle demanders
+        to_wiggle = [
+            graph.buyer_bobjects[0],
+            graph.buyer_bobjects[1],
+        ]
+        for thing in to_wiggle:
+            thing.wobble(
+                start_time = 457.25,
+                end_time = 458.25,
+            )'''
+
+
+
+        '''graph.add_axes()
+        graph.add_subbobjects(appear_time = 480)'''
+
+        '''cam_swivel.move_to(
+            new_angle = [74 * math.pi / 180, 0, -5 * math.pi / 180],
+            start_time = 493,
+            end_time = 499
+        )
+        cam_swivel.move_to(
+            new_angle = [74 * math.pi / 180, 0, 0 * math.pi / 180],
+            start_time = 499,
+            end_time = 505
+        )'''
+
+    def list_good_things(self):
+        mkts = tex_bobject.TexBobject(
+            '\\text{Ideal markets...}',
+            location = [-12, 5, 0],
+            scale = 3
+        )
+        mkts.add_to_blender(appear_time = 586)
+
+        max_surp = tex_bobject.TexBobject(
+            '\\text{Maximize total surplus}',
+            location = [-11, 1, 0],
+            scale = 1.4
+        )
+        max_surp.add_to_blender(appear_time = 587.5)
+
+        num_part = tex_bobject.TexBobject(
+            '\\text{Determine participants}',
+            location = [-11, -2, 0],
+            scale = 1.4
+        )
+        num_part.add_to_blender(appear_time = 590)
+
+        scale = 1
+        eff_bracket = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'bracket',
+                    'points': {
+                        'annotation_point' : [3.5, -0.5, 0],
+                        'left_point' : [2.5, 1.6, 0],
+                        'right_point' : [2.5, -2.6, 0]
+                    }
+                }
+            ],
+            scale = scale,
+            color = 'color5'
+        )
+        eff_bracket.add_to_blender(appear_time = 594.5)
+        efficient = tex_bobject.TexBobject(
+            '\\text{"Efficient"}',
+            location = [4, -0.5, 0],
+            scale = 1.4,
+            color = 'color5'
+        )
+        efficient.add_to_blender(appear_time = 594)
+
+
+        org_self = tex_bobject.TexBobject(
+            '\\text{Organize themselves}',
+            location = [-11, -5, 0],
+            scale = 1.4
+        )
+        org_self.add_to_blender(appear_time = 599)
+
+
+        inv_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'head' : [1.2, -5.1, 0],
+                        'tail' : [4, -5.1, 0]
+                    }
+                }
+            ],
+            scale = scale,
+            color = 'color5'
+        )
+        inv_arrow.add_to_blender(appear_time = 604.2)
+
+        inv_hand = tex_bobject.TexBobject(
+            '\\text{"Invisible hand"}',
+            location = [4.5, -5, 0],
+            scale = 1.4,
+            color = 'color5'
+        )
+        inv_hand.add_to_blender(appear_time = 603.7)
+
+
+        to_disappear = [
+            inv_hand,
+            inv_arrow,
+            org_self,
+            efficient,
+            eff_bracket,
+            num_part,
+            max_surp,
+            mkts
+        ]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = 610.5 - (len(to_disappear) - 1 - i) * 0.05)
+
+    def filler_market(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, -0.25, 34],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 0],
+            swivel_rotation_euler = [65 * math.pi / 180, 0, 0],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1, animate = False)
+
+        def demand_curve(x):
+            #Quadratics that contain starting values,
+            #and stays within the needed bounds,
+            #and results in the possibility of all agents transacting if
+            #forced
+            return (x - 17) * (x - 1) / 2.9 + 40
+
+        def supply_curve(x):
+            if x > 9:
+                x = 9 #Just be flat after 9
+            return (x - 4) * (x + 4) / 3.4 + 20
+
+
+        buyer_limits = [demand_curve(x) for x in range(10)]
+        seller_limits = [supply_curve(x) for x in range(10)]
+
+        new_sim = False
+        num_sessions = 40
+        if new_sim:
+            sim = market_sim.Market(
+                #num_initial_buyers = 1,
+                #num_initial_sellers = 1,
+                #interaction_mode = 'negotiate',
+                #interaction_mode = 'walk',
+                buyer_limits = buyer_limits,
+                seller_limits = seller_limits,
+                interaction_mode = 'seller_asks_buyer_decides',
+                initial_price = 30,
+                session_mode = 'rounds_w_concessions',
+                #session_mode = 'rounds',
+                #session_mode = 'one_shot',
+                fluid_sellers = True
+            )
+            #for i in range(num_sessions):
+            for i in range(num_sessions):
+                new_agents = []
+                print("Running session " + str(i))
+
+                save = False
+                if i == num_sessions - 1:
+                    save = True
+                sim.new_session(save = save, new_agents = new_agents)
+                #print(sim.sessions[-1])
+
+        else:
+            sim = 'surplus_examination'
+
+        '''show_graph = True
+        if show_graph:
+            graph = drawn_market.MarketGraph(
+                #demand_curve, supply_curve,
+                arrows = False,
+                x_range = 10,
+                y_range = 50,
+                tick_step = [20, 10],
+                x_label = "\\text{Quantity}",
+                y_label = "\\text{Price}",
+                y_label_pos = 'end',
+                padding = 0,
+                centered = True,
+                sim = sim,
+                location = [7, 0, -0.6],
+                rotation_euler = [74 * math.pi / 180, 0, 0],
+                scale = 0.9,
+                display_arrangement = 'superimposed',
+                show_axes = False,
+                #overlay_functions = True,
+            )
+
+            graph.add_to_blender(appear_time = 529.5)'''
+
+        animate = True
+        if animate:
+            '''if show_graph:
+                sim = graph.sim'''
+            market = drawn_market.DrawnMarket(
+                sim = sim,
+                location = [0, 0, 0],
+                rotation_euler = [0, 0, 60 * math.pi / 180],
+                scale = 11.5
+            )
+            '''if show_graph:
+                market.linked_graph = graph'''
+            market.spin(
+                start_time = 611,
+                spin_rate = -0.02,
+                axis = 2
+            )
+
+            market.add_to_blender(appear_time = 611)
+            unit = 8/60
+            updates = [
+                [
+                    0,
+                    {
+                        'seller_setup_anim_duration' : 0.5,
+                        'seller_setup_duration' : 0.5,
+                        'round_move_duration' : unit,
+                        'pause_before_exchange' : 0,
+                        'exchange_duration' : unit,
+                        'round_duration' : 2 * unit,
+                        'buyer_return_anim_duration' : unit,
+                        'buyer_return_duration': unit,
+                        'price_adjust_anim_duration' : unit,
+                        'price_adjust_duration' : unit
+                    }
+                ],
+                [
+                    1,
+                    {
+                        'seller_setup_anim_duration' : unit,
+                        'seller_setup_duration' : 0,
+                    }
+                ],
+                [
+                    num_sessions - 4,
+                    {
+                        'buyer_return_duration': 1000,
+                    }
+                ]
+            ]
+
+            market.animate_sessions(
+                start_time = 612,
+                first_animated_session = 0,
+                last_animated_session = num_sessions - 3, #leaving 3 off
+                phase_duration_updates = updates
+            )
+
+    def is_it_good(self):
+        mkts = tex_bobject.TexBobject(
+            '\\text{Is this an accurate model?}',
+            location = [0, 5, 0],
+            scale = 2.5,
+            centered = True
+        )
+        mkts.add_to_blender(appear_time = 0)
+        mkts.disappear(disappear_time = 1.1)
+
+    def list_requirements(self):
+        mkts = tex_bobject.TexBobject(
+            '\\text{Requirements for ideal markets}',
+            location = [-12, 5, 0],
+            scale = 1.9
+        )
+        mkts.add_to_blender(appear_time = 632)
+
+        many = tex_bobject.TexBobject(
+            '\\text{Many buyers and sellers}',
+            location = [-11, 2.25, 0],
+            scale = 1.4
+        )
+        many.add_to_blender(appear_time = 635.5)
+
+        freedom = tex_bobject.TexBobject(
+            '\\text{Freedom to transact with anyone}',
+            location = [-11, -0.25, 0],
+            scale = 1.4
+        )
+        freedom.add_to_blender(appear_time = 637.5)
+
+        voluntary = tex_bobject.TexBobject(
+            '\\text{Voluntary participation}',
+            location = [-11, -2.75, 0],
+            scale = 1.4
+        )
+        voluntary.add_to_blender(appear_time = 641)
+
+        info = tex_bobject.TexBobject(
+            '\\text{Good information}',
+            location = [-11, -5.25, 0],
+            scale = 1.4
+        )
+        info.add_to_blender(appear_time = 647)
+
+        to_disappear = [
+            mkts,
+            many,
+            freedom,
+            voluntary,
+            info
+        ]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = 658.5 - (len(to_disappear) - 1 - i) * 0.05)
+
+    def what_is_the_goal(self):
+        what_is = tex_bobject.TexBobject(
+            '\\text{What is}',
+            location = [0, 3.5, 0],
+            scale = 6,
+            centered = True
+        )
+
+        the_goal = tex_bobject.TexBobject(
+            '\\text{the goal?}',
+            location = [0, -3.5, 0],
+            scale = 6,
+            centered = True
+        )
+
+        what_is.add_to_blender(appear_time = 0)
+        the_goal.add_to_blender(appear_time = 0)
+
+        what_is.disappear(disappear_time = 1.5)
+        the_goal.disappear(disappear_time = 1.5)
+
+    def intervention(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 34],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 7.5],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
+            swivel_name = 'Cam swivel',
+            control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1, animate = False)
+
+        def demand_curve(x):
+            #Quadratics that contain starting values,
+            #and stays within the needed bounds,
+            #and results in the possibility of all agents transacting if
+            #forced
+            return (x - 17) * (x - 1) / 2.9 + 40
+
+        def supply_curve(x):
+            if x > 9:
+                x = 9 #Just be flat after 9
+            return (x - 4) * (x + 4) / 3.4 + 20
+
+
+        buyer_limits = [demand_curve(x) for x in range(10)]
+        seller_limits = [supply_curve(x) for x in range(10)]
+
+        new_sim = False
+        num_sessions = 40
+        if new_sim:
+            sim = market_sim.Market(
+                #num_initial_buyers = 1,
+                #num_initial_sellers = 1,
+                #interaction_mode = 'negotiate',
+                #interaction_mode = 'walk',
+                buyer_limits = buyer_limits,
+                seller_limits = seller_limits,
+                interaction_mode = 'seller_asks_buyer_decides',
+                initial_price = 30,
+                session_mode = 'rounds_w_concessions',
+                #session_mode = 'rounds',
+                #session_mode = 'one_shot',
+                fluid_sellers = True
+            )
+            #for i in range(num_sessions):
+            for i in range(num_sessions):
+                new_agents = []
+                print("Running session " + str(i))
+
+                save = False
+                if i == num_sessions - 1:
+                    save = True
+                sim.new_session(save = save, new_agents = new_agents)
+                #print(sim.sessions[-1])
+
+        else:
+            sim = 'surplus_examination'
+
+        show_graph = True
+        if show_graph:
+            graph = drawn_market.MarketGraph(
+                #demand_curve, supply_curve,
+                arrows = False,
+                x_range = 10,
+                y_range = 50,
+                tick_step = [20, 10],
+                x_label = "\\text{Quantity}",
+                y_label = "\\text{Price}",
+                y_label_pos = 'end',
+                padding = 0,
+                centered = False,
+                sim = sim,
+                location = [-7.5, 0, 0],
+                rotation_euler = [74 * math.pi / 180, 0, 0],
+                scale = 1.5,
+                display_arrangement = 'superimposed',
+                show_axes = False,
+                #overlay_functions = True,
+            )
+
+            graph.add_to_blender(appear_time = 529.5)
+
+        animate = True
+        if animate:
+            if show_graph:
+                sim = graph.sim
+            market = drawn_market.DrawnMarket(
+                sim = sim,
+                location = [0, 0, 0],
+                rotation_euler = [0, 0, 60 * math.pi / 180],
+                scale = 0
+            )
+            if show_graph:
+                market.linked_graph = graph
+            market.spin(
+                start_time = 611,
+                spin_rate = -0.02,
+                axis = 2
+            )
+
+            #market.add_to_blender(appear_time = 611)
+            unit = 8/60
+            updates = [
+                [
+                    0,
+                    {
+                        'seller_setup_anim_duration' : 0.5,
+                        'seller_setup_duration' : 1000,
+                        'round_move_duration' : unit,
+                        'pause_before_exchange' : 0,
+                        'exchange_duration' : unit,
+                        'round_duration' : 2 * unit,
+                        'buyer_return_anim_duration' : unit,
+                        'buyer_return_duration': unit,
+                        'price_adjust_anim_duration' : unit,
+                        'price_adjust_duration' : unit
+                    }
+                ],
+                [
+                    1,
+                    {
+                        'seller_setup_anim_duration' : unit,
+                        'seller_setup_duration' : 0,
+                    }
+                ],
+                [
+                    num_sessions - 4,
+                    {
+                        'buyer_return_duration': 1000,
+                    }
+                ]
+            ]
+
+            '''market.animate_sessions(
+                start_time = 612,
+                first_animated_session = 0,
+                last_animated_session = 1,
+                phase_duration_updates = updates
+            )'''
+
+        graph.update_agent_display(
+            start_time = 673,
+            mode = 'superimposed',
+            session_index = 0,
+            expected_prices = False
+        )
+
+        graph.move_to(
+            displacement = [7.5, 0, 0],
+            start_time = 675.5
+        )
+
+        num_blobs = 20
+        blob_scale = 1
+        x_range = [-15, -2]
+        y_range = [-1, 8]
+        locs = []
+        blobs = []
+        for i in range(num_blobs):
+            too_close = True
+            while too_close == True:
+                x = uniform(*x_range)
+                y = uniform(*y_range)
+                too_close = False
+                for loc in locs:
+                    dist = vec_len(
+                        add_lists_by_element(
+                            loc,
+                            [x, y],
+                            subtract = True
+                        )
+                    )
+                    if dist < blob_scale:
+                        too_close = True
+                        print('trying again')
+                        break
+            locs.append([x, y])
+
+        for i in range(num_blobs):
+            color = 'creature_color3'
+            if i % 2 == 1:
+                color = 'creature_color4'
+
+            blob = blobject.Blobject(
+                location = [locs[i][0], locs[i][1], 0],
+                rotation_euler = [math.pi / 2, 0, 0],
+                scale = blob_scale,
+                mat = color
+            )
+            blob.add_to_blender(
+                appear_time = 676 + i / num_blobs
+            )
+            blob.hello(
+                start_time = 677.5,
+                end_time = 679
+            )
+            blob.blob_wave(
+                start_time = 631,
+                duration = 2
+            )
+            blobs.append(blob)
+
+        food = tex_bobject.TexBobject(
+            '\\text{Food?}',
+            location = [-8, 13 * math.cos(74 * math.pi / 180), 13 * math.sin(74 * math.pi / 180)],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            scale = 2.5,
+            centered = True
+        )
+        labor = tex_bobject.TexBobject(
+            '\\text{Labor?}',
+            location = [-8, 10 * math.cos(74 * math.pi / 180), 10 * math.sin(74 * math.pi / 180)],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            scale = 2.5,
+            centered = True
+        )
+        healthcare = tex_bobject.TexBobject(
+            '\\text{Healthcare?}',
+            location = [-8, 7 * math.cos(74 * math.pi / 180), 7 * math.sin(74 * math.pi / 180)],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            scale = 2.5,
+            centered = True
+        )
+
+        food.add_to_blender(appear_time = 683)
+        labor.add_to_blender(appear_time = 683.5)
+        healthcare.add_to_blender(appear_time = 684)
+
+        graph.update_agent_display(
+            start_time = 686,
+            mode = 'superimposed_descending',
+            session_index = 1,
+            expected_prices = False
+        )
+
+        seller_sort_direction = -1
+        ordered_seller_displays = sorted(
+            graph.displayed_seller_bobjects,
+            key = lambda x: seller_sort_direction * x.agent.price_limit
+        )
+        buyer_sort_direction = -1
+        ordered_buyer_displays = sorted(
+            graph.displayed_buyer_bobjects,
+            key = lambda x: buyer_sort_direction * x.agent.price_limit
+        )
+
+        for i in range(len(ordered_buyer_displays)):
+            buyer = ordered_buyer_displays[i]
+            seller = ordered_seller_displays[i]
+
+            price = (buyer.agent.price_limit + seller.agent.price_limit) / 2
+
+            buyer.highlight_surplus(price = price, start_time = 690)
+            seller.highlight_surplus(price = price, start_time = 690)
+
+
+        for thing in [food, labor, healthcare, graph] + blobs:
+            #thing.disappear(disappear_time = 706)
+            thing.move_to(
+                new_scale = 0,
+                start_time = 706
+            )
+
+    def outro_blob(self):
+        bleb = blobject.Blobject(
+            scale = 5,
+            wiggle = False,
+            location = [0, -0.5, 0]
+        )
+        bleb.add_to_blender(appear_time = 708.5)
+
+        bleb.move_to(
+            new_angle = [0, 10 * 2 * math.pi, 0],
+            start_time = 706.5,
+            end_time = 710.5
+        )
+        bleb.blob_wave(
+            start_time = 708.5,
+            duration = 1.5,
+            end_pause_duration = 0.8
+        )
+
+
+        bleb.angry_eyes(
+            right = False,
+            start_time = 714.5,
+            end_time = 718.3
+        )
+        bleb.move_head(
+            start_time = 714.5,
+            end_time = 718,
+            rotation_quaternion = [1, -0.1, 0, -0.1]
+        )
+
+
+        bleb.move_head(
+            start_time = 720.5,
+            end_time = 725,
+            rotation_quaternion = [1, 0.1, 0.2, 0.1]
+        )
+
+        bleb.hello(start_time = 726, end_time = 730)
+        bleb.disappear(disappear_time = 727)
+
+    def thumbnail(self):
+        '''cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 34],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 7.5],
+            swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
+            swivel_name = 'Cam swivel',
+            control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1, animate = False)'''
+
+        '''def demand_curve(x):
+            #Quadratics that contain starting values,
+            #and stays within the needed bounds,
+            #and results in the possibility of all agents transacting if
+            #forced
+            return (x - 17) * (x - 1) / 2.9 + 40
+
+        def supply_curve(x):
+            if x > 9:
+                x = 9 #Just be flat after 9
+            return (x - 4) * (x + 4) / 3.4 + 20
+
+
+        buyer_limits = [demand_curve(x) for x in range(10)]
+        seller_limits = [supply_curve(x) for x in range(10)]'''
+
+        sim = 'surplus_examination'
+        show_graph = True
+        if show_graph:
+            graph = drawn_market.MarketGraph(
+                #demand_curve, supply_curve,
+                arrows = False,
+                x_range = 10,
+                y_range = 50,
+                tick_step = [20, 10],
+                x_label = "\\text{Quantity}",
+                y_label = "\\text{Price}",
+                y_label_pos = 'end',
+                padding = 0,
+                centered = False,
+                sim = sim,
+                location = [3, -5.5, 0],
+                rotation_euler = [0, -45 * math.pi / 180, 0],
+                scale = 1,
+                display_arrangement = 'superimposed',
+                show_axes = False,
+                #overlay_functions = True,
+            )
+
+            graph.add_to_blender(appear_time = 0)
+
+        animate = True
+        if animate:
+            if show_graph:
+                sim = graph.sim
+            market = drawn_market.DrawnMarket(
+                sim = sim,
+                location = [0, 0, 0],
+                rotation_euler = [0, 0, 60 * math.pi / 180],
+                scale = 0
+            )
+            if show_graph:
+                market.linked_graph = graph
+
+            market.add_to_blender(appear_time = 611)
+            unit = 30/60
+            updates = [
+                [
+                    0,
+                    {
+                        'seller_setup_anim_duration' : 0.5,
+                        'seller_setup_duration' : 2,
+                        'round_move_duration' : unit,
+                        'pause_before_exchange' : 0,
+                        'exchange_duration' : unit,
+                        'round_duration' : 2 * unit,
+                        'buyer_return_anim_duration' : unit,
+                        'buyer_return_duration': unit,
+                        'price_adjust_anim_duration' : unit,
+                        'price_adjust_duration' : unit
+                    }
+                ],
+                [
+                    1,
+                    {
+                        'seller_setup_anim_duration' : unit,
+                        'seller_setup_duration' : 0,
+                    }
+                ]
+            ]
+
+            market.animate_sessions(
+                start_time = 2,
+                first_animated_session = 0,
+                #last_animated_session = 1,
+                phase_duration_updates = updates
+            )
+
+        graph.update_agent_display(
+            start_time = 0,
+            mode = 'superimposed',
+            session_index = 0,
+            #expected_prices = False
+        )
+        #Frame 4355
+
+        vom = svg_bobject.SVGBobject(
+            "AMG_century",
+            #location = (-5, 3.75, 0), #Centered position
+            #scale = 0.26, #Centered scale
+            location = [-6, 3.5, 0],
+            scale = 4,
+            #color = 'color2',
+            centered = True
+        )
+        vom.add_to_blender(appear_time = 0)
+        '''for i in range(3, 10):
+            vom.lookup_table[0][i].color_shift(
+                color = COLORS_SCALED[6],
+                start_time = -1,
+                duration_time = None
+            )'''
+
+        simd = tex_bobject.TexBobject(
+            '\\text{Simulation}',
+            centered = True,
+            location = [8, 5, 0],
+            scale = 1.5
+        )
+        simd.add_to_blender(appear_time = 0)
+
+        scale = 1.5
+        tail1 = [8, 3.75]
+        head1 = [8, 1.25]
+        surp_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (tail1[0] / scale, tail1[1] / scale, 0),
+                        'head': (head1[0] / scale, head1[1] / scale, 0)
+                    }
+                }
+            ],
+            scale = scale,
+        )
+        surp_arrow.add_to_blender(appear_time = 0)
+
+    def end_card(self):
+        cues = self.subscenes
+        scene_end = self.duration
+
+        '''bpy.ops.mesh.primitive_plane_add()
+        play_bar = bpy.context.object
+        play_bar.scale[0] = 15
+        play_bar.scale[1] = 90 / 720 * 8.4
+        play_bar.location = [0, -8.4 + play_bar.scale[1], -0.01]
+
+        bpy.ops.mesh.primitive_plane_add()
+        vid_rec = bpy.context.object
+        vid_rec.scale[0] = 410 / 1280 * 15
+        vid_rec.scale[1] = 230 / 720 * 8.4
+        vid_rec.location = [9, -3, -0.01]
+        apply_material(vid_rec, 'color6')
+
+        bpy.ops.mesh.primitive_cylinder_add()
+        sub_cir = bpy.context.object
+        sub_cir.scale = [98 / 1280 * 30, 98 / 1280 * 30, 0]
+        sub_cir.location = [-11, 3.2, -0.01]
+
+        #Whole end area
+        bpy.ops.mesh.primitive_plane_add()
+        end_area = bpy.context.object
+        end_area.scale[0] = 1225 / 1280 * 15
+        end_area.scale[1] = 518 / 720 * 8.4
+        end_area.location = [0, 0.2, -0.15]'''
+
+        logo = svg_bobject.SVGBobject(
+            "Layer",
+            #file_name = "PrimerLogoWhite",
+            location = (-8.7, 3, 0),
+            scale = 1.4
+        )
+        for bobj in logo.rendered_curve_bobjects:
+            apply_material(bobj.ref_obj.children[0], 'color2')
+        stroke = logo.rendered_curve_bobjects[0]
+        apply_material(stroke.ref_obj.children[0], 'color3')
+        logo.morph_chains[0][0].ref_obj.location[2] = -1
+        logo.add_to_blender(
+            appear_time = cues['card']['start'],
+            #subbobject_timing = [90, 30, 40, 50, 60, 70, 80],
+            subbobject_timing = [42, 30, 33, 36, 39, 42, 45],
+            animate = True
+        )
+
+        patreon = import_object(
+            'patreon', 'svgblend',
+            scale = 2.297,
+            location = (-11, -3, 0),
+            name = 'Patreon'
+        )
+        patreon.add_to_blender(appear_time = 0)
+        thanks = tex_bobject.TexBobject(
+            '\\text{Special thanks:}',
+            location = [-8.35, -1.4, 0],
+            color = 'color2'
+        )
+        thanks.add_to_blender(appear_time = 0)
+        js = tex_bobject.TexBobject(
+            '\\text{Jordan Scales}',
+            location = [-7.8, -2.75, 0],
+            color = 'color2',
+            scale = 1
+        )
+        js.add_to_blender(appear_time = 0.5)
+
+        bmkw = tex_bobject.TexBobject(
+            '\\text{Kairui Wang}',
+            location = [-7.8, -4, 0],
+            color = 'color2',
+            scale = 1
+        )
+        bmkw.add_to_blender(appear_time = 0.75)
+
+        ap = tex_bobject.TexBobject(
+            '\\text{Anonymous Patrons}',
+            location = [-7.8, -5.25, 0],
+            color = 'color2',
+            scale = 1
+        )
+        ap.add_to_blender(appear_time = 1)
+
+
+        remaining = [logo, patreon, thanks, js, bmkw, ap]
+        for thing in remaining:
+            thing.disappear(disappear_time = 2.5)

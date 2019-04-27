@@ -280,11 +280,14 @@ class DrawnAgent(Blobject):
             )
 
         #Change thickness of expected price indicators
-        self.expected_price_indicator.move_to(
-            new_scale = new_thickness,
-            start_time = start_time,
-            end_time = end_time
-        )
+        try:
+            self.expected_price_indicator.move_to(
+                new_scale = new_thickness,
+                start_time = start_time,
+                end_time = end_time
+            )
+        except:
+            pass
 
         #Aaaand the base
         self.bar_base.move_to(
@@ -1396,7 +1399,7 @@ class MarketGraph(GraphBobject):
 
         return new_agent
 
-    def update_agent_display(self, start_time = None, end_time = None, mode = None, session_index = None):
+    def update_agent_display(self, start_time = None, end_time = None, mode = None, session_index = None, expected_prices = True):
         if mode == None:
             mode = self.display_arrangement
         else:
@@ -1433,7 +1436,7 @@ class MarketGraph(GraphBobject):
         #Update self.bar_width
         if mode == 'buyer_seller':
             current_num = len(self.buyer_bobjects + self.seller_bobjects)
-        elif mode == 'superimposed' or mode == 'stacked':
+        elif mode == 'superimposed' or mode == 'stacked' or mode == 'superimposed_descending':
             current_num = max(len(self.buyer_bobjects), len(self.seller_bobjects))
         else:
             raise Warning(str(mode) + ' is not valid mode')
@@ -1449,11 +1452,12 @@ class MarketGraph(GraphBobject):
                 appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
             )
             self.displayed_seller_bobjects.append(display)
-            display.add_expected_price(
-                appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE,
-                session_index = session_index,
-                thickness_factor = thickness_factor,
-            )
+            if expected_prices == True:
+                display.add_expected_price(
+                    appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE,
+                    session_index = session_index,
+                    thickness_factor = thickness_factor,
+                )
         for display in new_buyer_displays:
             #Delay make_display so the bobject will be in place before the bar
             #actually appears
@@ -1462,23 +1466,27 @@ class MarketGraph(GraphBobject):
                 appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
             )
             self.displayed_buyer_bobjects.append(display)
-            display.add_expected_price(
-                appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE,
-                session_index = session_index,
-                thickness_factor = thickness_factor,
-            )
+            if expected_prices == True:
+                display.add_expected_price(
+                    appear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE,
+                    session_index = session_index,
+                    thickness_factor = thickness_factor,
+                )
 
         #print(len(self.agent_bobjects))
+        seller_sort_direction = 1
+        if mode == 'superimposed_descending':
+            seller_sort_direction = -1
         ordered_seller_displays = sorted(
             self.displayed_seller_bobjects,
-            key = lambda x: x.agent.price_limit
+            key = lambda x: seller_sort_direction * x.agent.price_limit
         )
-        sort_direction = -1
+        buyer_sort_direction = -1
         if mode == 'buyer_seller':
-            sort_direction = 1
+            buyer_sort_direction = 1
         ordered_buyer_displays = sorted(
             self.displayed_buyer_bobjects,
-            key = lambda x: sort_direction * x.agent.price_limit
+            key = lambda x: buyer_sort_direction * x.agent.price_limit
         )
 
         #space_width = (graph.x_range[1] - num_bars * bar_width) / (num_bars + 1)
@@ -1500,7 +1508,7 @@ class MarketGraph(GraphBobject):
                         start_time = start_time,
                         end_time = end_time
                     )
-        if mode == 'superimposed':
+        if mode == 'superimposed' or mode == 'superimposed_descending':
             current_num = max(len(ordered_buyer_displays), len(ordered_seller_displays))
             for i, bar in enumerate(ordered_buyer_displays):
                 new_x = (i + 0.5) * self.display_width * self.num_initial_displays / current_num
