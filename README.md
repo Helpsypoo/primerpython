@@ -1,5 +1,5 @@
 # primer
-Code that makes videos for this: youtube.com/c/primerlearning
+Code that makes videos for this: [youtube.com/c/primerlearning](https://youtube.com/c/primerlearning)
 
 This is going to be a pretty minimal readme for now, and the code itself is likely very confusing. I intend to clean things up and improve documentation, though I don't know when that will be. If you'd like to receive an email when that update happens, you can submit your email here: https://forms.gle/GHTgKMUaMxqxGUu39
 
