@@ -268,6 +268,42 @@ def marketing():
     )
     comp.add_to_blender(appear_time = 0)
 
+def sample_scene():
+    initialize_blender()
+
+    num_colors = 8
+    for i in range(num_colors):
+        ghost = blobject.Blobject(
+            location = [3.5 * i - 12.25, 5, 0],
+            mat = 'trans_color' + str(i + 1),
+            scale = 2,
+            wiggle = True
+        )
+        mat = ghost.ref_obj.children[0].children[0].material_slots[0].material
+        node_tree = mat.node_tree
+        node_tree.nodes['Volume Absorption'].inputs[1].default_value = 0.2
+        node_tree.nodes['Emission'].inputs[1].default_value = 0.2
+        node_tree.nodes['Volume Scatter'].inputs[1].default_value = 0.2
+
+        solid = blobject.Blobject(
+            location = [3.5 * i - 12.25, -1, 0],
+            mat = 'creature_color' + str(i + 1),
+            scale = 2,
+            wiggle = True
+        )
+
+        text = tex_bobject.TexBobject(
+            '\\text{Text!}',
+            location = [3.5 * i - 12.25, -6, 0],
+            centered = True,
+            color = 'color' + str(i + 1),
+            scale = 1.5
+        )
+
+        ghost.add_to_blender(appear_time = 0)
+        solid.add_to_blender(appear_time = 0)
+        text.add_to_blender(appear_time = 0)
+
 def draw_scenes_from_file(script_file, clear = True):
     #This function is meant to process many scenes at once.
     #Most scenes end up being large enough where it doesn't make sense to have
@@ -298,282 +334,14 @@ def draw_scenes_from_file(script_file, clear = True):
 def test():
     initialize_blender()
 
-    """
-    sim = market_sim.Market(
-        num_buyers = 1,
-        num_sellers = 2,
-        #interaction_mode = 'negotiate',
-        #interaction_mode = 'walk',
-        interaction_mode = 'seller_asks_buyer_decides',
-        initial_price = 50,
-        session_mode = 'rounds_w_concessions',
-        #session_mode = 'rounds',
-        #session_mode = 'one_shot',
-        fluid_sellers = True
-    )
-    num_sessions = 200
-    for i in range(num_sessions):
-        print("Running session " + str(i))
-        sim.new_session()
-        #print(sim.sessions[-1])
-
-    for i, session in enumerate(sim.sessions):
-        print('Session ' + str(i))
-        print(' Completed transactions: ' + str(session.num_transactions) + ' Sellers: ' + str(session.num_sellers) + ' Price: ' + str(session.avg_price))
-
-        ordered_bids = sorted([x.goal_prices[i] for x in session.buyers])
-        #ordered_bids.reverse()
-        print(ordered_bids)
-        ordered_asks = sorted([x.goal_prices[i] for x in session.sellers])
-        print(ordered_asks)
-
-        goal_prices = []
-        for transaction in session.meetings:
-            print(transaction.transaction_price)
-            try:
-                goal_prices.append([transaction.buyer.goal_prices[i], transaction.seller.goal_prices[i]])
-            except:
-                print(i)
-                print(len(transaction.buyer.goal_prices))
-                print(len(transaction.seller.goal_prices))
-                raise()
-        print(' ' + str(goal_prices))
-
-        '''for agent in sim.agents:
-            print(len(agent.goal_prices))'''
-
-    ordered_bids = sorted([x.price_limit for x in sim.agents if x.type == 'buyer'])
-    ordered_bids.reverse()
-    print(ordered_bids)
-    ordered_asks = sorted([x.price_limit for x in sim.agents if x.type == 'seller'])
-    print(ordered_asks)
-
-
-
-    '''for i, [bid, ask] in enumerate(zip(ordered_bids, ordered_asks)):
-        if bid >= ask:
-            continue
-        else:
-            print(i-1, ordered_bids[i-1], ordered_asks[i-1])
-            print(i, bid, ask)
-            print(i+1, ordered_bids[i+1], ordered_asks[i+1])
-            break'''
-
-    """
-
-    '''agent = market_sim.Agent(
-        type = 'seller',
-        price_limit = 10,
-        interaction_mode = 'seller_asks_buyer_decides'
-    )
-    d_agent = drawn_market.DrawnAgent(agent = agent)
-    d_agent.add_to_blender(appear_time = 1)
-
-    d_agent.make_display(appear_time = 3)
-    d_agent.add_price_line(price = 45, appear_time = 5, emote = True)
-    d_agent.move_price_line(price = 25, start_time = 7, emote = True)
-
-    d_agent.add_expected_price(price = 25, appear_time = 9)
-    d_agent.move_expected_price(price = 15, start_time = 11)
-
-    d_agent.highlight_surplus(price = 25, start_time = 13, end_time = 15)'''
-
-    new_sim = False
-    if new_sim:
-        sim = market_sim.Market(
-            #num_initial_buyers = 1,
-            #num_initial_sellers = 1,
-            #interaction_mode = 'negotiate',
-            #interaction_mode = 'walk',
-            buyer_limits = [40],
-            seller_limits = [20],
-            interaction_mode = 'seller_asks_buyer_decides',
-            initial_price = 30,
-            session_mode = 'rounds_w_concessions',
-            #session_mode = 'rounds',
-            #session_mode = 'one_shot',
-            fluid_sellers = True
-        )
-        num_sessions = 5
-        for i in range(num_sessions):
-            new_agents = []
-            '''if i == 2:
-                new_seller = market_sim.Agent(
-                    type = 'seller',
-                    interaction_mode = sim.interaction_mode,
-                    initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
-                    price_limit = 29
-                )
-                new_agents.append(new_seller)
-            if i == 3:
-                new_buyer = market_sim.Agent(
-                    type = 'buyer',
-                    interaction_mode = sim.interaction_mode,
-                    initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
-                    price_limit = 29
-                )
-                new_agents.append(new_buyer)'''
-            '''if i > 0:
-                new_seller = market_sim.Agent(
-                    type = 'seller',
-                    interaction_mode = sim.interaction_mode,
-                    initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
-                    price_limit = 4 + 2 * i
-                )
-                new_agents.append(new_seller)
-                new_buyer = market_sim.Agent(
-                    type = 'buyer',
-                    interaction_mode = sim.interaction_mode,
-                    initial_price = sim.sessions[-1].rounds[-1][-1].transaction_price,
-                    price_limit = 50 - 2 * i
-                )
-                new_agents.append(new_buyer)'''
-            print("Running session " + str(i))
-            save = False
-            if i == num_sessions - 1:
-                save = True
-            sim.new_session(save = save, new_agents = new_agents)
-            #print(sim.sessions[-1])
-    else:
-        #Three total
-        #sim = 'MARKET20190327T161915'
-        #12 total
-        #sim = 'MARKET20190327T222513'
-        #1 on 1
-        #sim = 'MARKET20190328T165425'
-        #2 on 1
-        #sim = 'MARKET20190329T150237'
-        #2 on 3
-        sim = 'MARKET20190329T154933'
-
-    '''
-    #print('baanasdf')
-    for i, [bid, ask] in enumerate(zip(ordered_bids, ordered_asks)):
-        if bid >= ask:
-            continue
-        else:
-            print(i-1, ordered_bids[i-1], ordered_asks[i-1])
-            print(i, bid, ask)
-            print(i+1, ordered_bids[i+1], ordered_asks[i+1])
-            break
-    '''
-
-    show_graph = True
-    if show_graph:
-        graph = drawn_market.MarketGraph(
-            arrows = False,
-            padding = 0,
-            centered = True,
-            sim = sim,
-            location = [6, 0, 0],
-            scale = 0.5,
-            display_arrangement = 'buyer_seller',
-            show_axes = False
-        )
-
-
-        num_sessions = 30
-        for i in range(num_sessions):
-            new_agents = []
-            if i == 0:
-                new_agents.append(
-                    market_sim.Agent(
-                        type = 'buyer',
-                        interaction_mode = graph.sim.interaction_mode,
-                        initial_price = graph.sim.sessions[-1].rounds[-1][-1].transaction_price,
-                        price_limit = 20
-                    )
-                )
-            print("Running session " + str(i))
-            save = False
-            if i == num_sessions - 1:
-                save = True
-            graph.sim.new_session(save = save, new_agents = new_agents)
-
-        graph.add_to_blender(appear_time = 0)
-        #graph.add_agent(agent = sim.agents_lists[0][0], start_time = 0)
-        #graph.update_agent_display(start_time = 5, session_index = 0)
-        #graph.display_arrangement = 'superimposed'
-        #graph.update_agent_display(start_time = 3)
-
-        #graph.add_expected_prices(index = 0, start_time = 6)
-
-        #for i in range(num_sessions):
-        #    graph.highlight_surpluses(index = i + 1, start_time = 7 + i)
-        #    graph.move_expected_prices(index = i + 1, start_time = 7 + i + 0.5)
-        #    graph.hide_surpluses(start_time = 5 + i + 0.5)
-
-    animate = True
-    if animate:
-        if show_graph:
-            sim = graph.sim
-        market = drawn_market.DrawnMarket(
-            sim = sim,
-            location = [-6, 0, 0]
-        )
-        if show_graph:
-            market.linked_graph = graph
-        market.add_to_blender(appear_time = 0)
-        market.animate_sessions(start_time = 7)
-
-    #print()
-    #print()
-    #for list in market.sim.agents_lists:
-    #    print(' ' + str(list))
-    #print()
-    #print()
-    #print([x.agent for x in graph.buyer_bobjects + graph.seller_bobjects])
-    #print()
-    #print([x.agent for x in market.drawn_buyers + market.drawn_sellers])
-
-    summary = False
-    if summary and new_sim:
-        try:
-            iterable = enumerate(sim.sessions)
-        except:
-            iterable = enumerate(market.sim.sessions)
-
-        for i, session in iterable:
-            print('Session ' + str(i))
-            print(' Completed transactions: ' + str(session.num_transactions) + ' Sellers: ' + str(session.num_sellers) + ' Price: ' + str(session.avg_price))
-
-            ordered_bids = sorted([x.goal_prices[i] for x in session.buyers])
-            ordered_bids.reverse()
-            print(' New banana ' + str(ordered_bids))
-            ordered_asks = sorted([x.goal_prices[i] for x in session.sellers])
-            print(' New banana ' + str(ordered_asks))
-
-            goal_prices = []
-            for round in session.rounds:
-                goal_prices = []
-                for transaction in round:
-                    #print(transaction.transaction_price)
-                    try:
-                        goal_prices.append([transaction.buyer.goal_prices[i], transaction.seller.goal_prices[i]])
-                    except:
-                        print(i)
-                        print(len(transaction.buyer.goal_prices))
-                        print(len(transaction.seller.goal_prices))
-                        raise()
-                print(' ' + str(goal_prices))
-
-            '''for agent in sim.agents:
-                print(len(agent.goal_prices))'''
-
-        ordered_bids = sorted([x.price_limit for x in sim.agents_lists[-1] if x.type == 'buyer'])
-        ordered_bids.reverse()
-        print(ordered_bids)
-        ordered_asks = sorted([x.price_limit for x in sim.agents_lists[-1] if x.type == 'seller'])
-        print(ordered_asks)
-
 def main():
     """Use this as a test scene"""
     #tex_test()
     """"""
 
-    #test()
+    test()
     #draw_scenes_from_file(scds, clear = False)
-    draw_scenes_from_file(supply_and_demand)
+    #draw_scenes_from_file(supply_and_demand)
 
     print_time_report()
     finish_noise()
