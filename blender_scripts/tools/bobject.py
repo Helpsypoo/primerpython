@@ -56,6 +56,10 @@ class Bobject(object):
         self.superbobject = None #Changed when initializing a super
         self.appear_with_super = self.get_from_kwargs('appear_with_super', True)
 
+        material_set = self.get_from_kwargs('mat', None)
+        if material_set != None:
+            apply_material(self.ref_obj.children[0], material_set)
+
         self.added_to_blender = False
 
     def get_from_kwargs(self, kwarg_str, default):

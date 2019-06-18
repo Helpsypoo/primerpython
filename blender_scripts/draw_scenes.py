@@ -69,6 +69,8 @@ imp.reload(supply_and_demand)
 
 import hawk_dove
 imp.reload(hawk_dove)
+import drawn_contest_world
+imp.reload(drawn_contest_world)
 
 def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = True):
     #clear objects and materials
@@ -329,198 +331,191 @@ def draw_scenes_from_file(script_file, clear = True):
 
     print_time_report()
 
-def circle_grid():
-    initialize_blender()
-
-    num_rings = 10
-    dot_count_multiple = 6
-    dot_radius = 0.25
-    rot_add = 6
-
-    for i in range(num_rings):
-        if i == 0:
-            num_dots = 1
-        else:
-            num_dots = i * dot_count_multiple
-
-        for j in range(num_dots):
-            radius = i
-            angle = j / num_dots * 2 * math.pi + (i * rot_add * math.pi / 180)
-            loc = [
-                radius * math.cos(angle),
-                radius * math.sin(angle),
-                0
-            ]
-            dot = import_object(
-                'goodicosphere', 'primitives',
-                location = loc,
-                scale = dot_radius,
-            )
-            apply_material(dot.ref_obj.children[0] , 'color7')
-            dot.add_to_blender(appear_time = 0)
-
 def test():
     initialize_blender()
 
-    print('Initial bimodal distribution')
+    def sim_test():
+        print('Initial bimodal distribution')
 
-    food_counts_to_try = [
-        #50,
-        #100,
-        #150,
-        #200,
-        #300,
-        #400,
-        #500,
-        #600,
-        #700,
-        #800,
-        #900,
-        999
-    ]
-    nums_days_to_try = [
-        #1,
-        #10,
-        #20,
-        #30,
-        #40,
-        #50,
-        #100,
-        #150,
-        #200,
-        #300,
-        #400,
-        #500,
-        #600,
-        #700,
-        #800,
-        #900,
-        #999,
-        1999
-    ]
-    num_samples = 10
-    quantile_count = 10
-
-
-    #table_type = 'avgs_with_food_count_and_time'
-    table_type = 'show_distribution'
-
-    #Table where rows are food counts and columns are day counts
-    #Each cell show mean and stddev of samples
-    if table_type == 'avgs_with_food_count_and_time':
-        table_headings = '{0: <4}'.format('') + ' | '
-        for num in nums_days_to_try:
-            table_headings += '{0: ^13}'.format(num) + ' | '
-        print('Food v, days >')
-        print(table_headings)
-        print('-' * len(table_headings))
-    elif table_type == 'show_distribution':
-        table_headings = '{0: <4}'.format('') + ' | '
-        for i in range(quantile_count):
-            table_headings += '{0: ^5}'.format(i) + ' | '
-        print('Sample v, Quantiles >')
-        print(table_headings)
-        print('-' * len(table_headings))
+        food_counts_to_try = [
+            #50,
+            #100,
+            #150,
+            #200,
+            300,
+            #400,
+            #500,
+            #600,
+            #700,
+            #800,
+            #900,
+            #1999
+        ]
+        nums_days_to_try = [
+            #1,
+            #10,
+            #20,
+            #30,
+            #40,
+            #50,
+            #100,
+            #150,
+            #200,
+            #300,
+            #400,
+            500,
+            #600,
+            #700,
+            #800,
+            #900,
+            #999,
+            #1999
+        ]
+        num_samples = 10
+        quantile_count = 10
 
 
-    for food_count in food_counts_to_try:
-        samples = []
-        for j in range(num_samples):
-            sample_results = []
+        #table_type = 'avgs_with_food_count_and_time'
+        table_type = 'show_distribution'
 
-            num_creatures = food_count
-            initial_creatures = []
-            for k in range(num_creatures):
-                if k % 2 == 0:
-                    cre = hawk_dove.Creature(
-                        fight_chance = 1
-                    )
-                else:
-                    cre = hawk_dove.Creature(
-                        fight_chance = 0
-                    )
-                '''cre = hawk_dove.Creature(
-                    #fight_chance = 0.7
-                    fight_chance = k / num_creatures
-                )'''
-                initial_creatures.append(cre)
-
-            world = hawk_dove.World(food_count = food_count, initial_creatures = initial_creatures)
-
-            num_days = nums_days_to_try[-1]
-            for i in range(num_days):
-                world.new_day()
-                #print('Done simming day ' + str(i))
-
-            #print()
-            for day in world.calendar:
-                #print('Num doves: ' + str(len([x for x in day.creatures if x.fight_chance == 0])))
-                #print('Num hawks: ' + str(len([x for x in day.creatures if x.fight_chance == 1])))
-                #print()
-
-                if table_type == 'avgs_with_food_count_and_time':
-                    avg = statistics.mean([x.fight_chance for x in day.creatures])
-                    if day.date + 1 in nums_days_to_try:
-                        sample_results.append(avg)
-                elif table_type == 'show_distribution':
-                    if day.date + 1 in nums_days_to_try:
-                        sample_results = (
-                            [x.fight_chance for x in day.creatures]
-                        )
-
-                #print("Average fight chance: " + str(avg))
-
-                #print('Num shares: ' + str(len(day.morning_contests) + len(day.afternoon_contests)))
-                #contests = day.morning_contests + day.afternoon_contests
-                #shares = [x for x in contests if x.outcome == 'share']
-                #takes = [x for x in contests if x.outcome == 'take']
-                #fights = [x for x in contests if x.outcome == 'fight']
-                #print('Num shares: ' + str(len(shares)))
-                #print('Num takes: ' + str(len(takes)))
-                #print('Num fights: ' + str(len(fights)))
-                #for food in day.food_objects:
-                #    print('Eaten = ' + str(food.eaten_time) + ' Creatures = ' + str(food.interested_creatures))
-                #print()
-
-            samples.append(sample_results)
-
-        '''print()
-        for sample in samples:
-            to_print = ["{0:.2f}".format(round(x, 2)) for x in sample]
-            print(to_print)
-        print()'''
-
+        #Table where rows are food counts and columns are day counts
+        #Each cell show mean and stddev of samples
         if table_type == 'avgs_with_food_count_and_time':
-            results_str = '{0: <4}'.format(food_count) + ' | '
-            for i in range(len(nums_days_to_try)):
-                samples_at_day = []
-                for sample in samples:
-                    samples_at_day.append(sample[i])
-
-                results_str += "{0:.2f}".format(round(statistics.mean(samples_at_day),2)) + \
-                                ' +/- ' + \
-                                "{0:.2f}".format(round(statistics.stdev(samples_at_day),2)) + \
-                                ' | '
+            table_headings = '{0: <4}'.format('') + ' | '
+            for num in nums_days_to_try:
+                table_headings += '{0: ^13}'.format(num) + ' | '
+            print('Food v, days >')
+            print(table_headings)
+            print('-' * len(table_headings))
         elif table_type == 'show_distribution':
-            #print(samples)
+            table_headings = '{0: <4}'.format('') + ' | '
+            for i in range(quantile_count):
+                table_headings += '{0: ^5}'.format(i) + ' | '
+            print('Sample v, Quantiles >')
+            print(table_headings)
+            print('-' * len(table_headings))
+
+
+        for food_count in food_counts_to_try:
+            samples = []
+            for j in range(num_samples):
+                sample_results = []
+
+                num_creatures = food_count
+                initial_creatures = []
+                for k in range(num_creatures):
+                    if k % 2 == 0:
+                        cre = hawk_dove.Creature(
+                            fight_chance = 1
+                        )
+                    else:
+                        cre = hawk_dove.Creature(
+                            fight_chance = 0
+                        )
+                    '''cre = hawk_dove.Creature(
+                        #fight_chance = 0.2
+                        fight_chance = round(k / num_creatures, 1)
+                    )'''
+                    initial_creatures.append(cre)
+
+                world = hawk_dove.World(food_count = food_count, initial_creatures = initial_creatures)
+
+                num_days = nums_days_to_try[-1]
+                for i in range(num_days):
+                    world.new_day()
+                    #print('Done simming day ' + str(i))
+
+                #print()
+                for day in world.calendar:
+                    #print('f_hawks: ' + str(len([x for x in day.creatures if x.fight_chance == 1]) / \
+                    #                        (len([x for x in day.creatures if x.fight_chance == 0]) + len([x for x in day.creatures if x.fight_chance == 1])))
+                    #)
+                    #print('Num hawks: ' + str(len([x for x in day.creatures if x.fight_chance == 1])))
+                    #print('num    : ' + str(len(day.creatures)))
+                    #print()
+
+                    if table_type == 'avgs_with_food_count_and_time':
+                        avg = statistics.mean([x.fight_chance for x in day.creatures])
+                        if day.date + 1 in nums_days_to_try:
+                            sample_results.append(avg)
+                    elif table_type == 'show_distribution':
+                        if day.date + 1 in nums_days_to_try:
+                            sample_results = (
+                                [x.fight_chance for x in day.creatures]
+                            )
+
+                    #print("Average fight chance: " + str(avg))
+
+                    #print('Num shares: ' + str(len(day.morning_contests) + len(day.afternoon_contests)))
+                    #contests = day.morning_contests + day.afternoon_contests
+                    #shares = [x for x in contests if x.outcome == 'share']
+                    #takes = [x for x in contests if x.outcome == 'take']
+                    #fights = [x for x in contests if x.outcome == 'fight']
+                    #print('Num shares: ' + str(len(shares)))
+                    #print('Num takes: ' + str(len(takes)))
+                    #print('Num fights: ' + str(len(fights)))
+                    #for food in day.food_objects:
+                    #    print('Eaten = ' + str(food.eaten_time) + ' Creatures = ' + str(food.interested_creatures))
+                    #print()
+
+                samples.append(sample_results)
+
+            '''print()
             for sample in samples:
+                to_print = ["{0:.2f}".format(round(x, 2)) for x in sample]
+                print(to_print)
+            print()'''
+
+            if table_type == 'avgs_with_food_count_and_time':
                 results_str = '{0: <4}'.format(food_count) + ' | '
-                for i in range(quantile_count + 1): #1 to catch 100%
-                    num_in_quantile = 0
-                    for cre_fight_chance in sample: #Good naming! ...
-                        if cre_fight_chance < (i + 1) / quantile_count and \
-                           cre_fight_chance >= i / quantile_count:
-                            num_in_quantile += 1
+                for i in range(len(nums_days_to_try)):
+                    samples_at_day = []
+                    for sample in samples:
+                        samples_at_day.append(sample[i])
 
-                    results_str += '{0: ^5}'.format(num_in_quantile) + \
-                                        ' | '
+                    results_str += "{0:.2f}".format(round(statistics.mean(samples_at_day),2)) + \
+                                    ' +/- ' + \
+                                    "{0:.2f}".format(round(statistics.stdev(samples_at_day),2)) + \
+                                    ' | '
+            elif table_type == 'show_distribution':
+                #print(samples)
+                for sample in samples:
+                    results_str = '{0: <4}'.format(food_count) + ' | '
+                    for i in range(quantile_count + 1): #1 to catch 100%
+                        num_in_quantile = 0
+                        for cre_fight_chance in sample: #Good naming! ...
+                            if cre_fight_chance < (i + 1) / quantile_count and \
+                               cre_fight_chance >= i / quantile_count:
+                                num_in_quantile += 1
 
+                        results_str += '{0: ^5}'.format(num_in_quantile) + \
+                                            ' | '
+
+                    print(results_str)
+
+            if table_type == 'avgs_with_food_count_and_time':
                 print(results_str)
 
-        if table_type == 'avgs_with_food_count_and_time':
-            print(results_str)
+    #sim_test
 
-    #print("{0:.2f}".format(round(a,2)))
+    def animation_test():
+        world = hawk_dove.World(food_count = 61)
+        num_days = 4
+        for i in range(num_days):
+            world.new_day()
+
+        drawn_world = drawn_contest_world.DrawnWorld(
+            sim = world
+        )
+
+        drawn_world.add_to_blender(appear_time = 1)
+        drawn_world.animate_days(
+            start_time = 2,
+            first_animated_day = 0,
+            last_animated_day = 4
+        )
+
+    animation_test()
 
 def main():
     """Use this as a test scene"""

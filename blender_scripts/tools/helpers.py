@@ -450,6 +450,35 @@ def make_angles_within_pi(angle_to_change = None, target_angle = None):
         angle_to_change += 2 * math.pi
     return angle_to_change
 
+
+def circle_grid(
+    num_rings = 10,
+    dot_count_multiple = 6,
+    rot_add = 6,
+):
+    locations = []
+    for i in range(num_rings):
+        if i == 0:
+            num_dots = 1
+        else:
+            num_dots = i * dot_count_multiple
+
+        if num_rings > 1:
+            radius = i / (num_rings - 1)
+        else:
+            radius = 0
+        for j in range(num_dots):
+            angle = j / num_dots * 2 * math.pi + (i * rot_add * math.pi / 180)
+            loc = [
+                radius * math.cos(angle),
+                radius * math.sin(angle),
+                0
+            ]
+
+            locations.append(loc)
+
+    return locations
+
 '''
 Mesh intersections
 '''

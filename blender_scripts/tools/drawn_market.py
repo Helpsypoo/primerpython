@@ -805,7 +805,7 @@ class DrawnMarket(Bobject):
 
     def draw_sellers(self, start_time = None, end_time = None, agents = None, session_index = 0):
         if start_time == None:
-            raise Warning('Need start_time for move_expected_prices')
+            raise Warning('Need start_time for draw_sellers')
         if end_time == None:
             end_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
 

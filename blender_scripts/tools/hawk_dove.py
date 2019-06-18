@@ -1,10 +1,19 @@
 from random import random, choice
 
 
-DEFAULT_NUM_CREATURES = 1
-MUTATION_CHANCE = 0.1
+DEFAULT_NUM_CREATURES = 6
+MUTATION_CHANCE = 0.05
 MUTATION_VARIATION = 0.1
-TRAIT_MODE = 'float' #float or binary
+TRAIT_MODE = 'binary' #float or binary
+FOOD_VALUE = 2
+BASE_FOOD = 0
+
+SHARE_FRACTION = 1/2
+TAKE_FRACTION = 3/4
+SUCKER_FRACTION = 1/4
+FIGHT_FRACTION = 1/2
+FIGHT_COST = 16/16
+
 
 class Creature(object):
     """docstring for Creature."""
@@ -60,6 +69,7 @@ class Day(object):
                 target_food.interested_creatures.append(cre)
                 cre.days_log[-1]['morning_food'] = target_food
                 if len(target_food.interested_creatures) == 2:
+                    #Food is marked as eaten during the contest
                     self.morning_contests.append(
                         Contest(
                             food = target_food,
@@ -67,6 +77,8 @@ class Day(object):
                             time = 'morning'
                         )
                     )
+                if len(target_food.interested_creatures) == 3:
+                    raise Warning("Too many blobs on the dance floor")
 
         #Lone creatures eat their food
         for food in [x for x in self.food_objects if x.eaten == False]:
@@ -74,12 +86,12 @@ class Day(object):
             if num == 1:
                 food.eaten = True
                 food.eaten_time = 'morning'
-                food.interested_creatures[0].days_log[-1]['score'] += 1
+                food.interested_creatures[0].days_log[-1]['score'] += FOOD_VALUE
             elif num > 1:
                 raise Warning('Food has ' + str(num) + ' interested creatures. Too many.')
 
 
-        #Afternoon
+        '''#Afternoon
         for cre in self.creatures:
             uneaten = [x for x in self.food_objects if x.eaten == False]
             if len(uneaten) > 0:
@@ -103,12 +115,11 @@ class Day(object):
                 food.eaten_time = 'afternoon'
                 food.interested_creatures[0].days_log[-1]['score'] += 1
             elif num > 1:
-                raise Warning('Food has ' + str(num) + ' interested creatures. Too many.')
+                raise Warning('Food has ' + str(num) + ' interested creatures. Too many.')'''
 
         self.update_creatures()
 
     def update_creatures(self):
-        #TODO: make this depend on food collection and contests
         next = []
 
         for cre in self.creatures:
@@ -169,20 +180,22 @@ class Contest(object):
 
         #Determine payouts
         if strat_0 == 'fight' and strat_1 == 'fight':
-            winner_index = choice([0, 1])
-            self.contestants[winner_index].days_log[-1]['score'] += 1
-            self.contestants[0].days_log[-1]['score'] -= 0.75
-            self.contestants[1].days_log[-1]['score'] -= 0.75
+            #winner_index = choice([0, 1])
+            #self.contestants[winner_index].days_log[-1]['score'] += 1
+            self.contestants[0].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * FIGHT_FRACTION - FIGHT_COST
+            self.contestants[1].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * FIGHT_FRACTION - FIGHT_COST
             self.outcome = 'fight'
         if strat_0 == 'fight' and strat_1 == 'share':
-            self.contestants[0].days_log[-1]['score'] += 1
+            self.contestants[0].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * TAKE_FRACTION
+            self.contestants[1].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * SUCKER_FRACTION
             self.outcome = 'take'
         if strat_0 == 'share' and strat_1 == 'fight':
-            self.contestants[1].days_log[-1]['score'] += 1
+            self.contestants[1].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * TAKE_FRACTION
+            self.contestants[0].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * SUCKER_FRACTION
             self.outcome = 'take'
         if strat_0 == 'share' and strat_1 == 'share':
-            self.contestants[0].days_log[-1]['score'] += 0.5
-            self.contestants[1].days_log[-1]['score'] += 0.5
+            self.contestants[0].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * SHARE_FRACTION
+            self.contestants[1].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * SHARE_FRACTION
             self.outcome = 'share'
 
         self.food.eaten = True

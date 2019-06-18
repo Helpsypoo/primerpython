@@ -100,9 +100,6 @@ class Blobject(Bobject):
                 frame = end_frame
             )
 
-
-
-
     def add_beard(
         self,
         mat = None,
