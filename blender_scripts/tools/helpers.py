@@ -443,10 +443,10 @@ def do_segments_intersect(seg1, seg2):
 
     #Doesn't handle the collinear case
 
-def make_angles_within_pi(angle_to_change = None, target_angle = None):
-    while angle_to_change - target_angle > math.pi:
+def make_angles_within_pi(angle_to_change = None, reference_angle = None):
+    while angle_to_change - reference_angle > math.pi:
         angle_to_change -= 2 * math.pi
-    while angle_to_change - target_angle < -math.pi:
+    while angle_to_change - reference_angle < -math.pi:
         angle_to_change += 2 * math.pi
     return angle_to_change
 

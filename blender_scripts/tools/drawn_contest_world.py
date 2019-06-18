@@ -309,7 +309,7 @@ class DrawnWorld(Bobject):
                     target_food = entry['morning_food']
 
             if cre == target_food.interested_creatures[0]:
-                cre.drawn_creature.move_to(
+                cre.drawn_creature.walk_to(
                     start_time = self.elapsed_time,
                     end_time = self.elapsed_time + self.phase_durations['creatures_go_out'],
                     new_location = [
@@ -324,7 +324,7 @@ class DrawnWorld(Bobject):
                     ]
                 )
             elif cre == target_food.interested_creatures[1]:
-                cre.drawn_creature.move_to(
+                cre.drawn_creature.walk_to(
                     start_time = self.elapsed_time,
                     end_time = self.elapsed_time + self.phase_durations['creatures_go_out'],
                     new_location = [
@@ -358,14 +358,14 @@ class DrawnWorld(Bobject):
 
         #creatures go home
         for cre in day.creatures:
-            cre.drawn_creature.move_to(
+            cre.drawn_creature.walk_to(
                 start_time = self.elapsed_time,
                 end_time = self.elapsed_time + self.phase_durations['creatures_go_home'],
                 new_location = cre.home_loc,
                 new_angle = [
                     cre.drawn_creature.ref_obj.rotation_euler[0],
                     cre.drawn_creature.ref_obj.rotation_euler[1],
-                    math.atan2(cre.home_loc[0], cre.home_loc[1]) - math.pi / 2
+                    math.atan2(cre.home_loc[1], cre.home_loc[0]) - math.pi / 2
                 ]
             )
         #TODO: update based on phase durations

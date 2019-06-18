@@ -517,6 +517,24 @@ def test():
 
     animation_test()
 
+    def walk_to_test():
+        bleb = blobject.Blobject(
+            scale = 4,
+            location = [-8, 0, 0],
+            rotation_euler = [math.pi / 2, 0, 0]
+        )
+
+        bleb.add_to_blender()
+
+        bleb.walk_to(
+            new_location = [8, 0, 0],
+            new_angle = [math.pi / 2, 0, - math.pi / 2],
+            start_time = 3,
+            end_time = 5
+        )
+
+    #walk_to_test()
+
 def main():
     """Use this as a test scene"""
     #tex_test()

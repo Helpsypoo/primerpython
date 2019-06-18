@@ -38,6 +38,102 @@ class Blobject(Bobject):
                 0.398
             ]
 
+    def walk_to(
+        self,
+        start_time = None,
+        end_time = None,
+        new_location = None,
+        new_angle = None,
+        prep_frac = 0.1,
+        turn_frac = 0.2
+    ):
+        if start_time == None:
+            raise Warning('Need start time for walk_to')
+        if end_time == None:
+            end_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE
+        duration = end_time - start_time
+
+        if prep_frac > 0.5:
+            raise Warning('prep_frac cannot be greater than 0.5')
+        if turn_frac > 0.5:
+            raise Warning('turn_frac cannot be greater than 0.5')
+
+        if new_location == None:
+            raise Warning('Need new_location for walk_to')
+
+        if new_angle == None:
+            new_angle = list(self.ref_obj.rotation_euler)
+
+        vector = add_lists_by_element(
+            new_location,
+            self.ref_obj.location,
+            subtract = True
+        )
+
+        #I'm going to cheat on my facing-rotations and just do the most common cases
+
+        #Ground is xz-plane case
+        if self.ref_obj.rotation_euler[0] == 0:
+            heading_angle = [
+                0,
+                math.atan2(vector[0], vector[2]),
+                0,
+            ]
+            heading_angle[1] = make_angles_within_pi(
+                angle_to_change = heading_angle[1],
+                reference_angle = self.ref_obj.rotation_euler[1]
+            )
+            new_angle[1] = make_angles_within_pi(
+                angle_to_change = new_angle[1],
+                reference_angle = heading_angle[1]
+            )
+
+        #Ground is xy-plane case
+        elif abs(self.ref_obj.rotation_euler[0] - math.pi / 2) < 0.001:
+            heading_angle = [
+                math.pi / 2,
+                0,
+                math.atan2(vector[1], vector[0]) + math.pi / 2,
+            ]
+            heading_angle[2] = make_angles_within_pi(
+                angle_to_change = heading_angle[2],
+                reference_angle = self.ref_obj.rotation_euler[2]
+            )
+
+            new_angle[2] = make_angles_within_pi(
+                angle_to_change = new_angle[2],
+                reference_angle = heading_angle[2]
+            )
+
+        else:
+            print(self.ref_obj.rotation_euler[0])
+            print(math.pi / 2)
+            raise Warning('walk_to not defined for this starting orientation')
+
+
+
+        self.move_to(
+            new_angle = heading_angle,
+            start_time = start_time,
+            end_time = start_time + duration * turn_frac
+        )
+
+        self.move_to(
+            new_location = new_location,
+            start_time = start_time + duration * prep_frac,
+            end_time = end_time - duration * prep_frac,
+        )
+
+        self.move_to(
+            new_angle = new_angle,
+            start_time = end_time - duration * turn_frac,
+            end_time = end_time
+        )
+
+
+
+
+
     def move_head(
         self,
         rotation_quaternion = None,
