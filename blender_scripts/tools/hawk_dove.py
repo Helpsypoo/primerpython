@@ -1,8 +1,8 @@
-from random import random, choice
-
+from random import random, choice, shuffle
+from helpers import save_sim_result
 
 DEFAULT_NUM_CREATURES = 6
-MUTATION_CHANCE = 0.05
+MUTATION_CHANCE = 0#.05
 MUTATION_VARIATION = 0.1
 TRAIT_MODE = 'binary' #float or binary
 FOOD_VALUE = 2
@@ -35,7 +35,6 @@ class Food(object):
         self.index = index
         self.interested_creatures = []
         self.eaten = False
-        self.eaten_time = None
 
 class Day(object):
     """docstring for Day."""
@@ -48,8 +47,7 @@ class Day(object):
         for i in range(food_count):
             self.food_objects.append(Food(index = i))
         self.creatures = creatures
-        self.morning_contests = []
-        self.afternoon_contests = []
+        self.contests = []
 
     def simulate_day(self):
         #Morning
@@ -57,8 +55,7 @@ class Day(object):
             cre.days_log.append(
                 {
                     'date' : self.date,
-                    'morning_food' : None,
-                    'afternoon_food' : None,
+                    'food' : None,
                     'score' : 0
                 }
             )
@@ -67,14 +64,14 @@ class Day(object):
             if len(uneaten) > 0:
                 target_food = choice(uneaten)
                 target_food.interested_creatures.append(cre)
-                cre.days_log[-1]['morning_food'] = target_food
+                cre.days_log[-1]['food'] = target_food
                 if len(target_food.interested_creatures) == 2:
                     #Food is marked as eaten during the contest
-                    self.morning_contests.append(
+                    self.contests.append(
                         Contest(
                             food = target_food,
                             contestants = target_food.interested_creatures,
-                            time = 'morning'
+                            date = self.date
                         )
                     )
                 if len(target_food.interested_creatures) == 3:
@@ -85,7 +82,6 @@ class Day(object):
             num = len(food.interested_creatures)
             if num == 1:
                 food.eaten = True
-                food.eaten_time = 'morning'
                 food.interested_creatures[0].days_log[-1]['score'] += FOOD_VALUE
             elif num > 1:
                 raise Warning('Food has ' + str(num) + ' interested creatures. Too many.')
@@ -156,20 +152,20 @@ class Day(object):
                     )
                 )
 
-
-
         self.next_creatures = next
+
 
 class Contest(object):
     """docstring for Contest."""
 
-    def __init__(self, contestants = None, food = None, time = None):
+    def __init__(self, contestants = None, food = None, date = None):
         super().__init__()
         self.contestants = contestants
         self.food = food
-        self.time = time
+        self.date = date
 
         self.outcome = None
+        self.winner = None
 
         #Determine strategies
         strat_0 = strat_1 = 'share'
@@ -189,17 +185,18 @@ class Contest(object):
             self.contestants[0].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * TAKE_FRACTION
             self.contestants[1].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * SUCKER_FRACTION
             self.outcome = 'take'
+            self.winner = self.contestants[0]
         if strat_0 == 'share' and strat_1 == 'fight':
             self.contestants[1].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * TAKE_FRACTION
             self.contestants[0].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * SUCKER_FRACTION
             self.outcome = 'take'
+            self.winner = self.contestants[1]
         if strat_0 == 'share' and strat_1 == 'share':
             self.contestants[0].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * SHARE_FRACTION
             self.contestants[1].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * SHARE_FRACTION
             self.outcome = 'share'
 
         self.food.eaten = True
-        self.food.eaten_time = time
 
 class World(object):
     """docstring for World."""
@@ -214,7 +211,13 @@ class World(object):
 
         self.calendar = []
 
-    def new_day(self, food_count = None):
+    def new_day(
+        self,
+        food_count = None,
+        save = False,
+        filename = None,
+        filename_seed = None
+    ):
         if len(self.calendar) == 0:
             creatures = self.initial_creatures
         else:
@@ -230,15 +233,19 @@ class World(object):
         )
 
         day.simulate_day()
-
         self.calendar.append(day)
+
+        if save == True:
+            save_sim_result(self, filename, filename_seed, type = 'HAWKDOVE')
 
 
     def generate_creatures(self):
         self.initial_creatures = []
         for i in range(DEFAULT_NUM_CREATURES):
             cre = Creature(
-                fight_chance = 0
+                fight_chance = 0#i % 2
             )
 
             self.initial_creatures.append(cre)
+
+        shuffle(self.initial_creatures)

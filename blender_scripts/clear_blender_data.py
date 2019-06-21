@@ -8,7 +8,7 @@ import imp
 imp.reload(helpers)
 from helpers import print_time_report
 
-def clear_blender():
+def clear_blender_data():
     print('Clearing Blender data')
     for bpy_data_iter in (
                 bpy.data.objects,
@@ -24,6 +24,7 @@ def clear_blender():
         for id_data in bpy_data_iter:
             bpy_data_iter.remove(id_data)
 
+    #bpy.ops.wm.read_homefile(use_empty=True)
     #bpy.ops.wm.read_homefile(use_empty=True)
     #bpy.context.scene.update()
 

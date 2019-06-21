@@ -18,7 +18,7 @@ import tex_bobject
 import constants
 
 
-import clear
+import clear_blender_data
 #import alone doesn't check for changes in cached files
 imp.reload(drawn_world)
 imp.reload(tex_bobject)
@@ -79,7 +79,7 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = 
     #other stuff down the line. I don't know how to make the context not None.
     #bpy.ops.wm.read_homefile()
     if clear_blender == True:
-        clear.clear_blender()
+        clear_blender_data.clear_blender_data()
 
     scn = bpy.context.scene
     scn.render.engine = 'CYCLES'
@@ -338,11 +338,31 @@ def test():
         print('Initial bimodal distribution')
 
         food_counts_to_try = [
+            #37,
+            #37,
+            #37,
+            #37,
+            #37,
+            #37,
+            #37,
+            #37,
+            #37,
             #50,
+            61,
+            61,
+            61,
+            61,
+            61,
+            61,
+            61,
+            61,
+            61,
+            61,
+            61,
             #100,
             #150,
             #200,
-            300,
+            #300,
             #400,
             #500,
             #600,
@@ -353,8 +373,17 @@ def test():
         ]
         nums_days_to_try = [
             #1,
-            #10,
-            #20,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
             #30,
             #40,
             #50,
@@ -363,7 +392,7 @@ def test():
             #200,
             #300,
             #400,
-            500,
+            #500,
             #600,
             #700,
             #800,
@@ -371,12 +400,12 @@ def test():
             #999,
             #1999
         ]
-        num_samples = 10
+        num_samples = 1
         quantile_count = 10
 
 
-        #table_type = 'avgs_with_food_count_and_time'
-        table_type = 'show_distribution'
+        table_type = 'avgs_with_food_count_and_time'
+        #table_type = 'show_distribution'
 
         #Table where rows are food counts and columns are day counts
         #Each cell show mean and stddev of samples
@@ -473,10 +502,13 @@ def test():
                     for sample in samples:
                         samples_at_day.append(sample[i])
 
-                    results_str += "{0:.2f}".format(round(statistics.mean(samples_at_day),2)) + \
-                                    ' +/- ' + \
-                                    "{0:.2f}".format(round(statistics.stdev(samples_at_day),2)) + \
-                                    ' | '
+                    results_str += "{0:.2f}".format(round(statistics.mean(samples_at_day),2))
+                    if len(samples_at_day) > 1:
+                        results_str += ' +/- ' + \
+                                    "{0:.2f}".format(round(statistics.stdev(samples_at_day),2))
+
+                    results_str += ' | '
+
             elif table_type == 'show_distribution':
                 #print(samples)
                 for sample in samples:
@@ -496,23 +528,33 @@ def test():
             if table_type == 'avgs_with_food_count_and_time':
                 print(results_str)
 
-    #sim_test
+    #sim_test()
 
     def animation_test():
-        world = hawk_dove.World(food_count = 61)
-        num_days = 4
-        for i in range(num_days):
-            world.new_day()
+        new_sim = False
+
+        if new_sim == True:
+            world = hawk_dove.World(food_count = 61)
+            num_days = 10
+
+            for i in range(num_days):
+                save = False
+                if i == num_days - 1:
+                    save = True
+                world.new_day(save = save)
+        else:
+            world = 'HAWKDOVE20190620T212425'
 
         drawn_world = drawn_contest_world.DrawnWorld(
-            sim = world
+            sim = world,
+            loud = True
         )
 
         drawn_world.add_to_blender(appear_time = 1)
         drawn_world.animate_days(
             start_time = 2,
             first_animated_day = 0,
-            last_animated_day = 4
+            last_animated_day = 10
         )
 
     animation_test()
@@ -541,7 +583,6 @@ def main():
     """"""
 
     #circle_grid()
-
     test()
     #draw_scenes_from_file(scds, clear = False)
     #draw_scenes_from_file(supply_and_demand)

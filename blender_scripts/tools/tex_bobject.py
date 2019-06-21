@@ -26,7 +26,7 @@ imp.reload(tex_complex)
 
 import draw_scenes
 
-import clear
+#import clear
 
 class TexBobject(SVGBobject):
     def __init__(self, *expressions, typeface = 'default', **kwargs):

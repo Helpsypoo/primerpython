@@ -8,6 +8,7 @@ from random import random, uniform
 from copy import copy, deepcopy
 import time
 import datetime
+import pickle
 
 import constants
 imp.reload(constants)
@@ -16,6 +17,46 @@ from constants import *
 #sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts')
 import bobject
 import winsound
+
+'''
+Saving
+'''
+def save_sim_result(sim, filename, filename_seed, type = 'SIM'):
+    if filename != None:
+        name = filename
+    elif filename_seed != None:
+        k = 0
+        directory = os.fsencode(SIM_DIR)
+        while k <= len(os.listdir(directory)):
+            #print('looking in dir')
+            name_to_check = str(filename_seed) + '_' + str(k)
+            already_exists = False
+            for existing_file in os.listdir(directory):
+                existing_file_name = os.fsdecode(existing_file)[:-4]
+                #print(name_to_check)
+                #print(existing_file_name)
+                if existing_file_name == name_to_check:
+                    already_exists = True
+                    #print(already_exists)
+            if already_exists:
+                k += 1
+            else:
+                name = name_to_check
+                break
+    else:
+        now = datetime.datetime.now()
+        name = type + now.strftime('%Y%m%dT%H%M%S')
+    #name = 'test'
+    result = os.path.join(
+        SIM_DIR,
+        name
+    ) + ".pkl"
+    if not os.path.exists(result):
+        print("Writing simulation to %s" % (result))
+        with open(result, "wb") as outfile:
+            pickle.dump(sim, outfile, pickle.HIGHEST_PROTOCOL)
+    else:
+        raise Warning(str(result) + " already exists")
 
 '''
 Blender object functions
@@ -287,10 +328,14 @@ def add_lists_by_element(list1, list2, subtract = False):
             list3[i] *= -1
     return list(map(sum, zip(list1, list3)))
 
-def mult_lists_by_element(vec1, vec2):
+def mult_lists_by_element(vec1, vec2, divide = False):
     vec3 = []
-    for x1, x2, in zip(vec1, vec2):
-        vec3.append(x1 * x2)
+    if divide == False:
+        for x1, x2, in zip(vec1, vec2):
+            vec3.append(x1 * x2)
+    else:
+        for x1, x2, in zip(vec1, vec2):
+            vec3.append(x1 / x2)
 
     return vec3
 

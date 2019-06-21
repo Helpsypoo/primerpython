@@ -17,7 +17,7 @@ imp.reload(helpers)
 from helpers import *
 
 
-BASE_CREATURE_SCALE = 0.05
+BASE_CREATURE_SCALE = 0.04
 CREATURE_HEIGHT_FACTOR = 0.8
 #CREATURE_HOME_DISTANCE = 1.2
 
@@ -29,9 +29,15 @@ FOOD_EDGE_RATIO = 0.8
 CREATURE_MOVE_DURATION = 0.5
 PAUSE_LENGTH = 0.25
 
+'''
+Improvements
+- Cascade going out/in
+- Make stationary point not a creature
+- Add vines to food plants
+'''
+
 class DrawnCreature(Blobject):
     """docstring for DrawnCreature."""
-
     def __init__(
         self,
         creature = None,
@@ -41,6 +47,23 @@ class DrawnCreature(Blobject):
         self.creature = creature
         if self.creature == None:
             raise Warning('DrawnCreature needs creature.')
+
+        self.apply_material_by_fight_chance()
+
+    def apply_material_by_fight_chance(self):
+        color = mix_colors(
+            COLORS_SCALED[2],
+            COLORS_SCALED[5],
+            self.creature.fight_chance
+        )
+
+        self.color_shift(
+            duration_time = None,
+            color = color,
+            start_time = - 1 / FRAME_RATE,
+            shift_time = 1 / FRAME_RATE,
+            obj = self.ref_obj.children[0].children[0]
+        )
 
 class DrawnFood(Bobject):
     def __init__(self, object_model, **kwargs):
@@ -95,7 +118,7 @@ class DrawnWorld(Bobject):
         self.phase_durations = phase_durations
 
         #Initialize drawn_creature property of creature objects
-        for day in sim.calendar:
+        for day in self.sim.calendar:
             for cre in day.creatures:
                 cre.drawn_creature = None
 
@@ -112,6 +135,14 @@ class DrawnWorld(Bobject):
             color = 'color6'
         )
         self.food_object_model = food_bobject_model.ref_obj.children[0]
+
+        #Another model for half food, since food splits
+        half_food_bobject_model = import_object(
+            'halfgoodicosphere', 'primitives',
+            color = 'color6'
+        )
+        self.half_food_object_model = half_food_bobject_model.ref_obj.children[0]
+
 
         self.linked_graph = None
 
@@ -278,6 +309,9 @@ class DrawnWorld(Bobject):
 
             constraint = food1.ref_obj.constraints.new('CHILD_OF')
             constraint.target = self.ref_obj
+            constraint.use_rotation_x = False
+            constraint.use_rotation_y = False
+            constraint.use_rotation_z = False
 
             food1.add_to_blender(appear_time = start_time + i * delay)
             pair.drawn_food = [food1]
@@ -295,6 +329,9 @@ class DrawnWorld(Bobject):
 
             constraint = food2.ref_obj.constraints.new('CHILD_OF')
             constraint.target = self.ref_obj
+            constraint.use_rotation_x = False
+            constraint.use_rotation_y = False
+            constraint.use_rotation_z = False
 
             food2.add_to_blender(appear_time = start_time + i * delay)
             pair.drawn_food.append(food2)
@@ -306,7 +343,7 @@ class DrawnWorld(Bobject):
             cre.home_loc = list(cre.drawn_creature.ref_obj.location)
             for entry in cre.days_log:
                 if entry['date'] == day.date:
-                    target_food = entry['morning_food']
+                    target_food = entry['food']
 
             if cre == target_food.interested_creatures[0]:
                 cre.drawn_creature.walk_to(
@@ -344,15 +381,210 @@ class DrawnWorld(Bobject):
         self.elapsed_time += self.phase_durations['creatures_go_out'] + self.phase_durations['pause_before_contest']
 
         #Resolve contests
-        for cre in day.creatures:
-            for entry in cre.days_log:
-                if entry['date'] == day.date:
-                    target_food = entry['morning_food']
+        dur = self.phase_durations['contest']
+        for contest in day.contests:
+            if contest.outcome == 'share':
+                #print("Share on day " + str(contest.date))
+                for i in range(2):
+                    food = contest.food.drawn_food[i]
+                    eater = contest.contestants[i].drawn_creature
 
-            if len(target_food.drawn_food) > 0:
-                target_food.drawn_food[0].disappear(disappear_time = self.elapsed_time + self.phase_durations['contest'])
-                target_food.drawn_food[1].disappear(disappear_time = self.elapsed_time + self.phase_durations['contest'])
-                target_food.drawn_food = []
+                    self.transfer_food_to_creature(
+                        food_bobj = food,
+                        creature_bobj = eater,
+                        start_time = self.elapsed_time
+                    )
+                    #Eat animation
+                    self.animate_eating(
+                        food = food,
+                        eater = eater,
+                        start_time = self.elapsed_time,
+                        eat_rotation = 30 * math.pi / 180,
+                        dur = dur / 2 #If they cooperate, it takes half time
+                    )
+
+
+            elif contest.outcome == 'take':
+                #print("Take on day " + str(contest.date))
+
+                loser_index = 0
+                taker_index = contest.contestants.index(contest.winner)
+                if taker_index == 0:
+                    loser_index = 1
+
+                #print(taker_index)
+                #print(loser_index)
+
+                taker = contest.contestants[taker_index].drawn_creature
+                loser = contest.contestants[loser_index].drawn_creature
+
+                food = contest.food.drawn_food[loser_index]
+
+                halves = []
+                for i in range(2):
+                    half = DrawnFood(
+                        object_model = self.half_food_object_model,
+                        location = food.ref_obj.location,
+                        scale = 0,
+                        #rotation_euler = [- math.pi / 2 , 0, 0],
+                        rotation_euler = [0, (-1) ** (i + loser_index) * math.pi / 2, 0],
+                        mat = 'color7'
+                    )
+                    half.add_to_blender(
+                        appear_frame = self.elapsed_time * FRAME_RATE,
+                        transition_time = 1
+                    )
+                    constraint = half.ref_obj.constraints.new('CHILD_OF')
+                    constraint.target = self.ref_obj
+                    constraint.use_rotation_x = False
+                    constraint.use_rotation_y = False
+                    constraint.use_rotation_z = False
+                    half.move_to(
+                        start_frame = self.elapsed_time * FRAME_RATE,
+                        end_frame = self.elapsed_time * FRAME_RATE + 1,
+                        new_scale = food.ref_obj.scale
+                    )
+
+                    halves.append(half)
+
+
+                food.move_to(
+                    start_frame = self.elapsed_time * FRAME_RATE,
+                    end_frame = self.elapsed_time * FRAME_RATE + 1,
+                    new_scale = 0
+                )
+
+                for i, half in enumerate(halves):
+                    self.transfer_food_to_creature(
+                        food_bobj = half,
+                        creature_bobj = contest.contestants[(taker_index + i) % 2].drawn_creature,
+                        start_time = self.elapsed_time
+                    )
+                    #Eat animation
+                    self.animate_eating(
+                        food = half,
+                        eater = contest.contestants[(taker_index + i) % 2].drawn_creature,
+                        start_time = self.elapsed_time,
+                        eat_rotation = (-1) ** ((1 + i) % 2) * 30 * math.pi / 180,
+                        dur = dur / 2 #If they cooperate, it takes half time
+                    )
+
+                #Other food
+                food = contest.food.drawn_food[taker_index]
+                eater = contest.contestants[taker_index].drawn_creature
+
+                self.transfer_food_to_creature(
+                    food_bobj = food,
+                    creature_bobj = eater,
+                    start_time = self.elapsed_time + dur / 2
+                )
+                #Eat animation
+                self.animate_eating(
+                    food = food,
+                    eater = eater,
+                    start_time = self.elapsed_time + dur / 2,
+                    eat_rotation = 30 * math.pi / 180,
+                    dur = dur / 2 #If they cooperate, it takes half time
+                )
+
+                loser.wince(
+                    start_time = self.elapsed_time + dur / 2,
+                    end_time = self.elapsed_time + dur + self.phase_durations['pause_before_home'],
+                )
+                winner.evil_pose(
+                    start_time = self.elapsed_time + dur / 2,
+                    end_time = self.elapsed_time + dur + self.phase_durations['pause_before_home'],
+                )
+
+            elif contest.outcome == 'fight':
+                #print("Take on day " + str(contest.date))
+
+                for cre in contest.contestants:
+                    cre.drawn_creature.blob_wave(
+                        start_time = self.elapsed_time,
+                        duration = dur / 3
+                    )
+                    loser.wince(
+                        start_time = self.elapsed_time + dur,
+                        end_time = self.elapsed_time + dur + self.phase_durations['pause_before_home'],
+                    )
+
+                for j in range(2):
+                    food = contest.food.drawn_food[j]
+                    halves = []
+                    for i in range(2):
+                        half = DrawnFood(
+                            object_model = self.half_food_object_model,
+                            location = food.ref_obj.location,
+                            scale = 0,
+                            #rotation_euler = [- math.pi / 2 , 0, 0],
+                            rotation_euler = [0, (-1) ** (i) * math.pi / 2, 0],
+                            mat = 'color7'
+                        )
+                        half.add_to_blender(
+                            appear_frame = self.elapsed_time * FRAME_RATE,
+                            transition_time = 1
+                        )
+                        constraint = half.ref_obj.constraints.new('CHILD_OF')
+                        constraint.target = self.ref_obj
+                        constraint.use_rotation_x = False
+                        constraint.use_rotation_y = False
+                        constraint.use_rotation_z = False
+                        half.move_to(
+                            start_frame = self.elapsed_time * FRAME_RATE,
+                            end_frame = self.elapsed_time * FRAME_RATE + 1,
+                            new_scale = food.ref_obj.scale
+                        )
+
+                        halves.append(half)
+
+
+                    food.move_to(
+                        start_frame = self.elapsed_time * FRAME_RATE,
+                        end_frame = self.elapsed_time * FRAME_RATE + 1,
+                        new_scale = 0
+                    )
+
+                    for i, half in enumerate(halves):
+                        self.transfer_food_to_creature(
+                            food_bobj = half,
+                            creature_bobj = contest.contestants[i % 2].drawn_creature,
+                            start_time = self.elapsed_time + dur / 3 + j * dur / 3
+                        )
+                        #Eat animation
+                        self.animate_eating(
+                            food = half,
+                            eater = contest.contestants[i % 2].drawn_creature,
+                            start_time = self.elapsed_time + dur / 3 + j * dur / 3,
+                            eat_rotation = (-1) ** ((i + j) % 2) * 30 * math.pi / 180,
+                            dur = dur / 3 #If they cooperate, it takes half time
+                        )
+
+            else:
+                raise Warning('Unknown contest outcome')
+
+        for food in day.food_objects:
+            if len(food.interested_creatures) == 1:
+                eater = food.interested_creatures[0].drawn_creature
+                for i in range(2):
+                    piece = food.drawn_food[i]
+
+                    self.transfer_food_to_creature(
+                        food_bobj = piece,
+                        creature_bobj = eater,
+                        start_time = self.elapsed_time + i * dur / 2
+                    )
+                    #Eat animation
+                    self.animate_eating(
+                        food = piece,
+                        eater = eater,
+                        start_time = self.elapsed_time + i * dur / 2,
+                        dur = dur / 2, #If they cooperate, it takes half time
+                        eat_rotation = (-1) ** i * 30 * math.pi / 180
+                    )
+
+
+
 
         self.elapsed_time += self.phase_durations['contest'] + self.phase_durations['pause_before_home']
 
@@ -416,3 +648,141 @@ class DrawnWorld(Bobject):
                         d_food.disappear(disappear_time = self.elapsed_time)
 
                 self.elapsed_time += self.phase_durations['food_disappear']
+
+    def transfer_food_to_creature(
+        self,
+        food_bobj = None,
+        creature_bobj = None,
+        start_time = None
+    ):
+        if food_bobj == None:
+            raise Warning('Need food_bobj for transfer_food_to_creatures')
+        if creature_bobj == None:
+            raise Warning('Need creature_bobj for transfer_food_to_creatures')
+        if start_time == None:
+            raise Warning('Need start_time for transfer_food_to_creatures')
+
+        d_food = food_bobj
+        eater = creature_bobj
+
+        world_const = d_food.ref_obj.constraints[0]
+        #Make new child_of constraint binding food to eater
+        eater_const = d_food.ref_obj.constraints.new('CHILD_OF')
+        eater_const.target = eater.ref_obj
+        eater_const.influence = 0
+
+        #Change strengths of constraints
+        world_const.keyframe_insert(
+            data_path = 'influence',
+            frame = (start_time) * FRAME_RATE
+        )
+        world_const.influence = 0
+        world_const.keyframe_insert(
+            data_path = 'influence',
+            frame = (start_time) * FRAME_RATE + 1
+        )
+
+        eater_const.keyframe_insert(
+            data_path = 'influence',
+            frame = (start_time) * FRAME_RATE
+        )
+        eater_const.influence = 1
+        eater_const.keyframe_insert(
+            data_path = 'influence',
+            frame = (start_time) * FRAME_RATE + 1
+        )
+
+        #Change position of food to work in new reference frame
+        d_food.ref_obj.keyframe_insert(
+            data_path = 'location',
+            frame = (start_time) * FRAME_RATE
+        )
+
+        old_loc = d_food.ref_obj.location
+
+        rel = d_food.ref_obj.location - eater.ref_obj.location
+        ang = eater.ref_obj.rotation_euler[2]
+        sca = eater.ref_obj.scale
+        #The rotation matrix is wonky because the creature bobjects
+        #are actually rotated 90 degrees about their x-axis
+        #Robust!
+        loc_in_new_ref_frame = [
+            (rel[0] * math.cos(-ang) - rel[1] * math.sin(-ang)) / sca[0],
+            rel[2] / sca[2],
+            - (rel[0] * math.sin(-ang) + rel[1] * math.cos(-ang)) / sca[1]
+        ]
+        d_food.ref_obj.location = loc_in_new_ref_frame
+        d_food.ref_obj.keyframe_insert(
+            data_path = 'location',
+            frame = (start_time) * FRAME_RATE + 1
+        )
+
+        #correct_scale
+        d_food.ref_obj.keyframe_insert(
+            data_path = 'scale',
+            frame = (start_time) * FRAME_RATE
+        )
+        for i in range(3):
+            d_food.ref_obj.scale[i] /= sca[i]
+        d_food.ref_obj.keyframe_insert(
+            data_path = 'scale',
+            frame = (start_time) * FRAME_RATE + 1
+        )
+        #correct_rotation
+        d_food.ref_obj.keyframe_insert(
+            data_path = 'rotation_euler',
+            frame = (start_time) * FRAME_RATE
+        )
+        d_food.ref_obj.rotation_euler = [0, math.pi, 0]
+        d_food.ref_obj.keyframe_insert(
+            data_path = 'rotation_euler',
+            frame = (start_time) * FRAME_RATE + 1
+        )
+
+    def animate_eating(
+        self,
+        food = None,
+        eater = None,
+        start_time = None,
+        eat_rotation = 0,
+        dur = None
+    ):
+        eater.move_to(
+            new_angle = [
+                eater.ref_obj.rotation_euler[0],
+                eater.ref_obj.rotation_euler[1],
+                eater.ref_obj.rotation_euler[2] + eat_rotation,
+            ],
+            start_time = start_time,
+            end_time = start_time + dur / 2
+        )
+        eater.move_to(
+            new_angle = [
+                eater.ref_obj.rotation_euler[0],
+                eater.ref_obj.rotation_euler[1],
+                eater.ref_obj.rotation_euler[2] - eat_rotation,
+            ],
+            start_time = start_time + dur / 2,
+            end_time = start_time + dur
+        )
+
+        eater.eat_animation(
+            start_frame = (start_time + dur / 2) * FRAME_RATE,
+            end_frame = (start_time + dur) * FRAME_RATE,
+            decay_frames = dur / 6 * FRAME_RATE
+        )
+        eater.blob_scoop(
+            start_time = start_time,
+            duration = dur,
+        )
+        food.move_to(
+            start_time = start_time + dur / 3,
+            end_time = start_time + 2 * dur / 3,
+            new_location = [-0.05, 0.25, 1]
+        )
+        food.move_to(
+            start_time = start_time + 2 * dur / 3,
+            end_time = start_time + dur,
+            new_location = [-0.05, 0.125, 0],
+            new_scale = [0, 0, 0]
+        )

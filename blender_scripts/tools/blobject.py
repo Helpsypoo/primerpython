@@ -117,13 +117,11 @@ class Blobject(Bobject):
             start_time = start_time,
             end_time = start_time + duration * turn_frac
         )
-
         self.move_to(
             new_location = new_location,
             start_time = start_time + duration * prep_frac,
             end_time = end_time - duration * prep_frac,
         )
-
         self.move_to(
             new_angle = new_angle,
             start_time = end_time - duration * turn_frac,
@@ -300,16 +298,14 @@ class Blobject(Bobject):
         duration = 0,
         end_pause_duration = 0
     ):
-        #This function only works for blob creatures. Maybe they deserve their
-        #own subclass of bobject.
         start_frame = start_time * FRAME_RATE
         end_pause_frames = end_pause_duration * FRAME_RATE
         if duration == 0:
             duration = 1
         duration_frames = duration * FRAME_RATE
 
-        wave_cycle_length = 8
-        cycle_error = 4
+        wave_cycle_length = min(8, duration_frames / 2)
+        cycle_error = math.floor(wave_cycle_length / 2)
         num_wave_cycles = math.floor(duration_frames / wave_cycle_length)
         duration_frames = num_wave_cycles * wave_cycle_length
 

@@ -218,7 +218,7 @@ class Food(object):
                 cons.keyframe_insert(data_path = 'influence', frame = start_frame + 1)
 
         #There is almost certainly a more elegant way to do this, but there are
-        #several transformation matrices which don't seem to relaiably update,
+        #several transformation matrices which don't seem to reliably update,
         #and there's an extra complication because the 'parent' in the childof
         #constraint has the same parent as the food object, making the real parent
         #affect the transform twice.
