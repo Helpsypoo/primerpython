@@ -35,6 +35,8 @@ class GraphBobject(Bobject):
         padding = GRAPH_PADDING,
         show_axes = True,
         show_functions = True,
+        show_bounded_regions = False,
+        discrete_interpolation_style = 'square',
         **kwargs
     ):
         print('Initializing graph bobject')
@@ -43,10 +45,12 @@ class GraphBobject(Bobject):
 
         self.show_axes = show_axes
         self.show_functions = show_functions
+        self.show_bounded_regions = show_bounded_regions
 
         #Discrete functions usually use few points, but if they are animated
         #with highlight points, it's helpful to have more points.
         self.high_res_curve_indices = high_res_curve_indices
+        self.discrete_interpolation_style = discrete_interpolation_style
         super().__init__(**kwargs)
         if isinstance(x_range, int) or isinstance(x_range, float):
             x_range = [0, x_range]
@@ -88,6 +92,7 @@ class GraphBobject(Bobject):
 
         self.curve_highlight_points = []
         self.functions_curves = [] #Filled in self.add_function_curve()
+        self.regions_curves = [] #Filled in self.bounded_region()
         self.overlay_functions = overlay_functions
 
 
@@ -812,6 +817,267 @@ class GraphBobject(Bobject):
                 z_shift = z_shift[i]
             )
 
+    def add_bounded_region(
+        self,
+        index = 0,
+        color = 3,
+        mat_modifier = None,
+        z_shift = 0
+    ):
+        coords = deepcopy(self.functions_coords[index])
+
+        if index == 0:
+            lower_func = []
+            for coord in coords:
+                lower_func.append([coord[0], 0, 0])
+        else:
+            #Find curve from adding all previous functions
+            lower_func = deepcopy(self.functions_coords[index - 1])
+            for i in range(index - 1):
+                for j in range(len(lower_func)):
+                    lower_func[j][1] += self.functions_coords[i][j][1]
+
+            #lift current curve by total of old curves
+            for i in range(len(coords)):
+                coords[i][1] += lower_func[i][1]
+
+            #print(coords)
+            #print(lower_func)
+
+            #Add both curves to get bounding area
+        lower_func.reverse()
+        coords += lower_func
+
+
+        data = bpy.data.curves.new(name = 'function_curve_data', type = 'CURVE')
+        data.dimensions = '2D'
+        #data.resolution_u = 64
+        #data.render_resolution_u = 64
+
+        if isinstance(self.functions[index], list):
+            #Make bezier curve for discrete functions.
+            data.splines.new('BEZIER')
+            points = data.splines[0].bezier_points
+            points.add(len(coords) - 1) #Spline starts with one point
+            for i in range(len(points)):
+                point = points[i]
+                point.handle_left_type = 'VECTOR'
+                point.handle_right_type = 'VECTOR'
+
+                x, y, z = coords[i]
+                if i == 0 and mat_modifier != 'fade':
+                    z = - 2 * CURVE_Z_OFFSET
+                z += z_shift
+                point.co = (x, y, z)
+
+                if i > 0:
+                    point.handle_left = coords[i - 1]
+                else:
+                    point.handle_left = coords[i]
+                if i < len(points) - 1:
+                    point.handle_right = coords[i + 1]
+                else:
+                    point.handle_right = coords[i]
+
+        else:
+            raise Warning('Not implemented')
+            data.splines.new('NURBS')
+            #Add another coord to the beginning and end because NURBS curves
+            #don't draw all the way to the exteme points.
+            start_coord = [
+                coords[0][0] - (coords[1][0] - coords[0][0]),
+                coords[0][1] - (coords[1][1] - coords[0][1]),
+                coords[0][2] - (coords[1][2] - coords[0][2])
+            ]
+            coords.insert(0, start_coord)
+            end_coord = start_coord = [
+                coords[-1][0] + (coords[-2][0] - coords[-1][0]),
+                coords[-1][1] + (coords[-2][1] - coords[-1][1]),
+                coords[-1][2] + (coords[-2][2] - coords[-1][2])
+            ]
+            coords.append(end_coord)
+
+            points = data.splines[0].points
+            points.add(len(coords) - 1) #Spline starts with one point
+            for i in range(len(points)):
+                x, y, z = coords[i]
+                if i == 0 and mat_modifier != 'fade':
+                    z = - 2 * CURVE_Z_OFFSET
+                z += z_shift
+                points[i].co = (x, y, z, 1)
+
+        cur = bpy.data.objects.new(
+            name = 'bounded_region', object_data = data)
+
+        if mat_modifier == None:
+            mat_string = 'color' + str(color)
+        elif mat_modifier == 'fade':
+            mat_string = 'trans_color' + str(color)
+        apply_material(cur, mat_string)
+
+        cur_bobj = bobject.Bobject(objects = [cur], name = 'function_curve_container')
+        #cross_section.parent = cur_bobj.ref_obj
+        self.add_subbobject(cur_bobj)
+        self.regions_curves.append(cur_bobj)
+        data.splines[0].use_cyclic_u = True
+
+        #Double check that the number of curves is in sync with the index given
+        if index < 0: index += len(self.regions_curves) #In case index == -1
+        if len(self.regions_curves) != index + 1:
+            raise Warning('Function count and index are out of sync.')
+
+    def add_all_bounded_regions(self, colors = [3, 4, 7, 6, 5]):
+        for i in range(len(self.functions)):
+            print(self.functions_coords[i])
+
+
+
+        for i in range(len(self.functions)):
+            self.add_bounded_region(
+            #self.add_function_curve(
+                index = i,
+                color = colors[i % len(colors)]
+            )
+
+    def animate_bounded_region(
+        self,
+        start_time = None,
+        end_time = None,
+        start_frame = None,
+        end_frame = None,
+        uniform_along_x = False,
+        index = 0
+    ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+        if end_time != None:
+            if end_frame != None:
+                raise Warning("You defined both end frame and end time. " +\
+                              "Just do one, ya dick.")
+            end_frame = int(end_time * FRAME_RATE)
+
+        if end_frame == None:
+            raise Warning('Need end frame to animate function curve, ya dick.')
+
+
+
+
+        obj = self.regions_curves[index].ref_obj.children[0]
+        data = obj.data
+
+        #Store final coords and set to initial state
+        #This is super obnoxious, but I can't simply deepcopy() the curve data
+        #It's some kind of blender structure that doesn't allow copying.
+        final_coords = []
+        final_lefts = []
+        final_rights = []
+        for i, point in enumerate(data.splines[0].bezier_points):
+            final_coords.append(deepcopy(point.co))
+            final_lefts.append(deepcopy(point.handle_left))
+            final_rights.append(deepcopy(point.handle_right))
+
+            if i < len(data.splines[0].bezier_points) / 2:
+                point.co = deepcopy(data.splines[0].bezier_points[0].co)
+                point.handle_left = deepcopy(data.splines[0].bezier_points[0].handle_left)
+                point.handle_right = deepcopy(data.splines[0].bezier_points[0].handle_right)
+            else:
+                point.co = deepcopy(data.splines[0].bezier_points[-1].co)
+                point.handle_left = deepcopy(data.splines[0].bezier_points[-1].handle_left)
+                point.handle_right = deepcopy(data.splines[0].bezier_points[-1].handle_right)
+
+        print(final_coords)
+        print([x.co for x in data.splines[0].bezier_points])
+
+        #Set basis shape key
+        bpy.context.scene.objects.active = obj
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+        bpy.ops.object.shape_key_add(from_mix=False)
+        data.shape_keys.use_relative = False
+        data.shape_keys.key_blocks[-1].interpolation = 'KEY_LINEAR'
+
+        if len(data.splines[0].bezier_points) % 2 != 0:
+            raise Warning('Odd number of points in bounding curve')
+        for j in range(1, int(len(data.splines[0].bezier_points) / 2)):
+            bpy.ops.object.shape_key_add(from_mix=False)
+            data.shape_keys.use_relative = False
+            data.shape_keys.key_blocks[-1].interpolation = 'KEY_LINEAR'
+            #put points back to final state
+            bpy.ops.object.mode_set(mode = 'EDIT')
+            for i, point in enumerate(data.splines[0].bezier_points):
+                #final_coords.append(deepcopy(point.co))
+                #final_lefts.append(deepcopy(point.handle_left))
+                #final_rights.append(deepcopy(point.handle_right))
+                if i < len(data.splines[0].bezier_points) / 2:
+                    if i <= j:
+                        point.co = deepcopy(final_coords[i])
+                        point.handle_left = deepcopy(final_lefts[i])
+                        point.handle_right = deepcopy(final_rights[i])
+                    elif i > j:
+                        point.co = deepcopy(final_coords[j])
+                        point.handle_left = deepcopy(final_lefts[j])
+                        point.handle_right = deepcopy(final_rights[j])
+                else:
+                    if i >= len(data.splines[0].bezier_points) - j - 1:
+                        point.co = deepcopy(final_coords[i])
+                        point.handle_left = deepcopy(final_lefts[i])
+                        point.handle_right = deepcopy(final_rights[i])
+                    elif i < len(data.splines[0].bezier_points) - j - 1:
+                        point.co = deepcopy(final_coords[-j - 1])
+                        point.handle_left = deepcopy(final_lefts[-j - 1])
+                        point.handle_right = deepcopy(final_rights[-j - 1])
+
+            bpy.ops.object.mode_set(mode = 'OBJECT')
+
+        obj.data.shape_keys.eval_time = 0
+        obj.data.shape_keys.keyframe_insert(
+            data_path = 'eval_time',
+            frame = start_frame
+        )
+        obj.data.shape_keys.eval_time = (len(data.shape_keys.key_blocks) - 1) * 10
+        obj.data.shape_keys.keyframe_insert(
+            data_path = 'eval_time',
+            frame = end_frame
+        )
+
+        if uniform_along_x == True:
+            make_animations_linear(data.shape_keys)
+
+    def animate_all_bounded_regions(
+        self,
+        start_time = None,
+        end_time = None,
+        start_frame = None,
+        end_frame = None,
+        uniform_along_x = False,
+        start_window = 0, #time range in which animations can start
+        skip = 0
+    ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+        if end_time != None:
+            if end_frame != None:
+                raise Warning("You defined both end frame and end time. " +\
+                              "Just do one, ya dick.")
+            end_frame = int(end_time * FRAME_RATE)
+
+        num_regions = len(self.regions_curves) - skip
+        start_interval = (end_frame - start_frame) * start_window / num_regions
+
+        for i in range(num_regions):
+            self.animate_bounded_region(
+                start_frame = start_frame + start_interval * i,
+                end_frame = start_frame + start_interval * i + \
+                            (end_frame - start_frame) * (1 - start_window),
+                uniform_along_x = uniform_along_x,
+                index = i + skip
+            )
+
     def add_new_function_and_curve(
         self,
         func,
@@ -852,7 +1118,7 @@ class GraphBobject(Bobject):
         if end_frame == None:
             raise Warning('Need end frame to animate function curve, ya dick.')
 
-        print(self.functions_curves)
+        #print(self.functions_curves)
         data = self.functions_curves[index].ref_obj.children[0].data
 
         #Insert start and end keyframes for bevel_factor_end
@@ -936,22 +1202,23 @@ class GraphBobject(Bobject):
         if isinstance(func, list) and func_index not in self.high_res_curve_indices:
             #Discrete functions will be made from bezier curves
             ordered_pairs = []
-            #For lists of numbers, interpret index function input.
+            #For lists of numbers, interpret index as function input.
             if isinstance(func[0], int) or isinstance(func[0], float):
-                current_y = -math.inf
+                #current_y = -math.inf
                 for x, y in enumerate(func):
-                    if y != current_y:
-                        ordered_pairs.append([x, y])
-                        current_y = y
+                    #if y != current_y:
+                    ordered_pairs.append([x, y])
+                    #current_y = y
             else: #Assumes the only other case is ordered pairs
                 ordered_pairs = func
 
-
             for i, (x, y) in enumerate(ordered_pairs):
+                #If interpolation style is 'square'
                 #For value changes other than the first, add a point at the
                 #previous y value to serve as base of the "step up" or the edge
                 #of the "step down"
-                if x != 0:
+                if x != 0 and self.discrete_interpolation_style == 'square':
+                    print(self.discrete_interpolation_style)
                     coords.append([
                         x * self.domain_scale_factor,
                         ordered_pairs[i -1][1] * self.range_scale_factor,
@@ -969,6 +1236,7 @@ class GraphBobject(Bobject):
                         y * self.range_scale_factor,
                         CURVE_Z_OFFSET
                     ])
+
 
         else:
             points_per_drawn_x_unit = PLOTTED_POINT_DENSITY * self.scale[0]
@@ -1447,6 +1715,9 @@ class GraphBobject(Bobject):
                     self.add_all_function_curves(curve_colors = curve_colors)
                 else:
                     self.add_function_curve(index = 0)
+        if self.show_bounded_regions:
+            self.add_all_bounded_regions()
+
         super().add_to_blender(**kwargs)
 
     def move_to(

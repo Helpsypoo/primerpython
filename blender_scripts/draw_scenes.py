@@ -64,13 +64,13 @@ import blobject
 imp.reload(blobject)
 from blobject import Blobject
 
-import supply_and_demand
-imp.reload(supply_and_demand)
-
 import hawk_dove
 imp.reload(hawk_dove)
 import drawn_contest_world
 imp.reload(drawn_contest_world)
+
+import aggression
+imp.reload(aggression)
 
 def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = True):
     #clear objects and materials
@@ -557,7 +557,7 @@ def test():
             last_animated_day = 10
         )
 
-    animation_test()
+    #animation_test()
 
     def walk_to_test():
         bleb = blobject.Blobject(
@@ -577,6 +577,31 @@ def test():
 
     #walk_to_test()
 
+    func = [2, 3, 2, 5, 2, 6, 4, 4, 3, 9, 8]
+    def func2(x): return x
+
+    func3 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    func4 = [2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]
+    func5 = [2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]
+
+
+    g = graph_bobject.GraphBobject(
+        func, func3, func4, func5,
+        centered = True,
+        show_functions = False,
+        show_bounded_regions = True,
+        high_res_curve_indices = [],
+        discrete_interpolation_style = 'linear'
+    )
+    g.add_to_blender(
+        appear_time = 1,
+    )
+    g.animate_all_bounded_regions(
+        start_time = 2,
+        end_time = 3,
+        uniform_along_x = True
+    )
+
 def main():
     """Use this as a test scene"""
     #tex_test()
@@ -585,7 +610,7 @@ def main():
     #circle_grid()
     test()
     #draw_scenes_from_file(scds, clear = False)
-    #draw_scenes_from_file(supply_and_demand)
+    #draw_scenes_from_file(aggression)
 
     print_time_report()
     finish_noise()

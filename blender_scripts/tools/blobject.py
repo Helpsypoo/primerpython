@@ -675,6 +675,78 @@ class Blobject(Bobject):
             decay_frames = decay_frames
         )
 
+    def cheer(
+        self,
+        start_time = None,
+        end_time = None,
+        attack = None,
+        decay = None
+    ):
+        if start_time == None:
+            raise Warning('Need start time for evil pose')
+        if end_time == None:
+            raise Warning('Need end time for evil pose')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        if attack == None:
+            if end_time == None:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+        self.blob_wave(
+            start_time = start_time,
+            duration = end_time - start_time
+        )
+
+        head = self.ref_obj.children[0].pose.bones[3]
+        initial = list(head.rotation_quaternion)
+        head_back = [1, -0.1, 0, 0.1]
+        #head_back_left = [1, -0.1, 0.1, 0.1]
+        #head_back_right = [1, -0.1, -0.1, 0.1]
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        head.rotation_quaternion = head_back
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + attack_frames
+        )
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = end_frame - decay_frames
+        )
+        head.rotation_quaternion = initial
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = end_frame
+        )
+
+        #Mouth
+        self.eat_animation(
+            start_frame = start_frame,
+            end_frame = end_frame,
+            attack_frames = attack_frames,
+            decay_frames = decay_frames
+        )
+
     def angry_eyes(
         self,
         start_time = None,

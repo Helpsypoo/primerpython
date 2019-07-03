@@ -309,9 +309,9 @@ class DrawnWorld(Bobject):
 
             constraint = food1.ref_obj.constraints.new('CHILD_OF')
             constraint.target = self.ref_obj
-            constraint.use_rotation_x = False
-            constraint.use_rotation_y = False
-            constraint.use_rotation_z = False
+            #constraint.use_rotation_x = False
+            #constraint.use_rotation_y = False
+            #constraint.use_rotation_z = False
 
             food1.add_to_blender(appear_time = start_time + i * delay)
             pair.drawn_food = [food1]
@@ -329,9 +329,9 @@ class DrawnWorld(Bobject):
 
             constraint = food2.ref_obj.constraints.new('CHILD_OF')
             constraint.target = self.ref_obj
-            constraint.use_rotation_x = False
-            constraint.use_rotation_y = False
-            constraint.use_rotation_z = False
+            #constraint.use_rotation_x = False
+            #constraint.use_rotation_y = False
+            #constraint.use_rotation_z = False
 
             food2.add_to_blender(appear_time = start_time + i * delay)
             pair.drawn_food.append(food2)
