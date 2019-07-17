@@ -2765,7 +2765,46 @@ class SupplyAndDemand(Scene):
         )
         #Frame 4355
 
-        vom = svg_bobject.SVGBobject(
+
+        #Show seller
+        seller = market_sim.Agent(
+            type = 'seller',
+            price_limit = 20,
+            interaction_mode = 'seller_asks_buyer_decides'
+        )
+        b = drawn_market.DrawnAgent(
+            scale = 5,
+            agent = seller,
+            display_mode = 'table',
+            wiggle = False,
+            location = [-5, -0.75, 0]
+        )
+        '''seller_tex = tex_bobject.TexBobject(
+            '\\text{Seller}',
+            location = [0, 1.25, 0],
+            centered = True,
+            scale = 0.5
+        )
+        b.add_subbobject(seller_tex)'''
+        b.add_to_blender(appear_time = 0, subbobject_timing = OBJECT_APPEARANCE_TIME)
+        b.make_display(appear_time = 0)
+        r = import_object(
+            'rocket', 'misc',
+            #location = [-1, -0.4, 0],
+            scale = 0.5
+        )
+        r.tweak_colors_recursive()
+        b.set_out_good(
+            start_time = 0,
+            #duration_time = self.phase_durations['seller_setup_anim_duration'],
+            model = r.ref_obj.children[0]
+        )
+        '''
+        r.ref_obj.parent = b.ref_obj
+        r.tweak_colors_recursive()
+        r.add_to_blender(appear_time = 29.7)'''
+
+        '''vom = svg_bobject.SVGBobject(
             "AMG_century",
             #location = (-5, 3.75, 0), #Centered position
             #scale = 0.26, #Centered scale
@@ -2774,7 +2813,7 @@ class SupplyAndDemand(Scene):
             #color = 'color2',
             centered = True
         )
-        vom.add_to_blender(appear_time = 0)
+        vom.add_to_blender(appear_time = 0)'''
         '''for i in range(3, 10):
             vom.lookup_table[0][i].color_shift(
                 color = COLORS_SCALED[6],
@@ -2791,8 +2830,8 @@ class SupplyAndDemand(Scene):
         simd.add_to_blender(appear_time = 0)
 
         scale = 1.5
-        tail1 = [8, 3.75]
-        head1 = [8, 1.25]
+        tail1 = [7.5, 3.75]
+        head1 = [7.5, 1.25]
         surp_arrow = gesture.Gesture(
             gesture_series = [
                 {

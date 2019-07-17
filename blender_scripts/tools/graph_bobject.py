@@ -349,21 +349,24 @@ class GraphBobject(Bobject):
         tick_step = new_tick_step
         if tick_step == 'auto':
             num_steps_x = self.width / AUTO_TICK_SPACING_TARGET
-            self.x_tick_step = math.floor((new_x_range[1] - new_x_range[0]) / num_steps_x)
+            new_x_tick_step = math.floor((new_x_range[1] - new_x_range[0]) / num_steps_x)
+            #self.x_tick_step = math.floor((new_x_range[1] - new_x_range[0]) / num_steps_x)
 
             num_steps_y = self.height / AUTO_TICK_SPACING_TARGET
-            self.y_tick_step = math.floor((new_y_range[1] - new_y_range[0]) / num_steps_y)
+            new_y_tick_step = math.floor((new_y_range[1] - new_y_range[0]) / num_steps_y)
+            #self.y_tick_step = math.floor((new_y_range[1] - new_y_range[0]) / num_steps_y)
 
         else:
             if isinstance(tick_step, list):
-                self.x_tick_step = tick_step[0]
-                self.y_tick_step = tick_step[1]
+                new_x_tick_step = tick_step[0]
+                new_y_tick_step = tick_step[1]
             elif isinstance(tick_step, int) or isinstance(tick_step, float):
-                self.x_tick_step = self.y_tick_step = tick_step
+                new_x_tick_step = new_y_tick_step = tick_step
             else:
                 raise Warning('Idk wtf to do with that tick step.')
 
-        if self.x_tick_step != None:
+        if self.x_tick_step != new_x_tick_step:
+            self.x_tick_step = new_x_tick_step
             current_tick = self.x_tick_step
             #Positive x ticks
             while current_tick <= new_x_range[1]:
@@ -392,7 +395,8 @@ class GraphBobject(Bobject):
                         bobj.add_to_blender(appear_frame = start_frame + OBJECT_APPEARANCE_TIME - stagger_frame)
                 current_tick -= self.x_tick_step
 
-        if self.y_tick_step != None:
+        if self.y_tick_step != new_y_tick_step:
+            self.y_tick_step = new_y_tick_step
             current_tick = self.y_tick_step
             #Positive y ticks
             while current_tick <= new_y_range[1]:
@@ -478,15 +482,27 @@ class GraphBobject(Bobject):
         self.y_range = new_y_range
         self.range_scale_factor = self.height / (self.y_range[1] - self.y_range[0])
 
-        #Morph curve to fit new window
-        #Add function to function list again.
-        func = self.functions[self.active_function_index]
-        self.functions.append(func)
-        #Then make new coords set based on function.
-        self.functions_coords.append(self.func_to_coords(func_index = -1))
+        if len(self.functions_curves) != 0:
+            #Morph curve to fit new window
+            #Add function to function list again.
+            func = self.functions[self.active_function_index]
+            self.functions.append(func)
+            #Then make new coords set based on function.
+            self.functions_coords.append(self.func_to_coords(func_index = -1))
 
-        #Morph curve to new function
-        self.morph_curve(-1, start_time = start_time)
+            #Morph curve to new function
+            self.morph_curve(-1, start_time = start_time)
+
+        for region in self.regions_curves:
+            region.move_to(
+                new_scale = [
+                    region.ref_obj.scale[0] * x_scale_factor,
+                    region.ref_obj.scale[1] * y_scale_factor,
+                    region.ref_obj.scale[2],
+                ],
+                start_frame = start_frame,
+                end_frame = end_frame
+            )
 
     def highlight_region(
         self,
@@ -831,6 +847,11 @@ class GraphBobject(Bobject):
             for coord in coords:
                 lower_func.append([coord[0], 0, 0])
         else:
+            #Slightly shift zero-value points to prevent overlap which
+            #messes with fill.
+            for coord in coords:
+                if coord[1] == 0:
+                    coord[1] = 0.01
             #Find curve from adding all previous functions
             lower_func = deepcopy(self.functions_coords[index - 1])
             for i in range(index - 1):
@@ -924,11 +945,13 @@ class GraphBobject(Bobject):
         #Double check that the number of curves is in sync with the index given
         if index < 0: index += len(self.regions_curves) #In case index == -1
         if len(self.regions_curves) != index + 1:
+            #print('Function count and index are out of sync.')
             raise Warning('Function count and index are out of sync.')
 
-    def add_all_bounded_regions(self, colors = [3, 4, 7, 6, 5]):
-        for i in range(len(self.functions)):
-            print(self.functions_coords[i])
+    def add_all_bounded_regions(self, colors = [3, 4, 7, 6, 5, 1, 2, 8]):
+        #for i in range(len(self.functions)):
+            #print(self.functions_coords[i])
+            #pass
 
 
 
@@ -939,32 +962,7 @@ class GraphBobject(Bobject):
                 color = colors[i % len(colors)]
             )
 
-    def animate_bounded_region(
-        self,
-        start_time = None,
-        end_time = None,
-        start_frame = None,
-        end_frame = None,
-        uniform_along_x = False,
-        index = 0
-    ):
-        if start_time != None:
-            if start_frame != None:
-                raise Warning("You defined both start frame and start time. " +\
-                              "Just do one, ya dick.")
-            start_frame = int(start_time * FRAME_RATE)
-        if end_time != None:
-            if end_frame != None:
-                raise Warning("You defined both end frame and end time. " +\
-                              "Just do one, ya dick.")
-            end_frame = int(end_time * FRAME_RATE)
-
-        if end_frame == None:
-            raise Warning('Need end frame to animate function curve, ya dick.')
-
-
-
-
+    def set_shape_keys_bounded_region(self, index = 0):
         obj = self.regions_curves[index].ref_obj.children[0]
         data = obj.data
 
@@ -988,10 +986,8 @@ class GraphBobject(Bobject):
                 point.handle_left = deepcopy(data.splines[0].bezier_points[-1].handle_left)
                 point.handle_right = deepcopy(data.splines[0].bezier_points[-1].handle_right)
 
-        print(final_coords)
-        print([x.co for x in data.splines[0].bezier_points])
-
         #Set basis shape key
+        bpy.ops.object.select_all(action = 'DESELECT')
         bpy.context.scene.objects.active = obj
         bpy.ops.object.mode_set(mode = 'OBJECT')
         bpy.ops.object.shape_key_add(from_mix=False)
@@ -1031,13 +1027,39 @@ class GraphBobject(Bobject):
 
             bpy.ops.object.mode_set(mode = 'OBJECT')
 
-        obj.data.shape_keys.eval_time = 0
-        obj.data.shape_keys.keyframe_insert(
+    def animate_bounded_region(
+        self,
+        start_time = None,
+        end_time = None,
+        start_frame = None,
+        end_frame = None,
+        uniform_along_x = False,
+        index = 0
+    ):
+        if start_time != None:
+            if start_frame != None:
+                raise Warning("You defined both start frame and start time. " +\
+                              "Just do one, ya dick.")
+            start_frame = int(start_time * FRAME_RATE)
+        if end_time != None:
+            if end_frame != None:
+                raise Warning("You defined both end frame and end time. " +\
+                              "Just do one, ya dick.")
+            end_frame = int(end_time * FRAME_RATE)
+
+        if end_frame == None:
+            raise Warning('Need end frame to animate function curve, ya dick.')
+
+        #obj = self.regions_curves[index].ref_obj.children[0]
+        data = self.regions_curves[index].ref_obj.children[0].data
+
+        data.shape_keys.eval_time = 0
+        data.shape_keys.keyframe_insert(
             data_path = 'eval_time',
             frame = start_frame
         )
-        obj.data.shape_keys.eval_time = (len(data.shape_keys.key_blocks) - 1) * 10
-        obj.data.shape_keys.keyframe_insert(
+        data.shape_keys.eval_time = (len(data.shape_keys.key_blocks) - 1) * 10
+        data.shape_keys.keyframe_insert(
             data_path = 'eval_time',
             frame = end_frame
         )
@@ -1070,6 +1092,9 @@ class GraphBobject(Bobject):
         start_interval = (end_frame - start_frame) * start_window / num_regions
 
         for i in range(num_regions):
+            self.set_shape_keys_bounded_region(
+                index = i + skip
+            )
             self.animate_bounded_region(
                 start_frame = start_frame + start_interval * i,
                 end_frame = start_frame + start_interval * i + \
@@ -1155,7 +1180,7 @@ class GraphBobject(Bobject):
         start_interval = (end_frame - start_frame) * start_window / num_curves
 
         for i in range(num_curves):
-            print(i)
+            #print(i)
             self.animate_function_curve(
                 start_frame = start_frame + start_interval * i,
                 end_frame = start_frame + start_interval * i + \
@@ -1239,7 +1264,7 @@ class GraphBobject(Bobject):
 
 
         else:
-            points_per_drawn_x_unit = PLOTTED_POINT_DENSITY * self.scale[0]
+            points_per_drawn_x_unit = PLOTTED_POINT_DENSITY * self.ref_obj.scale[0]
             num_drawn_points = self.width * points_per_drawn_x_unit
 
             self.x_step = (self.x_range[1] - self.x_range[0]) / num_drawn_points
@@ -1654,7 +1679,7 @@ class GraphBobject(Bobject):
             curve_object.data.shape_keys.key_blocks[-1].interpolation = 'KEY_LINEAR'
 
         final_coords = self.functions_coords[to_curve_index]
-        print(len(final_coords))
+        #print(len(final_coords))
         #Add another coord to the beginning and end because NURBS curves
         #don't draw all the way to the exteme points.
         start_coord = [
@@ -1671,11 +1696,12 @@ class GraphBobject(Bobject):
         final_coords.append(end_coord)
 
         for j in range(len(self.functions_coords)):
-            print(j, len(self.functions_coords[j]))
+            #print(j, len(self.functions_coords[j]))
+            pass
 
         bpy.ops.object.mode_set(mode = 'EDIT')
         for j in range(len(curve_object.data.splines[0].points)):
-            print(j)
+            #print(j)
             x, y, z = final_coords[j]
             curve_object.data.splines[0].points[j].co = (x, y, z, 1)
         bpy.ops.object.mode_set(mode = 'OBJECT')
@@ -1775,7 +1801,7 @@ class GraphBobject3D(GraphBobject):
 
         if self.centered == True:
             self.ref_obj.location[2] -= \
-                (self.z_range[1] + self.z_range[0]) * self.z_scale_factor / 2 * self.scale[2]
+                (self.z_range[1] + self.z_range[0]) * self.z_scale_factor / 2 * self.ref_obj.scale[2]
 
     def add_axes(self):
         print(" Adding axes and labels")

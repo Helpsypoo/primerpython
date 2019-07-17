@@ -1011,7 +1011,7 @@ class DrawnMarket(Bobject):
                     ang += math.pi
                     ang = make_angles_within_pi(
                         angle_to_change = ang,
-                        target_angle = drawn_buyer.ref_obj.rotation_euler[2]
+                        reference_angle = drawn_buyer.ref_obj.rotation_euler[2]
                     )
 
                     angle = [
@@ -1047,7 +1047,7 @@ class DrawnMarket(Bobject):
                                     #because I like things to be hard for no reason
                     ang = make_angles_within_pi(
                         angle_to_change = ang,
-                        target_angle = drawn_buyer.ref_obj.rotation_euler[2]
+                        reference_angle = drawn_buyer.ref_obj.rotation_euler[2]
                     )
                     angle = [
                         drawn_buyer.ref_obj.rotation_euler[0],
@@ -1209,7 +1209,7 @@ class DrawnMarket(Bobject):
                                 #because I like things to be hard for no reason
                 disp_ang = make_angles_within_pi(
                     angle_to_change = disp_ang,
-                    target_angle = drawn_buyer.ref_obj.rotation_euler[2]
+                    reference_angle = drawn_buyer.ref_obj.rotation_euler[2]
                 )
                 drawn_buyer.move_to(
                     start_time = self.elapsed_time,

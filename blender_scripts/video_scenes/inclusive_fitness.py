@@ -67,8 +67,8 @@ class InclusiveFitness(Scene):
         #self.separate_genes()
         #self.separate_genes_sim()
         #self.kin_selection_intro()
-        #self.hamilton()
-        self.lies()
+        self.hamilton()
+        #self.lies()
         #self.kin_selection_sim()
         ##NEVERMIND self.kin_distance_sim()
         #self.gene_v_creature()
@@ -2651,7 +2651,7 @@ class InclusiveFitness(Scene):
         first_day_start = 364
         sim_appearance_time = 339
 
-        outro_start_time, cam_bobj = self.simulation_scene(
+        '''outro_start_time, cam_bobj = self.simulation_scene(
             animate_graph = False,
             animate_sim = True,
             sim_name = '100f_100d_low_2',
@@ -2667,14 +2667,14 @@ class InclusiveFitness(Scene):
             states_to_draw = states_to_draw,
             outro_length = 22,
             outro_sway = False
-        )
+        )'''
 
         '''g.move_to(
             new_location = [18, -4, 0],
             start_time = 360
         )'''
 
-        show_rule = False
+        show_rule = True
         if show_rule == True:
             rule = tex_bobject.TexBobject(
                 'C<rP',
@@ -2697,7 +2697,7 @@ class InclusiveFitness(Scene):
                 scale = 3
             )
 
-            annotations = False
+            annotations = True
             if annotations == True:
                 rules_complex.add_annotation(
                     targets = [

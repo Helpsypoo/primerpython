@@ -27,19 +27,19 @@ class Bobject(object):
         self.name = self.get_from_kwargs('name', 'bobject')
 
         #Would be cleaner elsewhere to override the setter to update
-        #self.ref_obj.scale when self.scale is updated
+        #self.ref_obj.scale when self.intrinsic_scale is updated
         #(similarly for any attribute that's actually on the ref_obj)
         #self.appear_frame = self.get_from_kwargs('appear_frame', 0)
 
         ref_obj = bpy.data.objects.new(name = self.name, object_data = None)
         ref_obj.location = self.get_from_kwargs('location', (0, 0, 0) )
         ref_obj.rotation_euler = self.get_from_kwargs('rotation_euler', (0, 0, 0) )
-        #TODO: Change self.scale to self.scale to differentiate it from
+        #TODO: Change self.intrinsic_scale to self.intrinsic_scale to differentiate it from
         #the actual current scale of the object after manipulations.
-        self.scale = self.get_from_kwargs('scale', 1)
-        if isinstance(self.scale, int) or isinstance(self.scale, float):
-            self.scale = [self.scale] * 3
-        ref_obj.scale = self.scale
+        self.intrinsic_scale = self.get_from_kwargs('scale', 1)
+        if isinstance(self.intrinsic_scale, int) or isinstance(self.intrinsic_scale, float):
+            self.intrinsic_scale = [self.intrinsic_scale] * 3
+        ref_obj.scale = self.intrinsic_scale
         ref_obj.name = self.name
         self.ref_obj = ref_obj
 
@@ -145,7 +145,7 @@ class Bobject(object):
 
             main_obj.scale = [0, 0, 0]
             main_obj.keyframe_insert(data_path="scale", frame = scale_up_frame)
-            main_obj.scale = self.scale
+            main_obj.scale = self.intrinsic_scale
             main_obj.keyframe_insert(data_path="scale", frame = scale_up_frame + duration)
             #don't need to do this for contained objects because it happens through
             #parenting
@@ -306,7 +306,7 @@ class Bobject(object):
             if isinstance(new_scale, int) or isinstance(new_scale, float):
                 new_scale = [new_scale] * 3
             obj.scale = new_scale
-            #self.scale = new_scale
+            self.intrinsic_scale = new_scale
             obj.keyframe_insert(data_path="scale", frame = end_frame)
         if new_angle != None:
             obj.keyframe_insert(data_path="rotation_euler", frame = start_frame)
@@ -438,6 +438,7 @@ class Bobject(object):
             mat_copy = obj.material_slots[0].material.copy()
         except:
             print(obj)
+            raise()
         obj.active_material = mat_copy
         color_node = mat_copy.node_tree.nodes[-1]
         color_field = color_node.inputs[0]

@@ -380,15 +380,23 @@ def mix_colors(color1, color2, mix):
     if len(color1) != len(color2):
         raise Warning('Colors are different lengths')
     mixed_color = []
-    #hsvcolor1 = rgb_to_hsv(*color1[:3])
-    #hsvcolor2 = rgb_to_hsv(*color2[:3])
     for i in range(len(color1)):
         comp = color1[i] * (1 - mix) + color2[i] * mix
-        #comp = hsvcolor1[i] * (1 - mix) + hsvcolor2[i] * (1 - mix)
         mixed_color.append(comp)
 
-    #return hsv_to_rgb(*mixed_color)
     return mixed_color
+
+def mix_colors_hsv(color1, color2, mix):
+    if len(color1) != len(color2):
+        raise Warning('Colors are different lengths')
+    mixed_color = []
+    hsvcolor1 = rgb_to_hsv(*color1[:3])
+    hsvcolor2 = rgb_to_hsv(*color2[:3])
+    for i in range(len(hsvcolor1)):
+        comp = hsvcolor1[i] * (1 - mix) + hsvcolor2[i] * (1 - mix)
+        mixed_color.append(comp)
+
+    return hsv_to_rgb(*mixed_color) + [1]
 
 def hsv_to_rgb(h, s, v):
     h = float(h)

@@ -21,6 +21,9 @@ imp.reload(natural_sim)
 import table_bobject
 imp.reload(table_bobject)
 
+import blobject
+imp.reload(blobject)
+
 import helpers
 imp.reload(helpers)
 from helpers import *
@@ -30,7 +33,7 @@ BLOB_VOLUME_DENSITY = 0.04
 class SelfishGene(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('card', {'duration': 10})
+            ('card', {'duration': 100})
         ])
         super().__init__()
 
@@ -38,7 +41,7 @@ class SelfishGene(Scene):
         super().play()
 
         #self.intro()
-        self.quote()
+        #self.quote()
         #self.replicating_creatures()
         #self.dna()
         #self.sexual_reproduction()
@@ -49,6 +52,7 @@ class SelfishGene(Scene):
         #self.end_card()
         #self.thumbnail()
         #self.banner_angled()
+        self.exponential_thumbnail()
 
     def intro(self):
         sg = svg_bobject.SVGBobject(
@@ -2168,7 +2172,7 @@ class SelfishGene(Scene):
             thing.disappear(disappear_time = 2.5)
 
     def thumbnail(self):
-        sg = svg_bobject.SVGBobject(
+        '''sg = svg_bobject.SVGBobject(
             "the_selfish_gene_century_italic",
             #location = (-5, 3.75, 0), #Centered position
             #scale = 0.26, #Centered scale
@@ -2185,18 +2189,33 @@ class SelfishGene(Scene):
                 start_time = -1,
                 duration_time = None
             )
+        '''
+
+        evil = blobject.Blobject(
+            location = [6.5, -7.5, 0],
+            scale = 11,
+            rotation_euler = [
+                6 * math.pi / 180,
+                -13 * math.pi / 180,
+                0,
+            ],
+            mat = 'creature_color6'
+        )
+        evil.add_to_blender(appear_time = 0)
+
+        evil.evil_pose(start_time = 0, end_time = 20)
 
 
         d = import_object(
             'dna_two_strand', 'biochem',
-            location = [7, 0, 0],#[7, 0, 0],
-            rotation_euler = [0, 0, 0 * math.pi / 180],
-            scale = 7
+            location = [-6, 0, 0],#[7, 0, 0],
+            rotation_euler = [0, 0, -22 * math.pi / 180],
+            scale = 6
         )
         d.add_to_blender(appear_time = 0)
 
-        d.spin(start_time = 0, spin_rate = 0.1)
-        #d.tweak_colors_recursive()
+        d.spin(start_time = 0, spin_rate = 0.5)
+        d.tweak_colors_recursive()
 
         '''gd = import_object(
             'dna_two_strand', 'biochem',
@@ -2208,12 +2227,12 @@ class SelfishGene(Scene):
 
         gd.spin(start_time = 0, spin_rate = 0.1)'''
 
-        def make_clear_recursive(obj):
+        '''def make_clear_recursive(obj):
             apply_material(obj, 'trans_color2', intensity = 0.7)
             for child in obj.children:
-                make_clear_recursive(child)
+                make_clear_recursive(child)'''
 
-        make_clear_recursive(d.ref_obj.children[0])
+        #make_clear_recursive(d.ref_obj.children[0])
 
     def banner_angled(self):
         cam_bobj, cam_swivel = cam_and_swivel(
@@ -2287,3 +2306,106 @@ class SelfishGene(Scene):
         )
         o_blob.add_to_blender(appear_time = 0)
         apply_material(o_blob.ref_obj.children[0].children[0], 'creature_color4')
+
+    def exponential_thumbnail(self):
+        #462
+        cam_bobj, cam_swivel = cam_and_swivel(
+            #cam_location = [0, 0, 32.8],
+            cam_location = [0, 0, 22.57],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [-0.79, 0.69, 0],
+            swivel_rotation_euler = [
+                -32.3 * math.pi / 180,
+                65.4 * math.pi / 180,
+                0
+            ],
+            #swivel_location = [3.45, -0.52, 0],
+            #swivel_rotation_euler = [
+            #    -7.7 * math.pi / 180,
+            #    44.3 * math.pi / 180,
+            #     0
+            #],
+            swivel_name = 'Cam swivel',
+            control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1, animate = False)
+
+
+        blue = blobject.Blobject(
+            location = [5.99, 4.72, 0],
+            rotation_euler = [
+                0 * math.pi / 180,
+                85.2 * math.pi / 180,
+                37.5 * math.pi / 180
+            ],
+            scale = 2.952
+        )
+        blue.add_to_blender(appear_time = 0)
+        blue.cheer(start_time = 1, end_time = 10)
+
+        red = blobject.Blobject(
+            location = [-8, -6, 7.34969],
+            rotation_euler = [
+                0 * math.pi / 180,
+                90 * math.pi / 180,
+                0 * math.pi / 180
+            ],
+            scale = 2.952,
+            mat = 'creature_color6'
+        )
+        red.add_to_blender(appear_time = 0)
+        red.move_head(
+            start_time = 1,
+            end_time = 10,
+            rotation_quaternion = [1, 0, 0.2, 0.3]
+        )
+
+        orange = blobject.Blobject(
+            location = [-8, -6, 2],
+            rotation_euler = [
+                0 * math.pi / 180,
+                90 * math.pi / 180,
+                0 * math.pi / 180
+            ],
+            scale = 2.952,
+            mat = 'creature_color4'
+        )
+        orange.add_to_blender(appear_time = 0)
+        orange.move_head(
+            start_time = 1,
+            end_time = 10,
+            rotation_quaternion = [1, 0.1, 0.1, 0.3]
+        )
+
+        green = blobject.Blobject(
+            location = [-12.78, -6, 4.656],
+            rotation_euler = [
+                0 * math.pi / 180,
+                90 * math.pi / 180,
+                0 * math.pi / 180
+            ],
+            scale = 2.952,
+            mat = 'creature_color7'
+        )
+        green.add_to_blender(appear_time = 0)
+        green.move_head(
+            start_time = 1,
+            end_time = 10,
+            rotation_quaternion = [1, 0, 0.1, 0.2]
+        )
+
+        def func(x): return 2 ** x
+
+        g = graph_bobject.GraphBobject(
+            func,
+            x_range = 4,
+            location = [0, -2, 0],
+            centered = True,
+            tick_step = [100, 100],
+            width = 24,
+            x_label = '\\text{Time}',
+            y_label = '\\text{Population}',
+            y_label_rot = True,
+        )
+        g.add_to_blender(appear_time = 0)

@@ -38,6 +38,9 @@ import helpers
 imp.reload(helpers)
 from helpers import *
 
+import table_bobject
+imp.reload(table_bobject)
+
 import natural_sim
 imp.reload(natural_sim)
 from natural_sim import *
@@ -71,6 +74,12 @@ imp.reload(drawn_contest_world)
 
 import aggression
 imp.reload(aggression)
+
+import inclusive_fitness
+imp.reload(inclusive_fitness)
+
+#import hawk_dove_basic
+#imp.reload(hawk_dove_basic)
 
 def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = True):
     #clear objects and materials
@@ -349,16 +358,16 @@ def test():
             #37,
             #50,
             61,
-            61,
-            61,
-            61,
-            61,
-            61,
-            61,
-            61,
-            61,
-            61,
-            61,
+            #61,
+            #61,
+            #61,
+            #61,
+            #61,
+            #61,
+            #1,
+            #61,
+            #61,
+            #61,
             #100,
             #150,
             #200,
@@ -372,22 +381,26 @@ def test():
             #1999
         ]
         nums_days_to_try = [
-            #1,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-            16,
-            17,
-            18,
-            19,
-            20,
+            #2,
+            #10,
+            #11,
+            #12,
+            #13,
+            #14,
+            #15,
+            #16,
+            #17,
+            #18,
+            #19,
+            #20,
             #30,
             #40,
             #50,
-            #100,
+            #60,
+            #70,
+            #80,
+            #90,
+            10000,
             #150,
             #200,
             #300,
@@ -404,8 +417,8 @@ def test():
         quantile_count = 10
 
 
-        table_type = 'avgs_with_food_count_and_time'
-        #table_type = 'show_distribution'
+        #table_type = 'avgs_with_food_count_and_time'
+        table_type = 'show_distribution'
 
         #Table where rows are food counts and columns are day counts
         #Each cell show mean and stddev of samples
@@ -430,10 +443,10 @@ def test():
             for j in range(num_samples):
                 sample_results = []
 
-                num_creatures = food_count
+                num_creatures = 2 * food_count
                 initial_creatures = []
                 for k in range(num_creatures):
-                    if k % 2 == 0:
+                    if k == num_creatures - 1: #% 2 == 0:
                         cre = hawk_dove.Creature(
                             fight_chance = 1
                         )
@@ -447,7 +460,7 @@ def test():
                     )'''
                     initial_creatures.append(cre)
 
-                world = hawk_dove.World(food_count = food_count, initial_creatures = initial_creatures)
+                world = hawk_dove_basic.World()#food_count = food_count, initial_creatures = initial_creatures)
 
                 num_days = nums_days_to_try[-1]
                 for i in range(num_days):
@@ -531,31 +544,30 @@ def test():
     #sim_test()
 
     def animation_test():
-        new_sim = False
-
-        if new_sim == True:
-            world = hawk_dove.World(food_count = 61)
-            num_days = 10
-
-            for i in range(num_days):
-                save = False
-                if i == num_days - 1:
-                    save = True
-                world.new_day(save = save)
-        else:
-            world = 'HAWKDOVE20190620T212425'
+        world = 'doves_only'
 
         drawn_world = drawn_contest_world.DrawnWorld(
             sim = world,
             loud = True
         )
 
-        drawn_world.add_to_blender(appear_time = 1)
-        drawn_world.animate_days(
+        #world = hawk_dove.World(food_count = 61)
+        world = drawn_world.sim
+        #sys.setrecursionlimit(10000)
+        num_days = 70
+
+        for i in range(num_days):
+            save = False
+            if i == num_days - 1:
+                save = True
+            world.new_day(save = save)
+
+        #drawn_world.add_to_blender(appear_time = 1)
+        '''drawn_world.animate_days(
             start_time = 2,
             first_animated_day = 0,
-            last_animated_day = 10
-        )
+            last_animated_day = 3#10
+        )'''
 
     #animation_test()
 
@@ -577,11 +589,11 @@ def test():
 
     #walk_to_test()
 
-    func = [2, 3, 2, 5, 2, 6, 4, 4, 3, 9, 8]
+    '''func = [2, 3, 2, 5, 2, 6, 4, 4, 3, 9, 8]
     def func2(x): return x
 
     func3 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    func4 = [2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]
+    func4 = [2, 0, 0, 0, 2, 1, 2, 1, 2, 1, 2]
     func5 = [2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]
 
 
@@ -595,22 +607,24 @@ def test():
     )
     g.add_to_blender(
         appear_time = 1,
-    )
-    g.animate_all_bounded_regions(
+    )'''
+    '''g.animate_all_bounded_regions(
         start_time = 2,
         end_time = 3,
         uniform_along_x = True
-    )
+    )'''
 
 def main():
     """Use this as a test scene"""
     #tex_test()
     """"""
+    #initialize_blender()
+
 
     #circle_grid()
-    test()
+    #test()
     #draw_scenes_from_file(scds, clear = False)
-    #draw_scenes_from_file(aggression)
+    draw_scenes_from_file(aggression)
 
     print_time_report()
     finish_noise()

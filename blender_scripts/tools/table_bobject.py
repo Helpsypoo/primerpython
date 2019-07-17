@@ -21,6 +21,7 @@ class TableBobject(Bobject):
         cell_padding = 0.75,
         centered = False,
         element_matrix = None,
+        style = 'two_lines',
         **kwargs
     ):
         print('Initializing table bobject')
@@ -30,6 +31,7 @@ class TableBobject(Bobject):
 
         self.width = width
         self.height = height
+        self.style = style
         #This doesn't actually do anything right now.
         self.centered = centered
 
@@ -67,7 +69,9 @@ class TableBobject(Bobject):
         self.draw_grid()
 
     def get_element_dimensions(self, element):
-        if not isinstance(element, svg_bobject.SVGBobject):
+        if not isinstance(element, svg_bobject.SVGBobject) \
+            and not isinstance(element, tex_bobject.TexBobject):
+            print(element)
             raise Warning("Tables can't yet hold things that aren't svg bobjects")
 
         width = 0
@@ -75,9 +79,9 @@ class TableBobject(Bobject):
         #Just size to the max width out of all possible forms
         for key in element.imported_svg_data:
             fig = element.imported_svg_data[key]
-            if fig['length'] > width:
+            if fig['length'] * element.ref_obj.scale[0] > width:
                 width = fig['length']
-            if fig['height'] > height:
+            if fig['height'] * element.ref_obj.scale[1] > height:
                 height = fig['height']
 
         return width, height
@@ -115,30 +119,58 @@ class TableBobject(Bobject):
 
         for i, row in enumerate(self.element_matrix):
             for j, element in enumerate(row):
-                element.scale = [
-                    element.scale[0] * self.scale_factor,
-                    element.scale[1] * self.scale_factor,
-                    element.scale[2] * self.scale_factor,
+                element.ref_obj.scale = [
+                    element.ref_obj.scale[0] * self.scale_factor,
+                    element.ref_obj.scale[1] * self.scale_factor,
+                    element.ref_obj.scale[2] * self.scale_factor,
                 ]
 
     def draw_grid(self):
         #Just going to draw two lines here, since that's what I need right now.
-        vert_line = import_object(
-            'one_side_cylinder', 'primitives',
-            location = [self.column_widths[0], 0, 0],
-            scale = [0.05, 0.05, sum(self.row_heights)],
-            rotation_euler = [math.pi / 2, 0, 0]
-        )
-        hor_line = import_object(
-            'one_side_cylinder', 'primitives',
-            location = [0, -self.row_heights[0], 0],
-            scale = [0.05, 0.05, sum(self.column_widths)],
-            rotation_euler = [0, math.pi / 2, 0]
-        )
+        if self.style == 'two_lines':
+            vert_line = import_object(
+                'one_side_cylinder', 'primitives',
+                location = [self.column_widths[0], 0, 0],
+                scale = [0.05, 0.05, sum(self.row_heights)],
+                rotation_euler = [math.pi / 2, 0, 0]
+            )
+            hor_line = import_object(
+                'one_side_cylinder', 'primitives',
+                location = [0, -self.row_heights[0], 0],
+                scale = [0.05, 0.05, sum(self.column_widths)],
+                rotation_euler = [0, math.pi / 2, 0]
+            )
+            for line in [vert_line, hor_line]:
+                self.add_subbobject(line)
+
+        if self.style == 'full_grid':
+            hor_pos = 0
+            for i in range(len(self.column_widths) + 1):
+                vert_line = import_object(
+                    'one_side_cylinder', 'primitives',
+                    location = [hor_pos, 0, 0],
+                    scale = [0.05, 0.05, sum(self.row_heights)],
+                    rotation_euler = [math.pi / 2, 0, 0]
+                )
+                self.add_subbobject(vert_line)
+                if i < len(self.column_widths):
+                    hor_pos += self.column_widths[i]
+
+            vert_pos = 0
+            for i in range(len(self.row_heights) + 1):
+                hor_line = import_object(
+                    'one_side_cylinder', 'primitives',
+                    location = [0, -vert_pos, 0],
+                    scale = [0.05, 0.05, sum(self.column_widths)],
+                    rotation_euler = [0, math.pi / 2, 0]
+                )
+                self.add_subbobject(hor_line)
+                if i < len(self.row_heights):
+                    vert_pos += self.row_heights[i]
 
 
-        for line in [vert_line, hor_line]:
-            self.add_subbobject(line)
+
+
 
     def default_element_matrix(self):
         strings = [['This', 'is', 'a'],['wide', 'table', 'dawg']]

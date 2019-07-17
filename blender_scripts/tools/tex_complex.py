@@ -160,7 +160,12 @@ class TexComplex(Bobject):
             bobjs = []
             path = tex_bobj.paths[target[0]]
             for i in range(target[1], target[2] + 1):
-                bobjs.append(tex_bobj.imported_svg_data[path]['curves'][i])
+                try:
+                    bobjs.append(tex_bobj.imported_svg_data[path]['curves'][i])
+                except:
+                    print(i)
+                    print(tex_bobj.imported_svg_data[path]['curves'])
+                    raise()
 
             left_most = math.inf
             right_most = -math.inf
@@ -194,13 +199,13 @@ class TexComplex(Bobject):
 
             if len(target) > 3 and target[3] == None: #No bobjs, empty gesture. HEH.
                 if alignment == 'top':
-                    #y += 0 * self.scale[1] * tex_bobj.scale[1]
+                    #y += 0 * self.ref_obj.scale[1] * tex_bobj.ref_obj.scale[1]
                     head = ((right_most + left_most) / 2 / gest_scale,
                             y + length,
                             0)
                     rot = (0, 0, 0)
                 elif alignment == 'bottom':
-                    #y -= 0 * self.scale[1] * tex_bobj.scale[1]
+                    #y -= 0 * self.ref_obj.scale[1] * tex_bobj.ref_obj.scale[1]
                     head = ((right_most + left_most) / 2 / gest_scale,
                             y - length,
                             0)
@@ -219,12 +224,12 @@ class TexComplex(Bobject):
             elif len(target) > 3 and target[3] == 'bracket' or \
                 (len(target) == 3 and len(bobjs) > 1): #Bracket
                 if alignment == 'top':
-                    y += 0.2 * self.scale[1] * tex_bobj.scale[1]
+                    y += 0.2 * self.ref_obj.scale[1] * tex_bobj.ref_obj.scale[1]
                     annotation_point = ((right_most + left_most) / 2 / gest_scale, y + length, 0)
                     left_point = (left_most / gest_scale, y, 0)
                     right_point = (right_most / gest_scale, y, 0)
                 elif alignment == 'bottom':
-                    y -= 0.2 * self.scale[1] * tex_bobj.scale[1]
+                    y -= 0.2 * self.ref_obj.scale[1] * tex_bobj.ref_obj.scale[1]
                     annotation_point = ((right_most + left_most) / 2 / gest_scale, y - length, 0)
                     left_point = [right_most / gest_scale, y, 0]
                     right_point = [left_most / gest_scale, y, 0]
@@ -244,7 +249,7 @@ class TexComplex(Bobject):
             elif len(target) > 3 and target[3] == 'arrow' or \
                 (len(target) == 3 and len(bobjs) == 1): #Arrow
                 if alignment == 'top':
-                    y += 0.3 * tex_bobj.scale[1] #* self.scale[1]
+                    y += 0.3 * tex_bobj.ref_obj.scale[1] #* self.ref_obj.scale[1]
                     head = ((right_most + left_most) / 2 / gest_scale + math.tan(this_angle) * 0.4,
                             y / gest_scale,
                             0)
@@ -252,7 +257,7 @@ class TexComplex(Bobject):
                             (y + length) / gest_scale,
                             0)
                 elif alignment == 'bottom':
-                    y -= 0.3 * tex_bobj.scale[1] #* self.scale[1]
+                    y -= 0.3 * tex_bobj.ref_obj.scale[1] #* self.ref_obj.scale[1]
                     head = ((right_most + left_most) / 2 / gest_scale - math.tan(this_angle) * 0.4,
                             y / gest_scale,
                             0)

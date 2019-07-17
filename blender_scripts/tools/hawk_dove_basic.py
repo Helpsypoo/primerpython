@@ -1,18 +1,19 @@
+import math
 from random import random, choice, shuffle
 from helpers import save_sim_result
 
-DEFAULT_NUM_CREATURES = 121
-MUTATION_CHANCE = 0.0
+DEFAULT_NUM_CREATURES = 11000
+MUTATION_CHANCE = 0.01
 MUTATION_VARIATION = 0.1
-TRAIT_MODE = 'binary' #float or binary
-FOOD_VALUE = 2
+TRAIT_MODE = 'float' #float or binary
+FOOD_VALUE = 1
 BASE_FOOD = 0
+
 
 SHARE_FRACTION = 1/2
 HAWK_TAKE_FRACTION = 3/4
 SUCKER_FRACTION = 1/4
-FIGHT_FRACTION = 1/2
-FIGHT_COST = 4/16
+FIGHT_FRACTION = 0
 
 
 class Creature(object):
@@ -43,15 +44,26 @@ class Day(object):
         super().__init__()
         self.date = date
 
+        self.creatures = creatures
+
+
+        food_count = int(math.floor(len(creatures)) / 2) #Make sure there's a food for every
+                                               #two creatures. Except there will
+                                               #be an odd one out. But they
+                                               #survive anyway
+
+
         self.food_objects = []
         for i in range(food_count):
             self.food_objects.append(Food(index = i))
-        self.creatures = creatures
         self.contests = []
 
     def simulate_day(self):
+        #Morning
+
         shuffled_cres = self.creatures.copy()
         shuffle(shuffled_cres)
+
         for cre in shuffled_cres:
             cre.days_log.append(
                 {
@@ -80,6 +92,7 @@ class Day(object):
 
         #Lone creatures eat their food
         for food in [x for x in self.food_objects if x.eaten == False]:
+            raise Warning('Should be node of these')
             num = len(food.interested_creatures)
             if num == 1:
                 food.eaten = True
@@ -117,21 +130,51 @@ class Day(object):
         self.update_creatures()
 
     def update_creatures(self):
+
+        scores = []
+        nums = []
+        for i in range(11):
+            score = 0
+            num = 0
+            for cre in self.creatures:
+                if int(cre.fight_chance * 10) == i:
+                    score += cre.days_log[-1]['score']
+                    num += 1
+            scores.append(score)
+            nums.append(num)
+
+        total = sum(scores)
+
+        nums_offspring = []
+        for score in scores:
+            frac = score / total
+            num_offspring = round(frac * DEFAULT_NUM_CREATURES)
+            nums_offspring.append(num_offspring)
+
+        '''avgs = []
+        for num, score in zip(nums, scores):
+            if num > 0:
+                avgs.append(score/num)
+            else:
+                avgs.append(0)
+        print(avgs)
+        offsprings_per = []
+        for num, num_offspring in zip(nums, nums_offspring):
+            if num > 0:
+                offsprings_per.append(num_offspring/num)
+            else:
+                offsprings_per.append(0)
+        print(offsprings_per)
+        print()'''
+
         next = []
-
-        for cre in self.creatures:
-            score = cre.days_log[-1]['score']
-            survival_roll = random()
-            if score > survival_roll:
-                next.append(cre)
-
-            #if score > 1:
-            reproduce_roll = random()
-            if score > 1 + reproduce_roll:
-                baby_fight_chance = cre.fight_chance
+        for i, num_offspring in enumerate(nums_offspring):
+            baby_fight_chance = i / 10
+            for i in range(num_offspring):
                 mutation_roll = random()
                 if MUTATION_CHANCE > mutation_roll:
                     if TRAIT_MODE == 'binary':
+                        raise Warning('Check baby fight chance')
                         if baby_fight_chance == 1:
                             baby_fight_chance = 0
                         elif baby_fight_chance == 0:
@@ -178,8 +221,8 @@ class Contest(object):
         if strat_0 == 'fight' and strat_1 == 'fight':
             #winner_index = choice([0, 1])
             #self.contestants[winner_index].days_log[-1]['score'] += 1
-            self.contestants[0].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * FIGHT_FRACTION - FIGHT_COST
-            self.contestants[1].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * FIGHT_FRACTION - FIGHT_COST
+            self.contestants[0].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * FIGHT_FRACTION
+            self.contestants[1].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * FIGHT_FRACTION
             self.outcome = 'fight'
         if strat_0 == 'fight' and strat_1 == 'share':
             self.contestants[0].days_log[-1]['score'] += BASE_FOOD + FOOD_VALUE * HAWK_TAKE_FRACTION
@@ -204,13 +247,9 @@ class World(object):
     def __init__(self, initial_creatures = None, food_count = 100):
         super().__init__()
 
-        if isinstance(initial_creatures, int) or initial_creatures == None:
-            self.generate_creatures(num = initial_creatures)
-        elif isinstance(initial_creatures, list):
-            self.initial_creatures = initial_creatures
-        else:
-            raise Warning('Cannot parse initial_creatures')
-
+        self.initial_creatures = initial_creatures
+        if self.initial_creatures == None:
+            self.generate_creatures()
         self.food_count = food_count
 
         self.calendar = []
@@ -242,15 +281,20 @@ class World(object):
         if save == True:
             save_sim_result(self, filename, filename_seed, type = 'HAWKDOVE')
 
-
-    def generate_creatures(self, num = None):
-        if num == None:
-            num = DEFAULT_NUM_CREATURES
+    def generate_creatures(self):
         self.initial_creatures = []
-        for i in range(num):
+        for i in range(DEFAULT_NUM_CREATURES):
             cre = Creature(
-                fight_chance = i % 2 #(i % 11) / 10
+                fight_chance = (i % 11) / 10
             )
+            '''if i % 2 == 0:
+                cre = Creature(
+                    fight_chance = 0
+                )
+            else:
+                cre = Creature(
+                    fight_chance = 1
+                )'''
 
             self.initial_creatures.append(cre)
 

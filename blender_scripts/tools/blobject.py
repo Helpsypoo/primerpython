@@ -683,9 +683,9 @@ class Blobject(Bobject):
         decay = None
     ):
         if start_time == None:
-            raise Warning('Need start time for evil pose')
+            raise Warning('Need start time for cheer')
         if end_time == None:
-            raise Warning('Need end time for evil pose')
+            raise Warning('Need end time for cheer')
 
         start_frame = start_time * FRAME_RATE
         end_frame = None
@@ -849,6 +849,57 @@ class Blobject(Bobject):
                     key.keyframe_insert(data_path = 'value', frame = end_frame - decay_frames)
                     key.value = initial_val
                     key.keyframe_insert(data_path = 'value', frame = end_frame)
+
+    def surprise_eyes(
+        self,
+        start_time = None,
+        end_time = None,
+        attack = None,
+        decay = None
+    ):
+        if start_time == None:
+            raise Warning('Need start time for normal_eyes()')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        if attack == None:
+            if end_time == None:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+        #Eyes
+        eyes = [
+            self.ref_obj.children[0].children[-2],
+            self.ref_obj.children[0].children[-3],
+        ]
+        for eye in eyes:
+
+            #key = eye.data.shape_keys.key_blocks['Key 1']
+            initial_val = copy(eye.scale)
+            eye.keyframe_insert(data_path = 'scale', frame = start_frame)
+            eye.scale = [1.2, 1.2, 1.2]
+            eye.keyframe_insert(data_path = 'scale', frame = start_frame + attack_frames)
+            if end_frame != None:
+                eye.keyframe_insert(data_path = 'scale', frame = end_frame - decay_frames)
+                eye.scale = initial_val
+                eye.keyframe_insert(data_path = 'scale', frame = end_frame)
+
 
     def hello(
         self,

@@ -243,7 +243,7 @@ class SVGBobject(Bobject):
                                 x.type == 'CURVE' and x not in previous_curves]
 
                 #Arrange new curves relative to tex object's ref_obj
-                scale_up = TEX_LOCAL_SCALE_UP #* self.scale[0]
+                scale_up = TEX_LOCAL_SCALE_UP #* self.intrinsic_scale[0]
 
                 for curve in new_curves:
                     for spline in curve.data.splines:
@@ -906,7 +906,7 @@ class SVGBobject(Bobject):
             length = right_most_x - left_most_x
             center = left_most_x + length / 2
 
-            self.imported_svg_data[expr]['length'] = length * self.scale[0]
+            self.imported_svg_data[expr]['length'] = length * self.intrinsic_scale[0]
             #Tbh, I don't remember why only the length is scaled
             self.imported_svg_data[expr]['centerx'] = center
             self.imported_svg_data[expr]['beginning'] = left_most_x #Untested
@@ -941,7 +941,7 @@ class SVGBobject(Bobject):
 
             self.imported_svg_data[expr]['top'] = top_most_y
             self.imported_svg_data[expr]['bottom'] = bottom_most_y
-            self.imported_svg_data[expr]['height'] = height * self.scale[1]
+            self.imported_svg_data[expr]['height'] = height * self.intrinsic_scale[1]
             self.imported_svg_data[expr]['centery'] = (top_most_y + bottom_most_y) / 2
 
     def get_figure_curves(self, fig):
