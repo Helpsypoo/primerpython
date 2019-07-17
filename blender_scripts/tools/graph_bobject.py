@@ -263,9 +263,20 @@ class GraphBobject(Bobject):
         ref.children[0].rotation_euler = (math.pi / 2, 0, 0)
         ref.children[0].scale = (AXIS_WIDTH / 2, AXIS_DEPTH / 2, tick_scale)
 
+        val_as_string = str(value)
+
+        #Hack to trim ridiculously rounded floats
+        #If a tick label is two longer than the previous one, it's probably
+        #because of rounding, so just make it the same length.
+        if len(self.tick_labels_x) > 0:
+            if len(val_as_string) > \
+                len(self.tick_labels_x[-1].rendered_curve_bobjects) + 1:
+
+                val_as_string = val_as_string[:len(self.tick_labels_x[-1].rendered_curve_bobjects)]
+
         label_scale = 0.5
         label = tex_bobject.TexBobject(
-            str(value),
+            val_as_string,
             #Scale label position based on tick length, but stay far enough
             #away to avoid overlap
             location = (
@@ -275,9 +286,11 @@ class GraphBobject(Bobject):
             ),
             centered = True,
             scale = label_scale,
-            name = 'x_tick_label ' + str(value),
+            name = 'x_tick_label ' + val_as_string,
             color = 'color5'
         )
+
+
         self.add_subbobject(label)
         self.tick_labels_x.append(label)
 
