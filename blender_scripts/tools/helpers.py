@@ -393,7 +393,13 @@ def mix_colors_hsv(color1, color2, mix):
     hsvcolor1 = rgb_to_hsv(*color1[:3])
     hsvcolor2 = rgb_to_hsv(*color2[:3])
     for i in range(len(hsvcolor1)):
-        comp = hsvcolor1[i] * (1 - mix) + hsvcolor2[i] * (1 - mix)
+        '''if i == 0:
+            print()
+            print(hsvcolor1[i])
+            print(hsvcolor2[i])
+            print()'''
+        #elif i > 0:
+        comp = hsvcolor1[i] * (1 - mix) + hsvcolor2[i] * (mix)
         mixed_color.append(comp)
 
     return hsv_to_rgb(*mixed_color) + [1]

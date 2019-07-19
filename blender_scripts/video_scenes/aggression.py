@@ -63,7 +63,8 @@ class HawkDove(Scene):
         #self.hypotheticals()
         #self.hawks_then_dove()
         #self.big_sim()
-        self.payoff_grid()
+        #self.payoff_grid()
+        self.building_from_here()
 
     def intro(self):
         pass
@@ -1716,6 +1717,14 @@ class HawkDove(Scene):
         arrow1.morph_figure(3, start_time = 106)
         arrow1.morph_figure(4, start_time = 110)'''
 
+        sotf = tex_bobject.TexBobject(
+            '\\text{Survival of the fittest}',
+            '\\text{Survival of the fittest?}',
+            location = [1.5, 9.5, 0]
+        )
+        sotf.ref_obj.parent = graph.ref_obj
+        sotf.add_to_blender(appear_time = 75)
+        sotf.morph_figure(1, start_time = 76)
 
         '''disappear_time = 50
         to_disappear = [graph, hawks_and_doves, drawn_world]
@@ -1902,6 +1911,9 @@ class HawkDove(Scene):
         )
         hh = tex_bobject.TexBobject(
             '0, 0',
+            '\\dfrac{1}{4}, \\dfrac{1}{4}',
+            '\\dfrac{1}{2}, \\dfrac{1}{2}',
+            '\\dfrac{3}{4}, \\dfrac{3}{4}',
             centered = True,
             scale = 1.5
         )
@@ -1942,6 +1954,14 @@ class HawkDove(Scene):
                     start_time = -1,
                     duration_time = None
                 )
+
+            for pos in [1, 4, 5, 6]:
+                hh.lookup_table[1][pos].color_shift(
+                    color = COLORS_SCALED[5],
+                    start_time = -1,
+                    duration_time = None
+                )
+
         color_elements()
 
         em = [
@@ -2202,6 +2222,13 @@ class HawkDove(Scene):
                         'tail': (tail1[0] / scale, tail1[1] / scale, 0),
                         'head': (head1[0] / scale, head1[1] / scale, 0)
                     }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (head1[0] / scale, head1[1] / scale, 0),
+                        'head': (tail1[0] / scale, tail1[1] / scale, 0)
+                    }
                 }
             ],
             scale = scale,
@@ -2275,6 +2302,13 @@ class HawkDove(Scene):
                     'points': {
                         'tail': (tail1[0] / scale, tail1[1] / scale, 0),
                         'head': (head1[0] / scale, head1[1] / scale, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (head1[0] / scale, head1[1] / scale, 0),
+                        'head': (tail1[0] / scale, tail1[1] / scale, 0)
                     }
                 }
             ],
@@ -2656,8 +2690,8 @@ class HawkDove(Scene):
             #rule.morph_figure(2, start_time = 377.5)
             #rule.morph_figure(3, start_time = 379)
 
-            d_lab = eq_con.lookup_table[0][0]
-            h_lab = eq_con.lookup_table[0][2]
+            d_lab = eq_con.lookup_table[1][0]
+            h_lab = eq_con.lookup_table[1][2]
             for i in range(2):
                 d_lab.pulse(
                     start_time = i + 73,
@@ -2686,6 +2720,9 @@ class HawkDove(Scene):
                 '\!=\\,\\, d \\cdot \\nicefrac{3}{2} + h \\cdot 0',
                 '\!=\\,\\, d \\cdot \\nicefrac{3}{2} + (1-d) \\cdot 0',
                 '\!=\\,\\, d \\cdot \\nicefrac{3}{2} + (1-d) \\cdot 0',
+                '\!=\\,\\, d \\cdot \\nicefrac{3}{2} + (1-d) \\cdot \\nicefrac{1}{4}',
+                '\!=\\,\\, d \\cdot \\nicefrac{3}{2} + (1-d) \\cdot \\nicefrac{1}{2}',
+                '\!=\\,\\, d \\cdot \\nicefrac{3}{2} + (1-d) \\cdot \\nicefrac{3}{4}',
             )
             hawk_eq = tex_complex.TexComplex(
                 hawk_score, hawk_rhs,
@@ -2728,6 +2765,9 @@ class HawkDove(Scene):
                             [7, 1, 5],
                             [8, 1, 5],
                             [9, 1, 5, None],
+                            [10, 1, 5, None],
+                            [11, 1, 5, None],
+                            [12, 1, 5, None],
                         ],
                     ],
                     labels = [
@@ -2740,6 +2780,9 @@ class HawkDove(Scene):
                         ['\\text{Score from}', '\\text{doves}'],
                         ['\\text{Score from}', '\\text{doves}'],
                         ['\\text{Score from}', '\\text{doves}'],
+                        [],
+                        [],
+                        [],
                         []
                     ],
                     alignment = 'bottom',
@@ -2759,6 +2802,9 @@ class HawkDove(Scene):
                             [7, 7, 9],
                             [8, 7, 13],
                             [9, 7, 13, None],
+                            [10, 7, 13, None],
+                            [11, 7, 13, None],
+                            [12, 7, 13, None],
                         ],
                     ],
                     labels = [
@@ -2771,6 +2817,9 @@ class HawkDove(Scene):
                         ['\\text{Score from}', '\\text{other hawks}'],
                         ['\\text{Score from}', '\\text{other hawks}'],
                         ['\\text{Score from}', '\\text{other hawks}'],
+                        [],
+                        [],
+                        [],
                         []
                     ],
                     alignment = 'bottom',
@@ -2819,7 +2868,7 @@ class HawkDove(Scene):
 
                 #Hawk dove payoof
                 for pos in [5, 6, 7]:
-                    hawk_rhs.lookup_table[3][pos].color_shift(
+                    hawk_rhs.lookup_table[2][pos].color_shift(
                         color = COLORS_SCALED[5],
                         start_time = -1,
                         duration_time = None
@@ -2834,6 +2883,12 @@ class HawkDove(Scene):
                     hawk_rhs.lookup_table[5][pos].color_shift(
                         color = COLORS_SCALED[5],
                         start_time = -1,
+                        duration_time = None
+                    )
+                for pos in [14, 15]:
+                    hawk_rhs.lookup_table[10][pos].color_shift(
+                        color = COLORS_SCALED[5],
+                        start_time = 100,
                         duration_time = None
                     )
                 to_highlight = hh.lookup_table[0][0:3:2]
@@ -2860,38 +2915,265 @@ class HawkDove(Scene):
             hawk_score.morph_figure(3, start_time = 99)
             hawk_rhs.morph_figure(9, start_time = 99)
             dove_eq.move_to(
-                new_location = [4.5, -3, 0],
+                new_location = [4.5, -3.75, 0],
                 start_time = 99
             )
             hawk_eq.move_to(
-                new_location = [4.5, -5.75, 0],
+                new_location = [4.5, -6.25, 0],
                 start_time = 99
             )
-        #equations_and_whatnot()
+
+            hawk_rhs.morph_figure(10, start_time = 115)
+            hawk_rhs.morph_figure(11, start_time = 117)
+            hawk_rhs.morph_figure(12, start_time = 118)
+
+        equations_and_whatnot()
 
         def dove_score_func1(x): return x * 1 + (1-x) * 1/2
-        def hawk_score_func1(x): return x * 1 + (1-x) * 0
-        def hawk_score_func2(x): return x * 1 + (1-x) * 1/4
-        def hawk_score_func3(x): return x * 1 + (1-x) * 3/4
+        def hawk_score_func1(x): return x * 3/2 + (1-x) * 0
+        def hawk_score_func2(x): return x * 3/2 + (1-x) * 1/4
+        def hawk_score_func3(x): return x * 3/2 + (1-x) * 2/4
+        def hawk_score_func4(x): return x * 3/2 + (1-x) * 3/4
 
         comparison_graph = graph_bobject.GraphBobject(
-            dove_score_func1, hawk_score_func1,
-            location = [-3, -1, 0],
+            #dove_score_func1, hawk_score_func1,
+            #hawk_score_func2, hawk_score_func3,
+            location = [-2, -0.75, 0],
             #rotation_euler = [74 * math.pi / 180, 0, 0],
             x_range = 1,
             y_range = 1.5,
-            width = 10,
-            height = 5,
-            tick_step = [0.2, 0.5],
-            x_label = "d",
+            width = 14,
+            height = 7,
+            tick_step = [0.25, 0.5],
+            x_label = "d \\phantom{lowercase}",
             y_label = "\\text{Expected score}",
-            y_label_pos = 'along',
+            y_label_pos = 'end',
+            #y_label_rot = True,
             x_label_pos = 'end',
             arrows = 'positive',
             centered = False,
-            scale = 1.5,
-            high_res_curve_indices = [0, 1],
+            scale = 1,
+            high_res_curve_indices = [],
             #discrete_interpolation_style = 'linear',
-            #show_functions = False
+            show_functions = False
         )
         comparison_graph.add_to_blender(appear_time = 110)
+        comparison_graph.add_new_function_and_curve(dove_score_func1, color = 3)
+        comparison_graph.add_new_function_and_curve(hawk_score_func1, color = 6)
+        comparison_graph.animate_all_function_curves(
+            start_time = 111,
+            end_time = 111.75,
+            start_window = 0.25
+        )
+        D_lab = tex_bobject.TexBobject(
+            '\\text{D}',
+            location = [12.5, 3.5, 0]
+        )
+        D_lab.ref_obj.parent = comparison_graph.ref_obj
+        D_lab.add_to_blender(appear_time = 111.25)
+        H_lab = tex_bobject.TexBobject(
+            '\\text{H}',
+            location = [12.5, 5.3, 0]
+        )
+        H_lab.ref_obj.parent = comparison_graph.ref_obj
+        H_lab.add_to_blender(appear_time = 111.5)
+
+        scale = 1
+        tail1 = [6, 6]
+        head1 = [6, 3]
+        tail2 = [4, 5.67]
+        head2 = [4, 2.67]
+        tail3 = [0.4 + 1.5, 2.2 + math.sqrt(9 - 2.25)]
+        head3 = [0.4 , 2.2]
+        eq_arrow = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (tail1[0] / scale, tail1[1] / scale, 0),
+                        'head': (head1[0] / scale, head1[1] / scale, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (tail2[0] / scale, tail2[1] / scale, 0),
+                        'head': (head2[0] / scale, head2[1] / scale, 0)
+                    }
+                },
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (tail3[0] / scale, tail3[1] / scale, 0),
+                        'head': (head3[0] / scale, head3[1] / scale, 0)
+                    }
+                },
+            ],
+            scale = scale,
+        )
+        eq_arrow.ref_obj.parent = comparison_graph.ref_obj
+        eq_arrow.add_to_blender(appear_time = 113)
+
+        #My handling of functions in graph bobjects is trash
+        comparison_graph.functions.append(hawk_score_func2)
+        comparison_graph.functions_coords.append(comparison_graph.func_to_coords(func_index = 2))
+        hh.morph_figure(1, start_time = 115)
+        comparison_graph.morph_curve(
+            2,
+            from_curve_index = 1,
+            start_time = 115,
+            end_time = 115.5
+        )
+        eq_arrow.morph_figure(1, start_time = 115)
+
+        comparison_graph.functions.append(hawk_score_func3)
+        comparison_graph.functions_coords.append(comparison_graph.func_to_coords(func_index = 3))
+        hh.morph_figure(2, start_time = 117)
+        comparison_graph.morph_curve(
+            3,
+            from_curve_index = 1,
+            start_time = 117,
+            end_time = 117.5
+        )
+        eq_arrow.morph_figure(2, start_time = 117)
+
+        comparison_graph.functions.append(hawk_score_func4)
+        comparison_graph.functions_coords.append(comparison_graph.func_to_coords(func_index = 4))
+        hh.morph_figure(3, start_time = 118)
+        comparison_graph.morph_curve(
+            4,
+            from_curve_index = 1,
+            start_time = 118,
+            end_time = 118.5
+        )
+        eq_arrow.disappear(disappear_time = 118.5)
+
+        #hh pulses
+        hh.lookup_table[1][0].pulse(start_time = 122, duration_time = 1)
+        hh.lookup_table[1][1].pulse(start_time = 122, duration_time = 1)
+        hh.lookup_table[1][2].pulse(start_time = 122, duration_time = 1)
+        hh.lookup_table[1][4].pulse(start_time = 122, duration_time = 1)
+        hh.lookup_table[1][5].pulse(start_time = 122, duration_time = 1)
+        hh.lookup_table[1][6].pulse(start_time = 122, duration_time = 1)
+
+        dh.lookup_table[0][0].pulse(start_time = 125, duration_time = 1)
+        dh.lookup_table[0][1].pulse(start_time = 125, duration_time = 1)
+        dh.lookup_table[0][2].pulse(start_time = 125, duration_time = 1)
+        hd.lookup_table[0][4].pulse(start_time = 125, duration_time = 1)
+        hd.lookup_table[0][5].pulse(start_time = 125, duration_time = 1)
+        hd.lookup_table[0][6].pulse(start_time = 125, duration_time = 1)
+
+        arrow_42.morph_figure(1, start_time = 128)
+        arrow_43.morph_figure(1, start_time = 128)
+
+        arrow_12.subbobjects[0].pulse(start_time = 130, duration_time = 0.5)
+        arrow_42.subbobjects[0].pulse(start_time = 130.25, duration_time = 0.5)
+        arrow_13.subbobjects[0].pulse(start_time = 130.75, duration_time = 0.5)
+        arrow_43.subbobjects[0].pulse(start_time = 131, duration_time = 0.5)
+
+        #hh pulses
+        hh.lookup_table[1][0].pulse(start_time = 132, duration_time = 1)
+        hh.lookup_table[1][1].pulse(start_time = 132, duration_time = 1)
+        hh.lookup_table[1][2].pulse(start_time = 132, duration_time = 1)
+        hh.lookup_table[1][4].pulse(start_time = 132, duration_time = 1)
+        hh.lookup_table[1][5].pulse(start_time = 132, duration_time = 1)
+        hh.lookup_table[1][6].pulse(start_time = 132, duration_time = 1)
+        #dd pulses
+        dd.lookup_table[0][0].pulse(start_time = 133, duration_time = 1)
+        dd.lookup_table[0][2].pulse(start_time = 133, duration_time = 1)
+
+    def building_from_here(self):
+        building = tex_bobject.TexBobject(
+            '\\text{Building from here}',
+            location = [-12, 5, 0],
+            scale = 1.9
+        )
+        building.add_to_blender(appear_time = 32)
+
+        mixed = tex_bobject.TexBobject(
+            '\\text{Creatures with more than one strategy}',
+            '\\text{Mixed strategies}',
+            location = [-11, 2.25, 0],
+            scale = 1.4
+        )
+        mixed.add_to_blender(appear_time = 35.5)
+
+        container = bobject.Bobject(
+            location = [0, -4, 0]
+        )
+        container.add_to_blender(appear_time = 0)
+
+        zero_blob = blobject.Blobject(
+            location = [-4, 0, 0],
+            scale = 4,
+            mat = 'creature_color3'
+        )
+        zero_blob.ref_obj.parent = container.ref_obj
+        zero_blob.add_to_blender(appear_time = 36)
+        one_blob = blobject.Blobject(
+            location = [4, 0, 0],
+            scale = 4,
+            mat = 'creature_color6'
+        )
+        one_blob.ref_obj.parent = container.ref_obj
+        one_blob.add_to_blender(appear_time = 37)
+
+        zero_blob.move_to(
+            new_location = [-10, 0, 0],
+            new_scale = 2,
+            start_time = 38
+        )
+        one_blob.move_to(
+            new_location = [10, 0, 0],
+            new_scale = 2,
+            start_time = 38
+        )
+
+        for i in range(1, 4):
+            bleb = blobject.Blobject(
+                location = [(i - 2) * 5, 0, 0],
+                scale = 2,
+            )
+            bleb.color_shift(
+                color = mix_colors_hsv(COLORS_SCALED[2], COLORS_SCALED[5], i / 10),
+                start_time = 0,
+                duration_time = None,
+                obj = bleb.ref_obj.children[0].children[0]
+            )
+            bleb.add_to_blender(appear_time = 38)
+            bleb.ref_obj.parent = container.ref_obj
+
+
+        mixed.morph_figure(1, start_time = 46.5)
+
+
+        conditional = tex_bobject.TexBobject(
+            '\\text{Conditional strategies}',
+            location = [-11, -0.25, 0],
+            scale = 1.4
+        )
+        conditional.add_to_blender(appear_time = 57.5)
+
+        asymmetric = tex_bobject.TexBobject(
+            '\\text{Asymmetric contests}',
+            location = [-11, -2.75, 0],
+            scale = 1.4
+        )
+        asymmetric.add_to_blender(appear_time = 61)
+
+        pd = tex_bobject.TexBobject(
+            '\\text{Prisoner\'s dilemma}',
+            location = [-11, -5.25, 0],
+            scale = 1.4
+        )
+        pd.add_to_blender(appear_time = 77)
+
+        to_disappear = [
+            building,
+            mixed,
+            conditional,
+            asymmetric,
+            pd
+        ]
+        for i, thing in enumerate(to_disappear):
+            thing.disappear(disappear_time = 58.5 - (len(to_disappear) - 1 - i) * 0.05)

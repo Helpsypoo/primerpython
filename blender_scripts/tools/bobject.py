@@ -381,8 +381,8 @@ class Bobject(object):
         start_time = None,
         start_frame = None,
         factor = 1.2,
-        attack = OBJECT_APPEARANCE_TIME,
-        decay = OBJECT_APPEARANCE_TIME,
+        attack = None,
+        decay = None,
         duration_time = None,
         duration = None,
     ):
@@ -400,11 +400,31 @@ class Bobject(object):
             if duration == None:
                 duration = OBJECT_APPEARANCE_TIME * 4
 
+        end_time = start_time + duration_time
+
+        if attack == None:
+            if end_time == None:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 2
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 2
+        decay_frames = decay * FRAME_RATE
+
         obj = self.ref_obj
         obj.keyframe_insert(data_path="scale", frame = start_frame)
         obj.scale *= factor
-        obj.keyframe_insert(data_path="scale", frame = start_frame + attack)
-        obj.keyframe_insert(data_path="scale", frame = start_frame + duration - decay)
+        obj.keyframe_insert(data_path="scale", frame = start_frame + attack_frames)
+        obj.keyframe_insert(data_path="scale", frame = start_frame + duration - decay_frames)
         obj.scale /= factor
         obj.keyframe_insert(data_path="scale", frame = start_frame + duration)
 

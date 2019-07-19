@@ -1188,6 +1188,8 @@ class GraphBobject(Bobject):
                 raise Warning("You defined both end frame and end time. " +\
                               "Just do one, ya dick.")
             end_frame = int(end_time * FRAME_RATE)
+        else:
+            end_frame = start_frame + OBJECT_APPEARANCE_TIME
 
         num_curves = len(self.functions_curves) - skip
         start_interval = (end_frame - start_frame) * start_window / num_curves
@@ -1642,6 +1644,7 @@ class GraphBobject(Bobject):
     def morph_curve(
         self,
         to_curve_index,
+        from_curve_index = 0,
         start_time = None,
         end_time = None,
         start_frame = None,
@@ -1670,7 +1673,7 @@ class GraphBobject(Bobject):
 
         self.active_function_index = to_curve_index
 
-        curve_object = self.functions_curves[0].ref_obj.children[0]
+        curve_object = self.functions_curves[from_curve_index].ref_obj.children[0]
         bpy.context.scene.objects.active = curve_object
         #bpy.ops.object.mode_set(mode = 'OBJECT')
         #If absolute shape keys exist, set eval_time to zero
@@ -1701,7 +1704,7 @@ class GraphBobject(Bobject):
             final_coords[0][2] - (final_coords[1][2] - final_coords[0][2])
         ]
         final_coords.insert(0, start_coord)
-        end_coord = start_coord = [
+        end_coord = [
             final_coords[-1][0] + (final_coords[-2][0] - final_coords[-1][0]),
             final_coords[-1][1] + (final_coords[-2][1] - final_coords[-1][1]),
             final_coords[-1][2] + (final_coords[-2][2] - final_coords[-1][2])
