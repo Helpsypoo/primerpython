@@ -29,7 +29,7 @@ FOOD_PATTERN_ANGLE_OFFSET = 6
 FOOD_EDGE_RATIO = 0.8
 
 CREATURE_MOVE_DURATION = 0.5
-PAUSE_LENGTH = 0.25
+PAUSE_LENGTH = 0#.25
 
 '''
 Improvements
@@ -84,11 +84,11 @@ class DrawnWorld(Bobject):
         phase_durations = {
             'day_prep' : CREATURE_MOVE_DURATION,
             'creatures_go_out' : CREATURE_MOVE_DURATION,
-            'pause_before_contest' : PAUSE_LENGTH,
+            'pause_before_contest' : 0,
             'contest' : CREATURE_MOVE_DURATION,
             'pause_before_home' : PAUSE_LENGTH,
             'creatures_go_home' : CREATURE_MOVE_DURATION,
-            'pause_before_reset' : PAUSE_LENGTH,
+            'pause_before_reset' : 0,
             'food_disappear' : CREATURE_MOVE_DURATION,
         },
         scale = 5,
@@ -97,6 +97,7 @@ class DrawnWorld(Bobject):
         loud = False,
         linked_graph = None,
         bounded_regions = True, #For testing
+        wiggle = False,
         **kwargs
     ):
         super().__init__(scale = scale, name = name, **kwargs)
@@ -130,10 +131,14 @@ class DrawnWorld(Bobject):
                 #Will be redundant in most cases, but catches last creatures
 
         self.drawn_creatures = []
+        self.reusable_creatures = []
+        self.reusable_food = []
+        self.reusable_halves = []
         self.creature_scale = creature_scale
         if self.creature_scale == None:
             self.creature_scale = BASE_CREATURE_SCALE
             ##TODO: make this depend on food count.
+        self.wiggle = wiggle
 
         self.elapsed_time = 0
 
@@ -221,25 +226,47 @@ class DrawnWorld(Bobject):
                     else:
                         start_loc = cre.parent.drawn_creature.ref_obj.location
 
+                    reusables = [x for x in self.reusable_creatures if x.creature.fight_chance == cre.fight_chance]
+                    if len(reusables) > 0:
+                        d_cre = reusables[0]
+                        self.reusable_creatures.remove(d_cre)
+                        d_cre.creature = cre
+                        d_cre.move_to(
+                            new_location = start_loc,
+                            new_angle = [math.pi / 2, 0, angle],
+                            #scale = self.creature_scale,
+                            end_time = start_time,
+                            start_frame = start_time * FRAME_RATE - 1
+                        )
+                        d_cre.move_to(
+                            new_scale = self.creature_scale,
+                            start_time = start_time,
+                            end_time = end_time
+                        )
 
-                    d_cre = DrawnCreature(
-                        creature = cre,
-                        location = start_loc,
-                        rotation_euler = [math.pi / 2, 0, angle],
-                        scale = self.creature_scale
-                    )
-                    self.add_subbobject(d_cre)
+                    else:
+                        d_cre = DrawnCreature(
+                            creature = cre,
+                            location = start_loc,
+                            rotation_euler = [math.pi / 2, 0, angle],
+                            scale = self.creature_scale,
+                            wiggle = self.wiggle
+                        )
+                        self.add_subbobject(d_cre)
+                        d_cre.add_to_blender(
+                            appear_time = start_time,
+                            transition_time = (end_time - start_time) * FRAME_RATE
+                            #subbobject_timing = (end_time - start_time) * FRAME_RATE
+                        )
+
                     self.drawn_creatures.append(d_cre)
-
                     cre.drawn_creature = d_cre
-                    d_cre.add_to_blender(
-                        appear_time = start_time,
-                        subbobject_timing = OBJECT_APPEARANCE_TIME
-                    )
+
                     if is_first_day == False:
                         d_cre.move_to(
                             new_location = destination,
-                            start_time = start_time
+                            start_time = start_time,
+                            end_time = end_time
                         )
 
             #old creatures
@@ -254,10 +281,12 @@ class DrawnWorld(Bobject):
                     ]
                     cre.drawn_creature.move_to(
                         new_location = destination,
-                        start_time = start_time
+                        start_time = start_time,
+                        end_time = end_time
                     )
 
             #clean up dead creatures
+            new_reusable_creatures = []
             for d_cre in self.drawn_creatures:
                 alive = False
                 for cre in creatures:
@@ -265,7 +294,20 @@ class DrawnWorld(Bobject):
                         alive = True
                         break
                 if alive == False:
-                    d_cre.disappear(disappear_time = start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE)
+                    #d_cre.disappear(disappear_time = end_time)#start_time + OBJECT_APPEARANCE_TIME / FRAME_RATE)
+                    d_cre.move_to(
+                        new_scale = 0,
+                        start_time = start_time,
+                        end_time = end_time
+                    )
+                    new_reusable_creatures.append(d_cre)
+
+            #print('New reusable creatures')
+            for d_cre in new_reusable_creatures:
+                #print(str(d_cre.name) + ' ' + str(d_cre.creature.fight_chance))
+                self.drawn_creatures.remove(d_cre)
+                self.reusable_creatures.append(d_cre)
+
 
         if self.linked_graph != None:
             if updating_next == False:
@@ -324,45 +366,112 @@ class DrawnWorld(Bobject):
             pair.location = locations[i]
             pair.angle = math.atan2(locations[i][1], locations[i][0])
 
-            food1 = DrawnFood(
-                object_model = self.food_object_model,
-                location = [
-                    locations[i][0] - 0.9 * f_scale * math.cos(pair.angle + math.pi / 2),
-                    locations[i][1] - 0.9 * f_scale * math.sin(pair.angle + math.pi / 2),
-                    f_scale,
-                ],
-                scale = f_scale,
-                mat = 'color7'
-            )
+            #reusables = [x for x in self.reusable_creatures if x.creature.fight_chance == cre.fight_chance]
+            if len(self.reusable_food) > 1:
+                food1 = self.reusable_food[0]
+                self.reusable_food.remove(food1)
+                food1.move_to(
+                    new_location = [
+                        locations[i][0] - 0.9 * f_scale * math.cos(pair.angle + math.pi / 2),
+                        locations[i][1] - 0.9 * f_scale * math.sin(pair.angle + math.pi / 2),
+                        f_scale,
+                    ],
+                    end_time = start_time,
+                    start_frame = start_time * FRAME_RATE - 1
+                )
+                world_const = food1.ref_obj.constraints[0]
+                world_const.keyframe_insert(
+                    data_path = 'influence',
+                    frame = start_time * FRAME_RATE - 1
+                )
+                world_const.influence = 1
+                world_const.keyframe_insert(
+                    data_path = 'influence',
+                    frame = start_time * FRAME_RATE
+                )
 
-            constraint = food1.ref_obj.constraints.new('CHILD_OF')
-            constraint.target = self.ref_obj
-            #constraint.use_rotation_x = False
-            #constraint.use_rotation_y = False
-            #constraint.use_rotation_z = False
+                food1.move_to(
+                    new_scale = f_scale,
+                    start_time = start_time + i * delay,
+                    end_time = start_time + i * delay + duration_time
+                )
+                pair.drawn_food = [food1]
 
-            food1.add_to_blender(appear_time = start_time + i * delay)
-            pair.drawn_food = [food1]
+                food2 = self.reusable_food[0]
+                self.reusable_food.remove(food2)
+                food2.move_to(
+                    new_location = [
+                        locations[i][0] + 0.9 * f_scale * math.cos(pair.angle + math.pi / 2),
+                        locations[i][1] + 0.9 * f_scale * math.sin(pair.angle + math.pi / 2),
+                        f_scale,
+                    ],
+                    end_time = start_time,
+                    start_frame = start_time * FRAME_RATE - 1
+                )
+                world_const = food2.ref_obj.constraints[0]
+                world_const.keyframe_insert(
+                    data_path = 'influence',
+                    frame = start_time * FRAME_RATE - 1
+                )
+                world_const.influence = 1
+                world_const.keyframe_insert(
+                    data_path = 'influence',
+                    frame = start_time * FRAME_RATE
+                )
 
-            food2 = DrawnFood(
-                object_model = self.food_object_model,
-                location = [
-                    locations[i][0] + 0.9 * f_scale * math.cos(pair.angle + math.pi / 2),
-                    locations[i][1] + 0.9 * f_scale * math.sin(pair.angle + math.pi / 2),
-                    f_scale,
-                ],
-                scale = f_scale,
-                mat = 'color7'
-            )
+                food2.move_to(
+                    new_scale = f_scale,
+                    start_time = start_time + i * delay,
+                    end_time = start_time + i * delay + duration_time
+                )
+                pair.drawn_food.append(food2)
 
-            constraint = food2.ref_obj.constraints.new('CHILD_OF')
-            constraint.target = self.ref_obj
-            #constraint.use_rotation_x = False
-            #constraint.use_rotation_y = False
-            #constraint.use_rotation_z = False
+            else:
+                food1 = DrawnFood(
+                    object_model = self.food_object_model,
+                    location = [
+                        locations[i][0] - 0.9 * f_scale * math.cos(pair.angle + math.pi / 2),
+                        locations[i][1] - 0.9 * f_scale * math.sin(pair.angle + math.pi / 2),
+                        f_scale,
+                    ],
+                    scale = f_scale,
+                    mat = 'color7'
+                )
 
-            food2.add_to_blender(appear_time = start_time + i * delay)
-            pair.drawn_food.append(food2)
+                constraint = food1.ref_obj.constraints.new('CHILD_OF')
+                constraint.target = self.ref_obj
+                #constraint.use_rotation_x = False
+                #constraint.use_rotation_y = False
+                #constraint.use_rotation_z = False
+
+                food1.add_to_blender(
+                    appear_time = start_time + i * delay,
+                    transition_time = duration_time * FRAME_RATE
+                )
+                pair.drawn_food = [food1]
+
+                food2 = DrawnFood(
+                    object_model = self.food_object_model,
+                    location = [
+                        locations[i][0] + 0.9 * f_scale * math.cos(pair.angle + math.pi / 2),
+                        locations[i][1] + 0.9 * f_scale * math.sin(pair.angle + math.pi / 2),
+                        f_scale,
+                    ],
+                    scale = f_scale,
+                    mat = 'color7'
+                )
+
+                constraint = food2.ref_obj.constraints.new('CHILD_OF')
+                constraint.target = self.ref_obj
+                #constraint.use_rotation_x = False
+                #constraint.use_rotation_y = False
+                #constraint.use_rotation_z = False
+
+                food2.add_to_blender(
+                    appear_time = start_time + i * delay,
+                    transition_time = duration_time * FRAME_RATE
+                )
+                pair.drawn_food.append(food2)
 
     def animate_day(self, day = None):
         target_food = None
@@ -410,6 +519,7 @@ class DrawnWorld(Bobject):
 
         #Resolve contests
         dur = self.phase_durations['contest']
+        all_halves = []
         for contest in day.contests:
             if contest.outcome == 'share':
                 #print("Share on day " + str(contest.date))
@@ -450,23 +560,51 @@ class DrawnWorld(Bobject):
 
                 halves = []
                 for i in range(2):
-                    half = DrawnFood(
-                        object_model = self.half_food_object_model,
-                        location = food.ref_obj.location,
-                        scale = 0,
-                        #rotation_euler = [- math.pi / 2 , 0, 0],
-                        rotation_euler = [0, (-1) ** (i + loser_index) * math.pi / 2, 0],
-                        mat = 'color7'
-                    )
-                    half.add_to_blender(
-                        appear_frame = self.elapsed_time * FRAME_RATE,
-                        transition_time = 1
-                    )
-                    constraint = half.ref_obj.constraints.new('CHILD_OF')
-                    constraint.target = self.ref_obj
-                    constraint.use_rotation_x = False
-                    constraint.use_rotation_y = False
-                    constraint.use_rotation_z = False
+                    if len(self.reusable_halves) > 1:
+                        half = self.reusable_halves[0]
+                        self.reusable_halves.remove(half)
+                        half.move_to(
+                            new_location = food.ref_obj.location,
+                            new_scale = 0,
+                            new_angle = [0, (-1) ** (i + loser_index) * math.pi / 2, 0],
+                            start_frame = self.elapsed_time * FRAME_RATE - 1,
+                            end_frame = self.elapsed_time * FRAME_RATE
+                        )
+
+                        for j, const in enumerate(half.ref_obj.constraints):
+                            const.keyframe_insert(
+                                data_path = 'influence',
+                                frame = self.elapsed_time * FRAME_RATE - 1
+                            )
+                            if j == 0:
+                                const.influence = 1
+                            else:
+                                const.influence = 0
+                            const.keyframe_insert(
+                                data_path = 'influence',
+                                frame = self.elapsed_time * FRAME_RATE
+                            )
+
+                    else:
+                        half = DrawnFood(
+                            object_model = self.half_food_object_model,
+                            location = food.ref_obj.location,
+                            scale = 0,
+                            #rotation_euler = [- math.pi / 2 , 0, 0],
+                            rotation_euler = [0, (-1) ** (i + loser_index) * math.pi / 2, 0],
+                            mat = 'color7'
+                        )
+                        half.add_to_blender(
+                            appear_frame = self.elapsed_time * FRAME_RATE,
+                            transition_time = 1
+                        )
+
+                        constraint = half.ref_obj.constraints.new('CHILD_OF')
+                        constraint.target = self.ref_obj
+                        constraint.use_rotation_x = False
+                        constraint.use_rotation_y = False
+                        constraint.use_rotation_z = False
+
                     half.move_to(
                         start_frame = self.elapsed_time * FRAME_RATE,
                         end_frame = self.elapsed_time * FRAME_RATE + 1,
@@ -474,6 +612,7 @@ class DrawnWorld(Bobject):
                     )
 
                     halves.append(half)
+                    all_halves.append(half)
 
 
                 food.move_to(
@@ -515,14 +654,15 @@ class DrawnWorld(Bobject):
                     dur = dur / 2 #If they cooperate, it takes half time
                 )
 
-                loser.wince(
-                    start_time = self.elapsed_time + dur / 2,
-                    end_time = self.elapsed_time + dur + self.phase_durations['pause_before_home'],
-                )
-                taker.evil_pose(
-                    start_time = self.elapsed_time + dur / 2,
-                    end_time = self.elapsed_time + dur + self.phase_durations['pause_before_home'],
-                )
+                if self.wiggle == False:
+                    loser.wince(
+                        start_time = self.elapsed_time + dur / 2,
+                        end_time = self.elapsed_time + dur + self.phase_durations['pause_before_home'],
+                    )
+                    taker.evil_pose(
+                        start_time = self.elapsed_time + dur,
+                        end_time = self.elapsed_time + dur + self.phase_durations['pause_before_home'],
+                    )
 
             elif contest.outcome == 'fight':
                 #print("Take on day " + str(contest.date))
@@ -532,32 +672,61 @@ class DrawnWorld(Bobject):
                         start_time = self.elapsed_time,
                         duration = dur / 3
                     )
-                    '''loser.wince(
-                        start_time = self.elapsed_time + dur,
-                        end_time = self.elapsed_time + dur + self.phase_durations['pause_before_home'],
-                    )'''
+                    if self.wiggle == False:
+                        cre.drawn_creature.wince(
+                            start_time = self.elapsed_time + dur,
+                            end_time = self.elapsed_time + dur + self.phase_durations['pause_before_home'],
+                        )
 
                 for j in range(2):
                     food = contest.food.drawn_food[j]
                     halves = []
                     for i in range(2):
-                        half = DrawnFood(
-                            object_model = self.half_food_object_model,
-                            location = food.ref_obj.location,
-                            scale = 0,
-                            #rotation_euler = [- math.pi / 2 , 0, 0],
-                            rotation_euler = [0, (-1) ** (i) * math.pi / 2, 0],
-                            mat = 'color7'
-                        )
-                        half.add_to_blender(
-                            appear_frame = self.elapsed_time * FRAME_RATE,
-                            transition_time = 1
-                        )
-                        constraint = half.ref_obj.constraints.new('CHILD_OF')
-                        constraint.target = self.ref_obj
-                        constraint.use_rotation_x = False
-                        constraint.use_rotation_y = False
-                        constraint.use_rotation_z = False
+                        if len(self.reusable_halves) > 1:
+                            half = self.reusable_halves[0]
+                            self.reusable_halves.remove(half)
+                            half.move_to(
+                                new_location = food.ref_obj.location,
+                                new_scale = 0,
+                                new_angle = [0, (-1) ** (i) * math.pi / 2, 0],
+                                start_frame = self.elapsed_time * FRAME_RATE - 1,
+                                end_frame = self.elapsed_time * FRAME_RATE
+                            )
+
+                            for k, const in enumerate(half.ref_obj.constraints):
+                                const.keyframe_insert(
+                                    data_path = 'influence',
+                                    frame = self.elapsed_time * FRAME_RATE - 1
+                                )
+                                if k == 0:
+                                    const.influence = 1
+                                else:
+                                    const.influence = 0
+                                const.keyframe_insert(
+                                    data_path = 'influence',
+                                    frame = self.elapsed_time * FRAME_RATE
+                                )
+
+                        else:
+                            half = DrawnFood(
+                                object_model = self.half_food_object_model,
+                                location = food.ref_obj.location,
+                                scale = 0,
+                                #rotation_euler = [- math.pi / 2 , 0, 0],
+                                rotation_euler = [0, (-1) ** (i) * math.pi / 2, 0],
+                                mat = 'color7'
+                            )
+                            half.add_to_blender(
+                                appear_frame = self.elapsed_time * FRAME_RATE,
+                                transition_time = 1
+                            )
+
+                            constraint = half.ref_obj.constraints.new('CHILD_OF')
+                            constraint.target = self.ref_obj
+                            constraint.use_rotation_x = False
+                            constraint.use_rotation_y = False
+                            constraint.use_rotation_z = False
+
                         half.move_to(
                             start_frame = self.elapsed_time * FRAME_RATE,
                             end_frame = self.elapsed_time * FRAME_RATE + 1,
@@ -565,7 +734,7 @@ class DrawnWorld(Bobject):
                         )
 
                         halves.append(half)
-
+                        all_halves.append(half)
 
                     food.move_to(
                         start_frame = self.elapsed_time * FRAME_RATE,
@@ -591,6 +760,7 @@ class DrawnWorld(Bobject):
             else:
                 raise Warning('Unknown contest outcome')
 
+        self.reusable_halves += all_halves
         for food in day.food_objects:
             if len(food.interested_creatures) == 1:
                 eater = food.interested_creatures[0].drawn_creature
@@ -680,9 +850,31 @@ class DrawnWorld(Bobject):
                 if graph_only == False:
                     self.animate_day(day = day)
 
+                    update_duration = min(
+                        OBJECT_APPEARANCE_TIME / FRAME_RATE,
+                        self.phase_durations['food_disappear']
+                    )
+
                     for food in day.food_objects:
                         for d_food in food.drawn_food:
-                            d_food.disappear(disappear_time = self.elapsed_time)
+                            d_food.move_to(
+                                new_scale = 0,
+                                start_time = self.elapsed_time,
+                                end_time = self.elapsed_time + update_duration
+                            )
+                            const = d_food.ref_obj.constraints[-1]
+                            if 'blob' in const.target.name:
+                                const.keyframe_insert(
+                                    data_path = 'influence',
+                                    frame = (self.elapsed_time + update_duration) * FRAME_RATE
+                                )
+                                const.influence = 0
+                                const.keyframe_insert(
+                                    data_path = 'influence',
+                                    frame = (self.elapsed_time + update_duration) * FRAME_RATE + 1
+                                )
+
+                            self.reusable_food.append(d_food)
 
                 self.elapsed_time += self.phase_durations['food_disappear']
 
@@ -822,6 +1014,7 @@ def transfer_food_to_creature(
             data_path = 'influence',
             frame = (start_time) * FRAME_RATE
         )
+        #math.floor((start_time) * FRAME_RATE)
         world_const.influence = 0
         world_const.keyframe_insert(
             data_path = 'influence',

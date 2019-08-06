@@ -961,7 +961,7 @@ class GraphBobject(Bobject):
             #print('Function count and index are out of sync.')
             raise Warning('Function count and index are out of sync.')
 
-    def add_all_bounded_regions(self, colors = [3, 4, 7, 6, 5, 1, 2, 8]):
+    def add_all_bounded_regions(self, colors = [3, 6, 7, 4, 5, 1, 2, 8]):
         #for i in range(len(self.functions)):
             #print(self.functions_coords[i])
             #pass

@@ -128,10 +128,6 @@ class Blobject(Bobject):
             end_time = end_time
         )
 
-
-
-
-
     def move_head(
         self,
         rotation_quaternion = None,
@@ -653,7 +649,13 @@ class Blobject(Bobject):
         )
 
         #Eyes
-        eyes = [
+        self.angry_eyes(
+            start_time = start_time,
+            end_time = end_time,
+            attack = attack,
+            decay = decay
+        )
+        '''eyes = [
             self.ref_obj.children[0].children[-2],
             self.ref_obj.children[0].children[-3],
         ]
@@ -665,7 +667,7 @@ class Blobject(Bobject):
                 if end_frame != None:
                     key.keyframe_insert(data_path = 'value', frame = end_frame - decay_frames)
                     key.value = 0
-                    key.keyframe_insert(data_path = 'value', frame = end_frame)
+                    key.keyframe_insert(data_path = 'value', frame = end_frame)'''
 
         #Mouth
         self.eat_animation(
@@ -793,12 +795,13 @@ class Blobject(Bobject):
             eyes.append(right_eye)
         for eye in eyes:
                 key = eye.data.shape_keys.key_blocks['Key 1']
+                initial_val = deepcopy(key.value)
                 key.keyframe_insert(data_path = 'value', frame = start_frame)
                 key.value = 1
                 key.keyframe_insert(data_path = 'value', frame = start_frame + attack_frames)
                 if end_frame != None:
                     key.keyframe_insert(data_path = 'value', frame = end_frame - decay_frames)
-                    key.value = 0
+                    key.value = initial_val
                     key.keyframe_insert(data_path = 'value', frame = end_frame)
 
     def normal_eyes(
@@ -900,6 +903,181 @@ class Blobject(Bobject):
                 eye.scale = initial_val
                 eye.keyframe_insert(data_path = 'scale', frame = end_frame)
 
+    #Not implemented. Just evil pose for now
+    def shrug(
+        self,
+        start_time = None,
+        end_time = None,
+        attack = None,
+        decay = None
+    ):
+        if start_time == None:
+            raise Warning('Need start time for evil pose')
+        if end_time == None:
+            raise Warning('Need end time for evil pose')
+
+        start_frame = start_time * FRAME_RATE
+        end_frame = None
+        if end_time != None:
+            end_frame = end_time * FRAME_RATE
+
+        if attack == None:
+            if end_time == None:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                attack = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                attack = (end_time - start_time) / 4
+        attack_frames = attack * FRAME_RATE
+
+        if decay == None:
+            if end_time == None:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            elif end_time - start_time > 2:
+                decay = OBJECT_APPEARANCE_TIME / FRAME_RATE
+            else:
+                decay = (end_time - start_time) / 4
+        decay_frames = decay * FRAME_RATE
+
+
+        #Blob's left arm up = [0.304, 0.034, 0.409, 0.011]
+        #Blob's right arm up = [0.304, 0.034, 0.409, 0.011]
+
+        #These labels are from the point of view of the blob, which is opposite
+        #from how they're labeled in the template .blend file. Huzzah.
+        l_arm = None
+        r_arm = None
+        for child in self.ref_obj.children:
+            if 'boerd_blob' in child.name:
+                l_arm = child.pose.bones[1]
+                r_arm = child.pose.bones[2]
+
+        #Left arm up
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        initial_angle = list(l_arm.rotation_quaternion)
+        l_arm.rotation_quaternion = [1, -2.5, -8.1, -1.5]
+        l_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + attack_frames
+        )
+
+        #And back
+        if end_frame != None:
+            l_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = end_frame - decay_frames
+            )
+            l_arm.rotation_quaternion = initial_angle
+            l_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = end_frame
+            )
+
+        #Right arm up
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        initial_angle = list(r_arm.rotation_quaternion)
+        r_arm.rotation_quaternion = [1, -2.5, -8.1, -1.5]
+        r_arm.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + attack_frames
+        )
+
+        #And back
+        if end_frame != None:
+            r_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = end_frame - decay_frames
+            )
+            r_arm.rotation_quaternion = initial_angle
+            r_arm.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = end_frame
+            )
+
+
+        #Head
+        head = self.ref_obj.children[0].pose.bones[3]
+        initial = list(head.rotation_quaternion)
+
+        head_back = [1, -0.1, 0, 0.1]
+        head_back_left = [1, -0.1, 0.1, 0.1]
+        head_back_right = [1, -0.1, -0.1, 0.1]
+
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame
+        )
+        head.rotation_quaternion = head_back
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = start_frame + attack_frames
+        )
+
+
+        #Shakes
+        still_time = end_frame - start_frame - attack_frames - decay_frames
+        if still_time >= 5 * OBJECT_APPEARANCE_TIME:
+            still_time = still_time - 2 * OBJECT_APPEARANCE_TIME
+
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + still_time / 3
+            )
+            head.rotation_quaternion = head_back_left
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + still_time / 3 + OBJECT_APPEARANCE_TIME
+            )
+
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + 2 * still_time / 3 + 1 * OBJECT_APPEARANCE_TIME
+            )
+            head.rotation_quaternion = head_back_right
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = start_frame + attack_frames + 2 * still_time / 3 + 2 * OBJECT_APPEARANCE_TIME
+            )
+
+
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = end_frame - decay_frames
+        )
+        head.rotation_quaternion = initial
+        head.keyframe_insert(
+            data_path = "rotation_quaternion",
+            frame = end_frame
+        )
+
+        #Eyes
+        eyes = [
+            self.ref_obj.children[0].children[-2],
+            self.ref_obj.children[0].children[-3],
+        ]
+        for eye in eyes:
+                key = eye.data.shape_keys.key_blocks['Key 1']
+                key.keyframe_insert(data_path = 'value', frame = start_frame)
+                key.value = 1
+                key.keyframe_insert(data_path = 'value', frame = start_frame + attack_frames)
+                if end_frame != None:
+                    key.keyframe_insert(data_path = 'value', frame = end_frame - decay_frames)
+                    key.value = 0
+                    key.keyframe_insert(data_path = 'value', frame = end_frame)
+
+        #Mouth
+        self.eat_animation(
+            start_frame = start_frame,
+            end_frame = end_frame,
+            attack_frames = attack_frames,
+            decay_frames = decay_frames
+        )
 
     def hello(
         self,
@@ -1031,6 +1209,8 @@ class Blobject(Bobject):
         self,
         start_time = None,
         end_time = None,
+        period = OBJECT_APPEARANCE_TIME,
+        non_uniform = False,
         attack = None,
         decay = None
     ):
@@ -1086,7 +1266,7 @@ class Blobject(Bobject):
 
         #Shakes
         still_time = end_frame - start_frame - attack_frames - decay_frames
-        num_shakes = math.floor(2 * still_time / OBJECT_APPEARANCE_TIME)
+        num_shakes = math.floor(2 * still_time / (period * FRAME_RATE))
         for i in range(num_shakes):
             '''head.keyframe_insert(
                 data_path = "rotation_quaternion",
@@ -1096,9 +1276,13 @@ class Blobject(Bobject):
                 head.rotation_quaternion = head_down_left
             else:
                 head.rotation_quaternion = head_down_right
+            variation = 0
+            if non_uniform == True:
+                variation = uniform(-1, 1) * 0.1 * period
             head.keyframe_insert(
                 data_path = "rotation_quaternion",
-                frame = start_frame + attack_frames + (1 + i) * OBJECT_APPEARANCE_TIME / 2
+                frame = start_frame + attack_frames \
+                    + (1 + i) * period * FRAME_RATE / 2 + variation
             )
 
             '''head.keyframe_insert(
@@ -1117,6 +1301,11 @@ class Blobject(Bobject):
             data_path = "rotation_quaternion",
             frame = end_frame - decay_frames
         )
+        if decay_frames > OBJECT_APPEARANCE_TIME:
+            head.keyframe_insert(
+                data_path = "rotation_quaternion",
+                frame = end_frame - OBJECT_APPEARANCE_TIME
+            )
         head.rotation_quaternion = initial
         head.keyframe_insert(
             data_path = "rotation_quaternion",
@@ -1135,9 +1324,18 @@ class Blobject(Bobject):
             eye.keyframe_insert(data_path = 'scale', frame = start_frame)
             eye.scale = [1, 0.3, 0.3]
             eye.keyframe_insert(data_path = 'scale', frame = start_frame + attack_frames)
+            #Override blinks
+            i = 0
+            while start_frame + attack_frames + i <= end_frame - decay_frames:
+                eye.keyframe_insert(data_path = 'scale', frame = int(start_frame + attack_frames + i))
+                i += 1
+
+
             eye.keyframe_insert(data_path = 'scale', frame = end_frame - decay_frames)
             eye.scale = init_eye_scale
             eye.keyframe_insert(data_path = 'scale', frame = end_frame)
+
+
 
             eye.keyframe_insert(data_path = 'rotation_euler', frame = start_frame)
             if eye == eyes[1]:

@@ -10,8 +10,8 @@ from scene import Scene
 
 import bobject
 imp.reload(bobject)
-#import svg_bobject
-#imp.reload(svg_bobject)
+import svg_bobject
+imp.reload(svg_bobject)
 import tex_bobject
 imp.reload(tex_bobject)
 import tex_complex
@@ -44,13 +44,13 @@ import constants
 imp.reload(constants)
 #from constants import SIM_DIR
 
-CREATURE_MOVE_DURATION = 0.25
-PAUSE_LENGTH = 0.125
+NEW_CREATURE_MOVE_DURATION = 0.5
+NEW_PAUSE_LENGTH = 0
 
 class HawkDove(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('card', {'duration': 1000})
+            ('card', {'duration': 100})
         ])
         super().__init__()
 
@@ -64,7 +64,10 @@ class HawkDove(Scene):
         #self.hawks_then_dove()
         #self.big_sim()
         #self.payoff_grid()
-        self.building_from_here()
+        #self.building_from_here()
+        #self.teaser()
+        #self.patreon()
+        self.thumb()
 
     def intro(self):
         pass
@@ -121,87 +124,110 @@ class HawkDove(Scene):
             sim = world,
             loud = True,
             linked_graph = graph,
-            scale = 13
+            scale = 13,
+            wiggle = True
         )
 
         #phase_durations = {
         #    'day_prep' : CREATURE_MOVE_DURATION,
         #    'creatures_go_out' : CREATURE_MOVE_DURATION,
-        #    'pause_before_contest' : PAUSE_LENGTH,
+        #    'pause_before_contest' : 0,
         #    'contest' : CREATURE_MOVE_DURATION,
         #    'pause_before_home' : PAUSE_LENGTH,
         #    'creatures_go_home' : CREATURE_MOVE_DURATION,
-        #    'pause_before_reset' : PAUSE_LENGTH,
+        #    'pause_before_reset' : 0,
         #    'food_disappear' : CREATURE_MOVE_DURATION,
         #}
         updates = [
             [
                 0,
                 {
-                    'day_prep' : 10,
+                    'day_prep' : 3,
                     #'creatures_go_out' : CREATURE_MOVE_DURATION,
-                    #'pause_before_contest' : PAUSE_LENGTH,
+                    #'pause_before_contest' : 0,
                     #'contest' : CREATURE_MOVE_DURATION,
-                    #'pause_before_home' : PAUSE_LENGTH,
+                    'pause_before_home' : 0,
                     #'creatures_go_home' : CREATURE_MOVE_DURATION,
-                    #'pause_before_reset' : PAUSE_LENGTH,
+                    #'pause_before_reset' : 0,
                     #'food_disappear' : CREATURE_MOVE_DURATION,
                 }
             ],
             [
                 1,
                 {
-                    'day_prep' : CREATURE_MOVE_DURATION,
+                    'day_prep' : 17, #ends 41.5
                     #'creatures_go_out' : CREATURE_MOVE_DURATION,
-                    'pause_before_contest' : 10,
-                    #'contest' : CREATURE_MOVE_DURATION,
-                    'pause_before_home' : 2,
+                    'pause_before_contest' : 18, #ends 60
+                    'contest' : 1 ,
+                    'pause_before_home' : 7.5, #ends 68.5
                     #'creatures_go_home' : CREATURE_MOVE_DURATION,
-                    'pause_before_reset' : 3,
+                    #'pause_before_reset' : 3,
                     #'food_disappear' : CREATURE_MOVE_DURATION,
                 }
             ],
             [
                 2,
                 {
-                    #'day_prep' : CREATURE_MOVE_DURATION,
+                    'day_prep' : CREATURE_MOVE_DURATION,
                     #'creatures_go_out' : CREATURE_MOVE_DURATION,
-                    'pause_before_contest' : PAUSE_LENGTH,
-                    #'contest' : CREATURE_MOVE_DURATION,
-                    'pause_before_home' : PAUSE_LENGTH,
+                    'pause_before_contest' : 0,
+                    'contest' : CREATURE_MOVE_DURATION,
+                    'pause_before_home' : 0,
                     #'creatures_go_home' : CREATURE_MOVE_DURATION,
-                    'pause_before_reset' : PAUSE_LENGTH,
+                    #'pause_before_reset' : PAUSE_LENGTH,
                     #'food_disappear' : CREATURE_MOVE_DURATION,
                 }
             ],
         ]
 
-        drawn_world.add_to_blender(appear_time = 1)
+        drawn_world.add_to_blender(appear_time = 18.5)
         drawn_world.move_to(
             new_angle = [0, 0, 2 * math.pi],
-            start_time = 0,
-            end_time = 13
+            start_time = 24,
+            end_time = 39
         )
 
-        graph.add_to_blender(appear_time = 29)
+        surv_rule = tex_bobject.TexBobject(
+            #'\\text{No food} \\rightarrow \\text{Death}',
+            '\\text{One food} \\rightarrow \\text{Survive}',
+            #'\\text{Two food} \\rightarrow \\text{Replicate}',
+            location = [0, 0, 6.75],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            scale = 1.5,
+            centered = True
+        )
+        surv_rule.add_to_blender(appear_time = 29)
+        surv_rule.disappear(disappear_time = 60)
+
+        rep_rule = tex_bobject.TexBobject(
+            '\\text{Two food} \\rightarrow \\text{Reproduce}',
+            location = [0, 0, 5],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            scale = 1.5,
+            centered = True
+        )
+        rep_rule.add_to_blender(appear_time = 33)
+        rep_rule.disappear(disappear_time = 60)
+
+        graph.add_to_blender(appear_time = 69)
         for i in range(len(graph.functions)):
             graph.set_shape_keys_bounded_region(index = i)
 
         drawn_world.animate_days(
-            start_time = 2,
-            first_animated_day = 0,
-            #last_animated_day = 2,
+            start_time = 19.5,
+            first_animated_day = 2,
+            last_animated_day = 4,
             phase_duration_updates = updates
         )
 
         def zoom_into_blobs():
             cam_bobj.move_to(
                 new_location = [0, 0.55, 2.75],
-                start_time = 17,
+                start_time = 43.5,
             )
             cam_swivel.move_to(
                 new_angle = [74 * math.pi / 180, 0, -56.6 * math.pi / 180],
-                start_time = 17
+                start_time = 43.5
             )
 
             two_blobs = [
@@ -210,18 +236,18 @@ class HawkDove(Scene):
             ]
             for blob in two_blobs:
                 blob.cheer(
-                    start_time = 18,
-                    end_time = 19
+                    start_time = 46,
+                    end_time = 48
                 )
 
             cam_bobj.move_to(
                 new_location = [0, 1/6, 3.75],
-                start_time = 20,
+                start_time = 48.5,
             )
             cam_swivel.move_to(
                 new_angle = [76 * math.pi / 180, 0, -126 * math.pi / 180],
                 new_location = [-3.25, -7.25, 0.1],
-                start_time = 20
+                start_time = 48.5
             )
 
             r_blob = drawn_world.drawn_creatures[3]
@@ -229,24 +255,42 @@ class HawkDove(Scene):
 
             r_blob.move_head(
                 rotation_quaternion = [1, 0.1, 0.1, -0.3],
-                start_time = 21
+                start_time = 49.5
             )
             r_blob.move_head(
                 rotation_quaternion = [1, 0, 0.8, 0],
-                start_time = 22
+                start_time = 51.5
             )
             r_blob.move_head(
                 rotation_quaternion = [1, 0.1, 0.1, -0.3],
-                start_time = 23
+                start_time = 53
             )
             r_blob.move_head(
                 rotation_quaternion = [1, 0, 0.8, 0],
-                start_time = 23.5
+                start_time = 54
             )
             r_blob.move_head(
                 rotation_quaternion = [1, 0, 0, 0],
-                start_time = 24.5
+                start_time = 55
             )
+
+            l_blob.move_head(
+                rotation_quaternion = [1, 0.1, 0.1, -0.3],
+                start_time = 50
+            )
+            l_blob.move_head(
+                rotation_quaternion = [1, 0, 0, 0],
+                start_time = 51.2
+            )
+            l_blob.move_head(
+                rotation_quaternion = [1, 0.1, 0.1, -0.3],
+                start_time = 53.8
+            )
+            l_blob.move_head(
+                rotation_quaternion = [1, 0, 0, 0],
+                start_time = 54.5
+            )
+
 
             dove = tex_bobject.TexBobject(
                 '\\text{"Dove"}',
@@ -254,26 +298,28 @@ class HawkDove(Scene):
                 location = [2.25, -14.6, 0.5]
             )
             dove.add_to_blender(
-                appear_time = 26.5
+                appear_time = 67.5
             )
-            dove.disappear(disappear_time = 29)
+            dove.disappear(disappear_time = 69)
 
         zoom_into_blobs()
 
         cam_bobj.move_to(
             new_location = [0, 0, 34],
-            start_time = 28.5,
+            start_time = 69,
+            end_time = 70
         )
         cam_swivel.move_to(
             new_angle = [74 * math.pi / 180, 0, 0],
             new_location = [0, 0, 4],
-            start_time = 28.5
+            start_time = 69,
+            end_time = 70
         )
         drawn_world.move_to(
             #new_location = [6.5, -9, 0],
             new_location = [7.5, 0, 0],
             new_scale = 6.5,
-            start_time = 28.5
+            start_time = 69
         )
 
         doves = tex_bobject.TexBobject(
@@ -284,11 +330,11 @@ class HawkDove(Scene):
             centered = True
         )
         doves.add_to_blender(
-            appear_time = 29
+            appear_time = 69.5
         )
         #doves.disappear(disappear_time = 29)
 
-        disappear_time = 50
+        disappear_time = 100
         to_disappear = [graph, doves, drawn_world]
         for i, thing in enumerate(to_disappear):
             thing.disappear(
@@ -297,12 +343,14 @@ class HawkDove(Scene):
 
     def hawk_intro(self):
         hawk_strat = tex_bobject.TexBobject(
+            '\\text{New strategy: }',
             '\\text{New strategy: Hawk}',
-            centered = True,
-            location = [0, 6, 0],
+            centered = False,
+            location = [-12.5, 6, 0],
             scale = 3
         )
-        hawk_strat.add_to_blender(appear_time = 1)
+        hawk_strat.add_to_blender(appear_time = 80.5)
+        hawk_strat.morph_figure(1, start_time = 82)
 
         food1 = import_object(
             'goodicosphere', 'primitives',
@@ -321,49 +369,52 @@ class HawkDove(Scene):
             rotation_euler = [0, math.pi / 2, 0],
             mat = 'color7'
         )
-        food1.add_to_blender(appear_time = 1)
-        food21.add_to_blender(appear_time = 1)
-        food22.add_to_blender(appear_time = 1)
+        food1.add_to_blender(appear_time = 83.5)
+        food21.add_to_blender(appear_time = 83.5)
+        food22.add_to_blender(appear_time = 83.5)
 
         dove = blobject.Blobject(
-            location = [-19, -2, 0],
+            location = [-32, -2, 0],
             rotation_euler = [0, math.pi / 2, 0],
-            scale = 5
+            scale = 5,
+            wiggle = True
         )
         dove.add_to_blender(appear_time = 1)
         dove.walk_to(
             new_location = [-6, -2, 0],
-            start_time = 2
+            start_time = 84,
+            end_time = 85.5
         )
 
         hawk = blobject.Blobject(
-            location = [19, -2, 0],
+            location = [32, -2, 0],
             rotation_euler = [0, -math.pi / 2, 0],
             scale = 5
         )
         hawk.add_to_blender(appear_time = 1)
         hawk.walk_to(
             new_location = [6, -2, 0],
-            start_time = 2
+            start_time = 84,
+            end_time = 85.5
         )
 
-        dove.hello(start_time = 3, end_time = 4)
-        dove.eat_animation(start_frame = 3 * FRAME_RATE, end_frame = 4 * FRAME_RATE)
+        dove.hello(start_time = 85.5, end_time = 86.5)
+        dove.eat_animation(start_frame = 85.5 * FRAME_RATE, end_frame = 86.5 * FRAME_RATE)
 
         hawk.move_head(
             rotation_quaternion = [1, 0, 0.9, -0.1],
-            start_time = 3,
-            end_time = 5
+            start_time = 85.5,
+            end_time = 87.5
         )
         hawk.color_shift(
             duration_time = None,
             color = COLORS_SCALED[5],
-            start_time = 3.5,
+            start_time = 86,
             shift_time = FRAME_RATE / 2,
             obj = hawk.ref_obj.children[0].children[0]
         )
         hawk.angry_eyes(
-            start_time = 3.5,
+            start_time = 86,
             attack = 0.5,
             end_time = None
         )
@@ -372,69 +423,74 @@ class HawkDove(Scene):
             drawn_contest_world.transfer_food_to_creature(
                 food_bobj = food22,
                 creature_bobj = hawk,
-                start_time = 6,
+                start_time = 88,
                 ground_plane = 'xz'
             )
 
             drawn_contest_world.animate_eating(
                 food = food22,
                 eater = hawk,
-                start_time = 6,
-                dur = 1,
+                start_time = 88,
+                dur = 1.5,
                 eat_rotation = [0, -30 * math.pi / 180, 0]
             )
 
             drawn_contest_world.transfer_food_to_creature(
                 food_bobj = food21,
                 creature_bobj = dove,
-                start_time = 6,
+                start_time = 88,
                 ground_plane = 'xz'
             )
 
             drawn_contest_world.animate_eating(
                 food = food21,
                 eater = dove,
-                start_time = 6,
-                dur = 1,
+                start_time = 88,
+                dur = 1.5,
                 eat_rotation = [0, 30 * math.pi / 180, 0]
             )
 
             drawn_contest_world.transfer_food_to_creature(
                 food_bobj = food1,
                 creature_bobj = hawk,
-                start_time = 7,
+                start_time = 89.5,
                 ground_plane = 'xz'
             )
 
             drawn_contest_world.animate_eating(
                 food = food1,
                 eater = hawk,
-                start_time = 7,
-                dur = 1,
+                start_time = 89.5,
+                dur = 1.5 ,
                 eat_rotation = [0, 30 * math.pi / 180, 0]
             )
 
             dove.surprise_eyes(
-                start_time = 7,
-                end_time = 9
+                start_time = 89,
+                end_time = 92
             )
 
         eats()
 
         dove.move_to(
             new_angle = [0, 0, 0],
-            start_time = 8.5
+            start_time = 91
         )
-        dove.wince(start_time = 8.5, end_time = 13)
+        dove.wince(
+            start_time = 91,
+            end_time = 112,
+            period = 1,
+            non_uniform = True
+        )
         hawk.move_to(
             new_angle = [0, 0, 0],
-            start_time = 8.5
+            start_time = 91
         )
-        hawk.evil_pose(start_time = 8.5, end_time = 13)
+        hawk.evil_pose(start_time = 91, end_time = 112)
 
         hawk.move_to(
             new_location = [3.5, -2, 0],
-            start_time = 12
+            start_time = 108
         )
         rep_indicator = tex_bobject.TexBobject(
             #'\\substack{\\text{Replication} \\\\ \\text{chance} \\\\ 50\\%}',
@@ -444,7 +500,7 @@ class HawkDove(Scene):
             color = 'color2',
             centered = True
         )
-        rep_indicator.add_to_blender(appear_time = 12)
+        rep_indicator.add_to_blender(appear_time = 108)
         '''for i in range(19, 20):
             char = rep_indicator.lookup_table[0][i]
             char.color_shift(
@@ -454,8 +510,8 @@ class HawkDove(Scene):
             )'''
 
         dove.move_to(
-            new_location = [-3.5, -2, 0],
-            start_time = 12
+            new_location = [-3.75, -2, 0],
+            start_time = 100.5
         )
         surv_indicator = tex_bobject.TexBobject(
             #'\\substack{\\text{Replication} \\\\ \\text{chance} \\\\ 50\\%}',
@@ -465,7 +521,7 @@ class HawkDove(Scene):
             color = 'color2',
             centered = True
         )
-        surv_indicator.add_to_blender(appear_time = 12)
+        surv_indicator.add_to_blender(appear_time = 100.5)
 
         to_disappear = [
             dove,
@@ -474,9 +530,7 @@ class HawkDove(Scene):
             surv_indicator
         ]
         for thing in to_disappear:
-            thing.disappear(disappear_time = 16)
-
-
+            thing.disappear(disappear_time = 112)
 
         #Hawk v hawk
         food31 = import_object(
@@ -503,123 +557,124 @@ class HawkDove(Scene):
             rotation_euler = [0, math.pi / 2, 0],
             mat = 'color7'
         )
-        food31.add_to_blender(appear_time = 17)
-        food32.add_to_blender(appear_time = 17)
-        food41.add_to_blender(appear_time = 17)
-        food42.add_to_blender(appear_time = 17)
+        food31.add_to_blender(appear_time = 113.5)
+        food32.add_to_blender(appear_time = 113.5)
+        food41.add_to_blender(appear_time = 113.5)
+        food42.add_to_blender(appear_time = 113.5)
 
         hawk2 = blobject.Blobject(
-            location = [-19, -2, 0],
+            location = [-32, -2, 0],
             rotation_euler = [0, math.pi / 2, 0],
             scale = 5,
             mat = 'creature_color6'
         )
-        hawk2.add_to_blender(appear_time = 17)
+        hawk2.add_to_blender(appear_time = 113)
         hawk2.walk_to(
             new_location = [-6, -2, 0],
-            start_time = 18
+            start_time = 113.5,
+            end_time = 115
         )
 
         hawk3 = blobject.Blobject(
-            location = [19, -2, 0],
+            location = [32, -2, 0],
             rotation_euler = [0, -math.pi / 2, 0],
             scale = 5,
             mat = 'creature_color6'
         )
-        hawk3.add_to_blender(appear_time = 17)
+        hawk3.add_to_blender(appear_time = 113)
         hawk3.walk_to(
             new_location = [6, -2, 0],
-            start_time = 18
+            start_time = 113.5,
+            end_time = 115
         )
 
         hawk2.blob_wave(
-            start_time = 18,
-            duration = 2
+            start_time = 115,
+            duration = 7.5
         )
-        hawk2.angry_eyes(start_time = 18, end_time = 2)
+        hawk2.angry_eyes(start_time = 115, end_time = None)
         hawk3.blob_wave(
-            start_time = 18,
-            duration = 2
+            start_time = 115,
+            duration = 7.5
         )
-        hawk3.angry_eyes(start_time = 18, end_time = 2)
+        hawk3.angry_eyes(start_time = 115, end_time = None)
 
         def eats2():
             drawn_contest_world.transfer_food_to_creature(
                 food_bobj = food32,
                 creature_bobj = hawk3,
-                start_time = 20,
+                start_time = 122.5,
                 ground_plane = 'xz'
             )
 
             drawn_contest_world.animate_eating(
                 food = food32,
                 eater = hawk3,
-                start_time = 20,
-                dur = 1,
+                start_time = 122.5,
+                dur = 1.5,
                 eat_rotation = [0, 30 * math.pi / 180, 0]
             )
 
             drawn_contest_world.transfer_food_to_creature(
                 food_bobj = food31,
                 creature_bobj = hawk2,
-                start_time = 20,
+                start_time = 122.5,
                 ground_plane = 'xz'
             )
 
             drawn_contest_world.animate_eating(
                 food = food31,
                 eater = hawk2,
-                start_time = 20,
-                dur = 1,
+                start_time = 122.5,
+                dur = 1.5,
                 eat_rotation = [0, -30 * math.pi / 180, 0]
             )
 
             drawn_contest_world.transfer_food_to_creature(
                 food_bobj = food41,
                 creature_bobj = hawk3,
-                start_time = 21,
+                start_time = 124,
                 ground_plane = 'xz'
             )
 
             drawn_contest_world.animate_eating(
                 food = food41,
                 eater = hawk3,
-                start_time = 21,
-                dur = 1,
+                start_time = 124,
+                dur = 1.5,
                 eat_rotation = [0, -30 * math.pi / 180, 0]
             )
 
             drawn_contest_world.transfer_food_to_creature(
                 food_bobj = food42,
                 creature_bobj = hawk2,
-                start_time = 21,
+                start_time = 124,
                 ground_plane = 'xz'
             )
 
             drawn_contest_world.animate_eating(
                 food = food42,
                 eater = hawk2,
-                start_time = 21,
-                dur = 1,
+                start_time = 124,
+                dur = 1.5,
                 eat_rotation = [0, 30 * math.pi / 180, 0]
             )
-
         eats2()
 
         hawk2.move_to(
             new_angle = [0, 0, 0],
-            start_time = 23
+            start_time = 127
         )
         #hawk2.wince(start_time = 8.5, end_time = 13)
         hawk3.move_to(
             new_angle = [0, 0, 0],
-            start_time = 23
+            start_time = 127
         )
         #hawk3.evil_pose(start_time = 8.5, end_time = 13)
 
         hawk3.move_to(
             new_location = [3.5, -2, 0],
-            start_time = 26
+            start_time = 129
         )
         rep_indicator2 = tex_bobject.TexBobject(
             #'\\substack{\\text{Replication} \\\\ \\text{chance} \\\\ 50\\%}',
@@ -629,7 +684,7 @@ class HawkDove(Scene):
             color = 'color2',
             centered = True
         )
-        rep_indicator2.add_to_blender(appear_time = 26)
+        rep_indicator2.add_to_blender(appear_time = 129)
         '''for i in range(19, 20):
             char = rep_indicator.lookup_table[0][i]
             char.color_shift(
@@ -640,7 +695,7 @@ class HawkDove(Scene):
 
         hawk2.move_to(
             new_location = [-3.5, -2, 0],
-            start_time = 26
+            start_time = 129
         )
         surv_indicator2 = tex_bobject.TexBobject(
             #'\\substack{\\text{Replication} \\\\ \\text{chance} \\\\ 50\\%}',
@@ -650,288 +705,23 @@ class HawkDove(Scene):
             color = 'color2',
             centered = True
         )
-        surv_indicator2.add_to_blender(appear_time = 26)
+        surv_indicator2.add_to_blender(appear_time = 129)
 
 
-        hawk2.wince(start_time = 26, end_time = 29)
-        hawk3.wince(start_time = 26.25, end_time = 29.25)
+        hawk2.wince(start_time = 129, end_time = 133, period = 1, non_uniform = True)
+        hawk3.wince(start_time = 129.25, end_time = 134, period = 1, non_uniform = True)
 
         to_disappear = [
             rep_indicator2,
             surv_indicator2,
             hawk2,
-            #hawk3,
+            hawk3,
             hawk_strat
         ]
-        disappear_time = 40
+        disappear_time = 132.5
         for i, thing in enumerate(to_disappear):
             thing.disappear(
                 disappear_time = disappear_time - (len(to_disappear) - i - 1) * 0.05
-            )
-
-
-        hawk3.move_to(
-            new_location = [5, -0.5, 0],
-            start_time = 42
-        )
-
-        dove2 = blobject.Blobject(
-            location = [-5, -0.5, 0],
-            scale = 5
-        )
-        dove2.add_to_blender(appear_time = 42)
-
-        def show_dna():
-            ###########################
-            #Turn Hawk clear and back
-            ###########################
-            meta = hawk3.ref_obj.children[0].children[0]
-            #apply_material(meta, 'creature_color3')
-            #blob1.add_to_blender(appear_time = 0, animate = False)
-
-            #All these nodes are a bit overkill since I'm not fading from the
-            #solid surface material
-            mat_copy = meta.material_slots[0].material.copy()
-            meta.active_material = mat_copy
-            node_tree = mat_copy.node_tree
-            out = node_tree.nodes['Material Output']
-            princ = node_tree.nodes['Principled BSDF']
-            trans = node_tree.nodes.new(type = 'ShaderNodeBsdfTransparent')
-            mix = node_tree.nodes.new(type = 'ShaderNodeMixShader')
-
-            scat = node_tree.nodes.new(type = 'ShaderNodeVolumeScatter')
-            absorb = node_tree.nodes.new(type = 'ShaderNodeVolumeAbsorption')
-            emit = node_tree.nodes.new(type = 'ShaderNodeEmission')
-            add1 = node_tree.nodes.new(type = 'ShaderNodeAddShader')
-            add2 = node_tree.nodes.new(type = 'ShaderNodeAddShader')
-
-            node_tree.links.new(mix.outputs[0], out.inputs[0])
-            node_tree.links.new(princ.outputs[0], mix.inputs[1])
-            node_tree.links.new(trans.outputs[0], mix.inputs[2])
-
-            node_tree.links.new(add1.outputs[0], out.inputs[1])
-            node_tree.links.new(emit.outputs[0], add1.inputs[0])
-            node_tree.links.new(add2.outputs[0], add1.inputs[1])
-            node_tree.links.new(scat.outputs[0], add2.inputs[0])
-            node_tree.links.new(absorb.outputs[0], add2.inputs[1])
-
-            #Make another copy before adding keyframes
-            mat_copy2 = mat_copy.copy()
-            #mat_copy3 = mat_copy.copy()
-
-            mix.inputs[0].default_value = 0
-            for node in [scat, absorb, emit]:
-                node.inputs[0].default_value = princ.inputs[0].default_value
-                node.inputs[1].default_value = 0
-                node.inputs[1].keyframe_insert(data_path = 'default_value', frame = 43.5 * FRAME_RATE)
-                node.inputs[1].default_value = BLOB_VOLUME_DENSITY
-                node.inputs[1].keyframe_insert(data_path = 'default_value', frame = 44 * FRAME_RATE)
-
-            mix.inputs[0].keyframe_insert(data_path = 'default_value', frame = 46.5 * FRAME_RATE)
-            mix.inputs[0].default_value = 1
-            mix.inputs[0].keyframe_insert(data_path = 'default_value', frame = 47 * FRAME_RATE)
-
-            mix.inputs[0].keyframe_insert(data_path = 'default_value', frame = 49.5 * FRAME_RATE)
-            mix.inputs[0].default_value = 0
-            mix.inputs[0].keyframe_insert(data_path = 'default_value', frame = 50 * FRAME_RATE)
-
-            ###########################
-            #Turn Dove clear and back
-            ###########################
-            meta2 = dove2.ref_obj.children[0].children[0]
-
-
-            meta2.active_material = mat_copy2
-            node_tree = mat_copy2.node_tree
-            princ = node_tree.nodes['Principled BSDF']
-            princ.inputs[0].default_value = COLORS_SCALED[2]
-            mix2 = node_tree.nodes['Mix Shader']
-
-
-            scat2 = node_tree.nodes['Volume Scatter']
-            absorb2 = node_tree.nodes['Volume Absorption']
-            emit2 = node_tree.nodes['Emission']
-
-            mix2.inputs[0].default_value = 0
-            for node in [scat2, absorb2, emit2]:
-                node.inputs[0].default_value = princ.inputs[0].default_value
-                node.inputs[1].default_value = 0
-                node.inputs[1].keyframe_insert(data_path = 'default_value', frame = 43.5 * FRAME_RATE)
-                node.inputs[1].default_value = BLOB_VOLUME_DENSITY
-                node.inputs[1].keyframe_insert(data_path = 'default_value', frame = 44 * FRAME_RATE)
-
-            mix2.inputs[0].keyframe_insert(data_path = 'default_value', frame = 46.5 * FRAME_RATE)
-            mix2.inputs[0].default_value = 1
-            mix2.inputs[0].keyframe_insert(data_path = 'default_value', frame = 47 * FRAME_RATE)
-
-            mix2.inputs[0].keyframe_insert(data_path = 'default_value', frame = 49.5 * FRAME_RATE)
-            mix2.inputs[0].default_value = 0
-            mix2.inputs[0].keyframe_insert(data_path = 'default_value', frame = 50 * FRAME_RATE)
-
-            dna_1 = import_object(
-                'dna_two_strand', 'biochem',
-                scale = 1.4,
-                location = [-5, -1.4, 0]
-            )
-            dna_1.add_to_blender(appear_time = 44)
-            dna_1.disappear(disappear_time = 50.5)
-
-            def make_blue_recursive(obj):
-                apply_material(obj, 'color3')
-                for child in obj.children:
-                    make_blue_recursive(child)
-
-            make_blue_recursive(dna_1.ref_obj.children[0])
-
-            dna_2 = import_object(
-                'dna_two_strand', 'biochem',
-                scale = 1.4,
-                location = [5, -1.4, 0]
-            )
-            dna_2.add_to_blender(appear_time = 44)
-            dna_2.disappear(disappear_time = 50.5)
-
-            def make_red_recursive(obj):
-                apply_material(obj, 'color6')
-                for child in obj.children:
-                    make_red_recursive(child)
-
-            make_red_recursive(dna_2.ref_obj.children[0])
-
-            for strand in [dna_1, dna_2]:
-                '''print(strand)
-                strand.tweak_colors_recursive()
-                strand.move_to(
-                    displacement = [0, 1.5, 0],
-                    start_time = 176.5
-                )'''
-                strand.spin(
-                    start_time = 40,
-                    end_time = 60,
-                    spin_rate = 0.05
-                )
-        show_dna()
-
-        dove2.hello(start_time = 50, end_time = 52)
-
-        dove2.move_to(
-            start_time = 54,
-            new_location = [-6, 4, 0],
-            new_scale = 2.5
-        )
-        hawk3.move_to(
-            start_time = 54.25,
-            new_location = [6, 4, 0],
-            new_scale = 2.5
-        )
-
-        dove3 = blobject.Blobject(
-            location = [-9, -4, 0],
-            scale = 2.5,
-            mat = 'creature_color3'
-        )
-        hawk4 = blobject.Blobject(
-            location = [-3, -4, 0],
-            scale = 2.5,
-            mat = 'creature_color6'
-        )
-        hawk5 = blobject.Blobject(
-            location = [3, -4, 0],
-            scale = 2.5,
-            mat = 'creature_color6'
-        )
-        dove4 = blobject.Blobject(
-            location = [9, -4, 0],
-            scale = 2.5,
-            mat = 'creature_color3'
-        )
-
-        new_cres = [dove3, hawk4, hawk5, dove4]
-        for i, cre in enumerate(new_cres):
-            cre.add_to_blender(
-                appear_time = 56 + i / 4
-            )
-
-
-        '''scale = 1
-        tail1 = [-7, 1.3]
-        head1 = [-8.25, -1.5]
-        arrow1 = gesture.Gesture(
-            gesture_series = [
-                {
-                    'type': 'arrow',
-                    'points': {
-                        'tail': (tail1[0] / scale, tail1[1] / scale, 0),
-                        'head': (head1[0] / scale, head1[1] / scale, 0)
-                    }
-                }
-            ],
-            scale = scale,
-        )'''
-
-        l99 = tex_bobject.TexBobject(
-            '99\\%',
-            location = [-9, 0.5, 0],
-            scale = 1,
-            centered = True
-        )
-        l1 = tex_bobject.TexBobject(
-            '1\\%',
-            location = [-3, 0.5, 0],
-            scale = 1,
-            centered = True
-        )
-        r99 = tex_bobject.TexBobject(
-            '99\\%',
-            location = [3, 0.5, 0],
-            scale = 1,
-            centered = True
-        )
-        r1 = tex_bobject.TexBobject(
-            '1\\%',
-            location = [9, 0.5, 0],
-            scale = 1,
-            centered = True
-        )
-        labels = [l99, l1, r99, r1]
-        arrows = []
-        scale = 1
-        for i in range(4):
-            mid = 6
-            dir = -1
-            if i > 1:
-                dir = 1
-
-            disp_dir = -1 * (-1) ** i
-
-            tail = [mid * dir + disp_dir, 1.3]
-            head = [mid * dir + disp_dir * 2.25, -1.5]
-
-            arrow = gesture.Gesture(
-                gesture_series = [
-                    {
-                        'type': 'arrow',
-                        'points': {
-                            'tail': (tail[0] / scale, tail[1] / scale, 0),
-                            'head': (head[0] / scale, head[1] / scale, 0)
-                        }
-                    }
-                ],
-                scale = scale,
-            )
-            arrows.append(arrow)
-            arrow.add_to_blender(
-                appear_time = 56.125 + i / 4
-            )
-            labels[i].add_to_blender(
-                appear_time = 56.25 + i / 4
-            )
-
-        to_disappear = [dove2, hawk3] + labels + arrows + new_cres
-        disappear_time = 60
-        for i, thing in enumerate(to_disappear):
-            thing.disappear(
-                disappear_time = disappear_time - (len(to_disappear) - i - 1) * 0.03
             )
 
         '''
@@ -1004,7 +794,6 @@ class HawkDove(Scene):
                 world.new_day(save = save)#, filename = 'intro_hawk')
 
         graph = graph_bobject.GraphBobject(
-            #demand_curve, supply_curve,
             location = [-11, -4, 0],
             rotation_euler = [74 * math.pi / 180, 0, 0],
             x_range = 10,
@@ -1023,64 +812,75 @@ class HawkDove(Scene):
             show_functions = False
         )
 
-        #drawn_world.linked_graph = graph
-        #drawn_food.add_functions_to_graph()
-
         drawn_world = drawn_contest_world.DrawnWorld(
             sim = world,
             loud = True,
             linked_graph = graph,
             location = [7.5, 0, 0],
-            scale = 6.5
+            scale = 6.5,
+            wiggle = True
         )
 
         #phase_durations = {
         #    'day_prep' : CREATURE_MOVE_DURATION,
         #    'creatures_go_out' : CREATURE_MOVE_DURATION,
-        #    'pause_before_contest' : PAUSE_LENGTH,
+        #    'pause_before_contest' : 0,
         #    'contest' : CREATURE_MOVE_DURATION,
         #    'pause_before_home' : PAUSE_LENGTH,
         #    'creatures_go_home' : CREATURE_MOVE_DURATION,
-        #    'pause_before_reset' : PAUSE_LENGTH,
+        #    'pause_before_reset' : 0,
         #    'food_disappear' : CREATURE_MOVE_DURATION,
         #}
         updates = [
             [
-                9,
+                10,
                 {
-                    #'day_prep' : CREATURE_MOVE_DURATION,
-                    #'creatures_go_out' : CREATURE_MOVE_DURATION,
-                    #'pause_before_contest' : PAUSE_LENGTH,
-                    #'contest' : CREATURE_MOVE_DURATION,
-                    #'pause_before_home' : PAUSE_LENGTH,
-                    #'creatures_go_home' : CREATURE_MOVE_DURATION,
-                    #'pause_before_reset' : PAUSE_LENGTH,
-                    'food_disappear' : CREATURE_MOVE_DURATION,
+                    'day_prep' : 16,
+                    'creatures_go_out' : NEW_CREATURE_MOVE_DURATION,
+                    'pause_before_contest' : 0,
+                    'contest' : NEW_CREATURE_MOVE_DURATION,
+                    'pause_before_home' : 1/4,
+                    'creatures_go_home' : NEW_CREATURE_MOVE_DURATION,
+                    'pause_before_reset' : 0,
+                    'food_disappear' : NEW_CREATURE_MOVE_DURATION,
                 }
             ],
             [
-                10,
+                11,
                 {
-                    #'day_prep' : CREATURE_MOVE_DURATION,
+                    'day_prep' : NEW_CREATURE_MOVE_DURATION,
                     #'creatures_go_out' : CREATURE_MOVE_DURATION,
                     #'pause_before_contest' : PAUSE_LENGTH,
                     #'contest' : CREATURE_MOVE_DURATION,
                     #'pause_before_home' : PAUSE_LENGTH,
                     #'creatures_go_home' : CREATURE_MOVE_DURATION,
                     #'pause_before_reset' : PAUSE_LENGTH,
-                    'food_disappear' : CREATURE_MOVE_DURATION,
+                    #'food_disappear' : CREATURE_MOVE_DURATION,
+                }
+            ],
+            [
+                20,
+                {
+                    'day_prep' : NEW_CREATURE_MOVE_DURATION,
+                    'creatures_go_out' : NEW_CREATURE_MOVE_DURATION,
+                    #'pause_before_contest' : PAUSE_LENGTH,
+                    'contest' : NEW_CREATURE_MOVE_DURATION,
+                    #'pause_before_home' : 0,
+                    'creatures_go_home' : NEW_CREATURE_MOVE_DURATION,
+                    #'pause_before_reset' : PAUSE_LENGTH,
+                    'food_disappear' : NEW_CREATURE_MOVE_DURATION,
                 }
             ]
         ]
 
-        graph.add_to_blender(appear_time = 1)
-        drawn_world.add_to_blender(appear_time = 1)
+        graph.add_to_blender(appear_time = 133)
+        drawn_world.add_to_blender(appear_time = 133)
         for i in range(len(graph.functions)):
             graph.set_shape_keys_bounded_region(index = i)
 
         hawks_and_doves = tex_bobject.TexBobject(
-            #'\\text{Hawks and Doves}',
-            '\\begin{array}{@{}c@{}}\\text{Hawks and} \\\\ \\text{Doves} \\end{array}',
+            '\\text{Doves only}',
+            '\\begin{array}{@{}c@{}}\\text{Doves and} \\\\ \\text{Hawks} \\end{array}',
             rotation_euler = [74 * math.pi / 180, 0, 0],
             location = [7, 0, 8],
             scale = 2,
@@ -1095,19 +895,52 @@ class HawkDove(Scene):
         )'''
 
 
-        drawn_world.animate_days(
-            start_time = 10,
-            first_animated_day = 0,
-            #last_animated_day = 11,
-            phase_duration_updates = updates,
-            graph_only = True
+
+
+
+        hawks_and_doves.add_to_blender(appear_time = 133)
+        hawks_and_doves.morph_figure(1, start_time = 135)
+
+        scale = 1
+        tail1 = [6.69, 4.75]
+        head1 = [6.69, 2.75]
+
+        arrow2 = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (tail1[0] / scale, tail1[1] / scale, 0),
+                        'head': (head1[0] / scale, head1[1] / scale, 0)
+                    }
+                }
+            ],
+            scale = scale,
+            rotation_euler = [74 * math.pi / 180, 0, 0]
+        )
+        arrow2.add_to_blender(appear_time = 134.5)
+        arrow2.disappear(disappear_time = 150)
+
+        scale = 1
+        tail1 = [8.75, 11.5]
+        head1 = [8.75, 9.5]
+
+        arrow3 = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (tail1[0] / scale, tail1[1] / scale, 0),
+                        'head': (head1[0] / scale, head1[1] / scale, 0)
+                    }
+                }
+            ],
+            scale = scale,
         )
 
-
-        hawks_and_doves.add_to_blender(
-            appear_time = 1
-        )
-
+        arrow3.ref_obj.parent = graph.ref_obj
+        arrow3.add_to_blender(appear_time = 134.5)
+        arrow3.disappear(disappear_time = 150)
 
         scale = 1
         tail1 = [11.5, 4.01]
@@ -1145,35 +978,43 @@ class HawkDove(Scene):
                 {
                     'type': 'arrow',
                     'points': {
-                        'tail': (tail3[0] / scale, tail3[1] / scale, 0),
-                        'head': (head3[0] / scale, head3[1] / scale, 0)
+                        'tail': (tail2[0] / scale, tail2[1] / scale, 0),
+                        'head': (head2[0] / scale, head2[1] / scale, 0)
                     }
                 },
                 {
                     'type': 'arrow',
                     'points': {
-                        'tail': (tail4[0] / scale, tail4[1] / scale, 0),
-                        'head': (head4[0] / scale, head4[1] / scale, 0)
+                        'tail': (tail3[0] / scale, tail3[1] / scale, 0),
+                        'head': (head3[0] / scale, head3[1] / scale, 0)
                     }
-                }
+                },
             ],
             scale = scale,
         )
 
         arrow1.ref_obj.parent = graph.ref_obj
-        arrow1.add_to_blender(appear_time = 100)
-        arrow1.morph_figure(1, start_time = 102)
-        arrow1.morph_figure(2, start_time = 104)
-        arrow1.morph_figure(3, start_time = 106)
-        arrow1.morph_figure(4, start_time = 110)
+        arrow1.add_to_blender(appear_time = 342)
+        arrow1.morph_figure(1, start_time = 342.5)
+        arrow1.morph_figure(2, start_time = 343)
+        arrow1.morph_figure(3, start_time = 343.5)
+        arrow1.morph_figure(4, start_time = 346)
 
+        drawn_world.animate_days(
+            start_time = 134,
+            first_animated_day = 10,
+            last_animated_day = 80,
+            phase_duration_updates = updates,
+            #graph_only = True
+        )
 
-        '''disappear_time = 50
+        disappear_time = 352
+        #to_disappear = [drawn_world]
         to_disappear = [graph, hawks_and_doves, drawn_world]
         for i, thing in enumerate(to_disappear):
             thing.disappear(
                 disappear_time = disappear_time - (len(to_disappear) - i - 1) * 0.05
-            )'''
+            )
 
     def hypotheticals(self):
         cam_bobj, cam_swivel = cam_and_swivel(
@@ -1183,7 +1024,7 @@ class HawkDove(Scene):
             swivel_location = [0, 0, 4],
             swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
             swivel_name = 'Cam swivel',
-            #control_sun = True
+            control_sun = True
         )
         cam_swivel.add_to_blender(appear_time = -1, animate = False)
 
@@ -1222,9 +1063,16 @@ class HawkDove(Scene):
         edit_sim = True
         hypothetical_outcome = 'few_doves'
         if edit_sim == True:
+            '''old_cre = world.calendar[-1].next_creatures.pop()
+            new_cre = hawk_dove.Creature(
+                fight_chance = 1,
+                parent = old_cre.parent
+            )
+            world.calendar[-1].next_creatures.append(new_cre)'''
+
             num_added_days = 10
-            target_num_hawks = 115
-            for i in range(num_added_days):
+            target_num_hawks = 70
+            for i in range(0, num_added_days):
                 '''old_cre = world.calendar[-1].next_creatures.pop()
                 new_cre = hawk_dove.Creature(
                     fight_chance = 1,
@@ -1310,6 +1158,10 @@ class HawkDove(Scene):
                         elif roll < 0.5:
                             new_num_hawks -= 1
 
+                #Override on first additional day
+                if i == 0:
+                    new_num_hawks = 1
+
                 creatures = []
                 for j in range(old_num_cres):
                     if j < new_num_hawks:
@@ -1391,33 +1243,20 @@ class HawkDove(Scene):
             [
                 9,
                 {
-                    #'day_prep' : CREATURE_MOVE_DURATION,
-                    #'creatures_go_out' : CREATURE_MOVE_DURATION,
-                    #'pause_before_contest' : PAUSE_LENGTH,
-                    #'contest' : CREATURE_MOVE_DURATION,
-                    #'pause_before_home' : PAUSE_LENGTH,
-                    #'creatures_go_home' : CREATURE_MOVE_DURATION,
-                    #'pause_before_reset' : PAUSE_LENGTH,
-                    'food_disappear' : CREATURE_MOVE_DURATION,
-                }
-            ],
-            [
-                10,
-                {
-                    #'day_prep' : CREATURE_MOVE_DURATION,
-                    #'creatures_go_out' : CREATURE_MOVE_DURATION,
-                    #'pause_before_contest' : PAUSE_LENGTH,
-                    #'contest' : CREATURE_MOVE_DURATION,
-                    #'pause_before_home' : PAUSE_LENGTH,
-                    #'creatures_go_home' : CREATURE_MOVE_DURATION,
-                    #'pause_before_reset' : PAUSE_LENGTH,
-                    'food_disappear' : CREATURE_MOVE_DURATION,
+                    'day_prep' : NEW_CREATURE_MOVE_DURATION,
+                    'creatures_go_out' : NEW_CREATURE_MOVE_DURATION,
+                    'pause_before_contest' : NEW_PAUSE_LENGTH,
+                    'contest' : NEW_CREATURE_MOVE_DURATION,
+                    'pause_before_home' : NEW_PAUSE_LENGTH,
+                    'creatures_go_home' : NEW_CREATURE_MOVE_DURATION,
+                    'pause_before_reset' : NEW_PAUSE_LENGTH,
+                    'food_disappear' : NEW_CREATURE_MOVE_DURATION,
                 }
             ]
         ]
 
         graph.add_to_blender(appear_time = 1)
-        drawn_world.add_to_blender(appear_time = 1)
+        #drawn_world.add_to_blender(appear_time = 1)
         for i in range(len(graph.functions)):
             graph.set_shape_keys_bounded_region(index = i)
 
@@ -1447,7 +1286,7 @@ class HawkDove(Scene):
         )
 
 
-        hawks_and_doves.add_to_blender(
+        '''hawks_and_doves.add_to_blender(
             appear_time = 1
         )
 
@@ -1508,7 +1347,7 @@ class HawkDove(Scene):
         arrow1.morph_figure(1, start_time = 102)
         arrow1.morph_figure(2, start_time = 104)
         arrow1.morph_figure(3, start_time = 106)
-        arrow1.morph_figure(4, start_time = 110)
+        arrow1.morph_figure(4, start_time = 110)'''
 
 
         '''disappear_time = 50
@@ -1611,7 +1450,8 @@ class HawkDove(Scene):
             loud = True,
             linked_graph = graph,
             location = [7.5, 0, 0],
-            scale = 6.5
+            scale = 6.5,
+            wiggle = True
         )
 
         #phase_durations = {
@@ -1635,26 +1475,39 @@ class HawkDove(Scene):
                     #'pause_before_home' : PAUSE_LENGTH,
                     #'creatures_go_home' : CREATURE_MOVE_DURATION,
                     #'pause_before_reset' : PAUSE_LENGTH,
-                    'food_disappear' : 10,
+                    'food_disappear' : 8.5,
                 }
             ],
             [
                 11,
                 {
-                    #'day_prep' : CREATURE_MOVE_DURATION,
+                    'day_prep' : 3.5,
                     #'creatures_go_out' : CREATURE_MOVE_DURATION,
                     #'pause_before_contest' : PAUSE_LENGTH,
                     #'contest' : CREATURE_MOVE_DURATION,
                     #'pause_before_home' : PAUSE_LENGTH,
                     #'creatures_go_home' : CREATURE_MOVE_DURATION,
                     #'pause_before_reset' : PAUSE_LENGTH,
-                    'food_disappear' : CREATURE_MOVE_DURATION,
+                    'food_disappear' : NEW_CREATURE_MOVE_DURATION,
+                }
+            ],
+            [
+                12,
+                {
+                    'day_prep' : NEW_CREATURE_MOVE_DURATION,
+                    #'creatures_go_out' : CREATURE_MOVE_DURATION,
+                    #'pause_before_contest' : PAUSE_LENGTH,
+                    #'contest' : CREATURE_MOVE_DURATION,
+                    #'pause_before_home' : PAUSE_LENGTH,
+                    #'creatures_go_home' : CREATURE_MOVE_DURATION,
+                    #'pause_before_reset' : PAUSE_LENGTH,
+                    'food_disappear' : NEW_CREATURE_MOVE_DURATION,
                 }
             ]
         ]
 
-        graph.add_to_blender(appear_time = 1)
-        drawn_world.add_to_blender(appear_time = 1)
+        graph.add_to_blender(appear_time = 180)
+        drawn_world.add_to_blender(appear_time = 180)
         for i in range(len(graph.functions)):
             graph.set_shape_keys_bounded_region(index = i)
 
@@ -1666,26 +1519,10 @@ class HawkDove(Scene):
             scale = 2,
             centered = True
         )
-
-        '''graph.change_window(
-            start_time = 3,
-            end_time = 4,
-            new_x_range = [0, 100],
-            new_tick_step = [50, 20]
-        )'''
-
-        drawn_world.animate_days(
-            start_time = 10,
-            first_animated_day = 0,
-            #last_animated_day = 11,
-            phase_duration_updates = updates,
-            graph_only = True
-        )
-
         hawks_and_doves.add_to_blender(
-            appear_time = 1
+            appear_time = 180
         )
-        hawks_and_doves.morph_figure(1, start_time = 31)
+        hawks_and_doves.morph_figure(1, start_time = 217.5)
 
         scale = 1
         tail1 = [11, 2]
@@ -1711,11 +1548,28 @@ class HawkDove(Scene):
         )
 
         arrow1.ref_obj.parent = graph.ref_obj
-        arrow1.add_to_blender(appear_time = 22)
-        '''arrow1.morph_figure(1, start_time = 102)
-        arrow1.morph_figure(2, start_time = 104)
-        arrow1.morph_figure(3, start_time = 106)
-        arrow1.morph_figure(4, start_time = 110)'''
+        arrow1.add_to_blender(appear_time = 217.5)
+
+        scale = 1
+        tail1 = [7.25, 4.75]
+        head1 = [7.25, 2.75]
+
+        arrow2 = gesture.Gesture(
+            gesture_series = [
+                {
+                    'type': 'arrow',
+                    'points': {
+                        'tail': (tail1[0] / scale, tail1[1] / scale, 0),
+                        'head': (head1[0] / scale, head1[1] / scale, 0)
+                    }
+                }
+            ],
+            scale = scale,
+            rotation_euler = [74 * math.pi / 180, 0, 0]
+        )
+        arrow2.add_to_blender(appear_time = 217.5)
+        arrow2.disappear(disappear_time = 221)
+        arrow1.disappear(disappear_time = 221)
 
         sotf = tex_bobject.TexBobject(
             '\\text{Survival of the fittest}',
@@ -1723,15 +1577,23 @@ class HawkDove(Scene):
             location = [1.5, 9.5, 0]
         )
         sotf.ref_obj.parent = graph.ref_obj
-        sotf.add_to_blender(appear_time = 75)
-        sotf.morph_figure(1, start_time = 76)
+        sotf.add_to_blender(appear_time = 605.5)
+        sotf.morph_figure(1, start_time = 608.5)
 
-        '''disappear_time = 50
-        to_disappear = [graph, hawks_and_doves, drawn_world]
+        drawn_world.animate_days(
+            start_time = 182,
+            first_animated_day = 0,
+            last_animated_day = 80,
+            phase_duration_updates = updates,
+            #graph_only = True
+        )
+
+        disappear_time = 621
+        to_disappear = [sotf, graph, hawks_and_doves, drawn_world]
         for i, thing in enumerate(to_disappear):
             thing.disappear(
                 disappear_time = disappear_time - (len(to_disappear) - i - 1) * 0.05
-            )'''
+            )
 
     def big_sim(self):
         cam_bobj, cam_swivel = cam_and_swivel(
@@ -1741,14 +1603,14 @@ class HawkDove(Scene):
             swivel_location = [0, 0, 4],
             swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
             swivel_name = 'Cam swivel',
-            #control_sun = True
+            control_sun = True
         )
         cam_swivel.add_to_blender(appear_time = -1, animate = False)
 
         multiple = 30
 
         is_sim = True
-        num_days = 50
+        num_days = 49
         num_creatures = 2 #int(121 * multiple / 2)
         if is_sim == True:
             world = hawk_dove.World(
@@ -1772,11 +1634,11 @@ class HawkDove(Scene):
             #demand_curve, supply_curve,
             location = [-10, -4, 0],
             rotation_euler = [74 * math.pi / 180, 0, 0],
-            x_range = num_days,
+            x_range = num_days + 1,
             y_range = 120 * multiple * 0.8,
             width = 23,
             height = 11,
-            tick_step = [num_days, 500],
+            tick_step = [num_days + 1, 500],
             x_label = "\\text{Days}",
             y_label = "\\text{Creatures}",
             y_label_pos = 'end',
@@ -1844,54 +1706,19 @@ class HawkDove(Scene):
 
         graph.add_all_bounded_regions()#colors = [3, 6])
 
-        graph.add_to_blender(appear_time = 1)
+        graph.add_to_blender(appear_time = 0)
         graph.animate_all_bounded_regions(
-            start_time = 4,
-            end_time = 15
+            start_time = 1,
+            end_time = 4
         )
-
-
-        #drawn_world.add_to_blender(appear_time = 1)
-
-
-        '''hawks_and_doves = tex_bobject.TexBobject(
-            #'\\text{Hawks and Doves}',
-            '\\begin{array}{@{}c@{}}\\text{Hawks and} \\\\ \\text{Doves} \\end{array}',
-            rotation_euler = [74 * math.pi / 180, 0, 0],
-            location = [7, 0, 8],
-            scale = 2,
-            centered = True
-        )'''
-
-        '''graph.change_window(
-            start_time = 3,
-            end_time = 4,
-            new_x_range = [0, 100],
-            new_tick_step = [50, 20]
-        )'''
-
-
-
-
-        '''hawks_and_doves.add_to_blender(
-            appear_time = 1
-        )'''
-
-
-
-        '''disappear_time = 50
-        to_disappear = [graph, hawks_and_doves, drawn_world]
-        for i, thing in enumerate(to_disappear):
-            thing.disappear(
-                disappear_time = disappear_time - (len(to_disappear) - i - 1) * 0.05
-            )'''
+        graph.disappear(disappear_time = 4.5)
 
     def payoff_grid(self):
 
-        dd_time = 2
-        dh_time = 5
-        hd_time = 8
-        hh_time = 11
+        dd_time = 242
+        dh_time = 245.5
+        hd_time = 252.5
+        hh_time = 256.25
 
 
         dd = tex_bobject.TexBobject(
@@ -1912,7 +1739,7 @@ class HawkDove(Scene):
         hh = tex_bobject.TexBobject(
             '0, 0',
             '\\dfrac{1}{4}, \\dfrac{1}{4}',
-            '\\dfrac{1}{2}, \\dfrac{1}{2}',
+            #'\\dfrac{1}{2}, \\dfrac{1}{2}',
             '\\dfrac{3}{4}, \\dfrac{3}{4}',
             centered = True,
             scale = 1.5
@@ -1985,7 +1812,12 @@ class HawkDove(Scene):
             subbobject_timing = [
                 dd_time * FRAME_RATE, dh_time * FRAME_RATE,
                 hd_time * FRAME_RATE, hh_time * FRAME_RATE,
-                0, 60, 30, 0, 60, 30
+                dd_time * FRAME_RATE - 90 + 0,
+                dd_time * FRAME_RATE - 90 +  60,
+                dd_time * FRAME_RATE - 90 +  30,
+                dd_time * FRAME_RATE - 90 +  0,
+                dd_time * FRAME_RATE - 90 +  60,
+                dd_time * FRAME_RATE - 90 +  30
             ]
         )
 
@@ -1993,7 +1825,7 @@ class HawkDove(Scene):
             mat = 'creature_color3',
             scale = 2,
             location = [-2, -2.5, 0],
-            wiggle = True
+            #wiggle = True
         )
         d1.add_to_blender(appear_time = dd_time)
         d1.ref_obj.parent = grid.ref_obj
@@ -2002,16 +1834,17 @@ class HawkDove(Scene):
             mat = 'creature_color6',
             scale = 2,
             location = [-2, -7.5, 0],
-            wiggle = True
+            #wiggle = True
         )
         h1.add_to_blender(appear_time = hd_time)
+        h1.angry_eyes(start_time = -1, end_time = None)
         h1.ref_obj.parent = grid.ref_obj
 
         d2 = blobject.Blobject(
             mat = 'creature_color3',
             scale = 2,
             location = [2.35, 2.5, 0],
-            wiggle = True
+            #wiggle = True
         )
         d2.add_to_blender(appear_time = dd_time)
         d2.ref_obj.parent = grid.ref_obj
@@ -2020,9 +1853,10 @@ class HawkDove(Scene):
             mat = 'creature_color6',
             scale = 2,
             location = [7, 2.5, 0],
-            wiggle = True
+            #wiggle = True
         )
         h2.add_to_blender(appear_time = dh_time)
+        h2.angry_eyes(start_time = -1, end_time = None)
         h2.ref_obj.parent = grid.ref_obj
 
         def pulses():
@@ -2044,40 +1878,50 @@ class HawkDove(Scene):
 
             #dd pulses
             d1.pulse(start_time = dd_time + 1, duration_time = 1)
+            d1.nod_yes(start_time = dd_time + 1, end_time = dd_time + 2)
             dd.lookup_table[0][0].pulse(start_time = dd_time + 1, duration_time = 1)
-            d2.pulse(start_time = dd_time + 2, duration_time = 1)
-            dd.lookup_table[0][2].pulse(start_time = dd_time + 2, duration_time = 1)
+            d2.pulse(start_time = dd_time + 1.5, duration_time = 1)
+            d2.nod_yes(start_time = dd_time + 1.5, end_time = dd_time + 2.5)
+            dd.lookup_table[0][2].pulse(start_time = dd_time + 1.5, duration_time = 1)
 
             #dh pulses
             d1.pulse(start_time = dh_time + 1, duration_time = 1)
+            d1.wince(start_time = dh_time + 1, end_time = dh_time + 2.5, period = 0.25)
             dh.lookup_table[0][0].pulse(start_time = dh_time + 1, duration_time = 1)
             dh.lookup_table[0][1].pulse(start_time = dh_time + 1, duration_time = 1)
             dh.lookup_table[0][2].pulse(start_time = dh_time + 1, duration_time = 1)
-            h2.pulse(start_time = dh_time + 2, duration_time = 1)
-            dh.lookup_table[0][4].pulse(start_time = dh_time + 2, duration_time = 1)
-            dh.lookup_table[0][5].pulse(start_time = dh_time + 2, duration_time = 1)
-            dh.lookup_table[0][6].pulse(start_time = dh_time + 2, duration_time = 1)
+            h2.pulse(start_time = dh_time + 3, duration_time = 1.5)
+            h2.evil_pose(start_time = dh_time + 3, end_time = dh_time + 4.5)
+            dh.lookup_table[0][4].pulse(start_time = dh_time + 3, duration_time = 1.5)
+            dh.lookup_table[0][5].pulse(start_time = dh_time + 3, duration_time = 1.5)
+            dh.lookup_table[0][6].pulse(start_time = dh_time + 3, duration_time = 1.5)
 
             #hd pulses
-            h1.pulse(start_time = hd_time + 1, duration_time = 1)
-            hd.lookup_table[0][0].pulse(start_time = hd_time + 1, duration_time = 1)
-            hd.lookup_table[0][1].pulse(start_time = hd_time + 1, duration_time = 1)
-            hd.lookup_table[0][2].pulse(start_time = hd_time + 1, duration_time = 1)
+            h1.pulse(start_time = hd_time + 1.5, duration_time = 1)
+            h1.evil_pose(start_time = hd_time + 1.5, end_time = hd_time + 2.5)
+            hd.lookup_table[0][0].pulse(start_time = hd_time + 1.5, duration_time = 1)
+            hd.lookup_table[0][1].pulse(start_time = hd_time + 1.5, duration_time = 1)
+            hd.lookup_table[0][2].pulse(start_time = hd_time + 1.5, duration_time = 1)
             d2.pulse(start_time = hd_time + 2, duration_time = 1)
+            d2.wince(start_time = hd_time + 2, end_time = hd_time + 3.5, period = 0.25)
             hd.lookup_table[0][4].pulse(start_time = hd_time + 2, duration_time = 1)
             hd.lookup_table[0][5].pulse(start_time = hd_time + 2, duration_time = 1)
             hd.lookup_table[0][6].pulse(start_time = hd_time + 2, duration_time = 1)
 
             #hh pulses
-            h1.pulse(start_time = hh_time + 1, duration_time = 1)
-            hh.lookup_table[0][0].pulse(start_time = hh_time + 1, duration_time = 1)
-            h2.pulse(start_time = hh_time + 2, duration_time = 1)
-            hh.lookup_table[0][2].pulse(start_time = hh_time + 2, duration_time = 1)
+            h1.pulse(start_time = hh_time + 1.5, duration_time = 1)
+            h1.blob_wave(start_time = hh_time, duration = 3.5)
+            h1.wince(start_time = hh_time + 3.5, end_time = hh_time + 5, period = 0.25)
+            hh.lookup_table[0][0].pulse(start_time = hh_time + 1.5, duration_time = 1)
+            h2.pulse(start_time = hh_time + 2.25, duration_time = 1)
+            h2.blob_wave(start_time = hh_time, duration = 3.5)
+            h2.wince(start_time = hh_time + 3.5, end_time = hh_time + 5, period = 0.25)
+            hh.lookup_table[0][2].pulse(start_time = hh_time + 2.25, duration_time = 1)
 
         pulses()
 
-        h1.move_to(new_scale = 0, start_time = 20)
-        h2.move_to(new_scale = 0, start_time = 20)
+        h1.move_to(new_scale = 0, start_time = 264)
+        h2.move_to(new_scale = 0, start_time = 264)
 
         def go_to_dove_1(blob, start_time):
             blob.move_to(
@@ -2173,8 +2017,8 @@ class HawkDove(Scene):
             )
 
         #You control side, and I control top
-        go_to_mid_1(d1, 20)
-        go_to_mid_2(d2, 20)
+        go_to_mid_1(d1, 264)
+        go_to_mid_2(d2, 264)
         me = tex_bobject.TexBobject(
             '\\text{Me}',
             location = [1.4, 0, 0],
@@ -2186,7 +2030,7 @@ class HawkDove(Scene):
         constraint.use_rotation_x = False
         constraint.use_rotation_y = False
         constraint.use_rotation_z = False
-        me.add_to_blender(appear_time = 22)
+        me.add_to_blender(appear_time = 267)
 
         you = tex_bobject.TexBobject(
             '\\text{You}',
@@ -2199,16 +2043,28 @@ class HawkDove(Scene):
         constraint.use_rotation_x = False
         constraint.use_rotation_y = False
         constraint.use_rotation_z = False
-        you.add_to_blender(appear_time = 22)
+        you.add_to_blender(appear_time = 268.5)
 
         #If I go hawk, you go dove
-        go_to_hawk_2(d2, 25)
-        go_to_hawk_1(d1, 26)
-        hh.lookup_table[0][0].pulse(start_time = 26, duration_time = 1)
-        go_to_dove_1(d1, 27)
-        dh.lookup_table[0][0].pulse(start_time = 27, duration_time = 1)
-        dh.lookup_table[0][2].pulse(start_time = 27, duration_time = 1)
-        dh.lookup_table[0][3].pulse(start_time = 27, duration_time = 1)
+        go_to_hawk_2(d2, 271)
+        d2.angry_eyes(start_time = 271, end_time = None)
+        go_to_dove_1(d1, 277.5)
+        d1.angry_eyes(start_time = 280.5, end_time = 283, left = False)
+        d1.angry_eyes(start_time = 284, end_time = 307)
+        go_to_hawk_1(d1, 284.5)
+        d1.blob_wave(start_time = 285.75, duration = 1.5)
+        d1.move_head(
+            start_time = 296,
+            end_time = 300,
+            rotation_quaternion = [1, 0.2, 0, 0]
+        )
+
+        hh.lookup_table[0][0].pulse(start_time = 308.5, duration_time = 2)
+        dh.lookup_table[0][0].pulse(start_time = 308.5, duration_time = 2)
+        dh.lookup_table[0][2].pulse(start_time = 308.5, duration_time = 2)
+        dh.lookup_table[0][3].pulse(start_time = 308.5, duration_time = 2)
+        go_to_dove_1(d1, 311)
+
 
 
         scale = 1
@@ -2235,20 +2091,24 @@ class HawkDove(Scene):
         )
 
         arrow_42.ref_obj.parent = grid.ref_obj
-        arrow_42.add_to_blender(appear_time = 27.5)
+        arrow_42.add_to_blender(appear_time = 315.5)
+        arrow_42.subbobjects[0].pulse(start_time = 320, duration_time = 1)
 
         #Reset
-        go_to_mid_2(d2, 28)
-        go_to_mid_1(d1, 28)
+        go_to_mid_2(d2, 323)
+        d2.normal_eyes(start_time = 323, end_time = None)
+        go_to_mid_1(d1, 323)
 
         #If I go dove, you go hawk
-        go_to_dove_2(d2, 30)
-        go_to_dove_1(d1, 31)
-        dd.lookup_table[0][0].pulse(start_time = 31, duration_time = 1)
-        go_to_hawk_1(d1, 32)
-        hd.lookup_table[0][0].pulse(start_time = 32, duration_time = 1)
-        hd.lookup_table[0][2].pulse(start_time = 32, duration_time = 1)
-        hd.lookup_table[0][3].pulse(start_time = 32, duration_time = 1)
+        go_to_dove_2(d2, 326.5)
+        go_to_hawk_1(d1, 330)
+        go_to_dove_1(d1, 335.5)
+        d1.nod_yes(start_time = 336, end_time = 337.5)
+        dd.lookup_table[0][0].pulse(start_time = 343, duration_time = 2)
+        hd.lookup_table[0][0].pulse(start_time = 343, duration_time = 2)
+        hd.lookup_table[0][2].pulse(start_time = 343, duration_time = 2)
+        hd.lookup_table[0][3].pulse(start_time = 343, duration_time = 2)
+        go_to_hawk_1(d1, 345)
 
         scale = 1
         tail1 = [d2.ref_obj.location[0], -4]
@@ -2267,11 +2127,11 @@ class HawkDove(Scene):
         )
 
         arrow_13.ref_obj.parent = grid.ref_obj
-        arrow_13.add_to_blender(appear_time = 32.5)
+        arrow_13.add_to_blender(appear_time = 347)
 
         #Reset
-        go_to_mid_2(d2, 35)
-        go_to_mid_1(d1, 35)
+        go_to_mid_2(d2, 349.5)
+        go_to_mid_1(d1, 349.5)
 
         scale = 1
         tail1 = [4, -2.5]
@@ -2290,7 +2150,7 @@ class HawkDove(Scene):
         )
 
         arrow_12.ref_obj.parent = grid.ref_obj
-        arrow_12.add_to_blender(appear_time = 36)
+        arrow_12.add_to_blender(appear_time = 357)
 
         scale = 1
         tail1 = [5.5, -7.5]
@@ -2316,32 +2176,28 @@ class HawkDove(Scene):
         )
 
         arrow_43.ref_obj.parent = grid.ref_obj
-        arrow_43.add_to_blender(appear_time = 36)
+        arrow_43.add_to_blender(appear_time = 357)
 
         #First Nash Equilibrium
-        go_to_dove_2(d2, 37)
-        go_to_hawk_1(d1, 37)
-        arrow_13.subbobjects[0].pulse(start_time = 37, duration_time = 1)
-        arrow_43.subbobjects[0].pulse(start_time = 37, duration_time = 1)
+        go_to_dove_2(d2, 366.5)
+        go_to_hawk_1(d1, 366.5)
+        arrow_13.subbobjects[0].pulse(start_time = 366.5, duration_time = 2)
+        arrow_43.subbobjects[0].pulse(start_time = 366.5, duration_time = 2)
 
         #Other Nash Equilibrium
-        go_to_hawk_2(d2, 38)
-        go_to_dove_1(d1, 38)
-        arrow_12.subbobjects[0].pulse(start_time = 38, duration_time = 1)
-        arrow_42.subbobjects[0].pulse(start_time = 38, duration_time = 1)
+        go_to_hawk_2(d2, 368.5)
+        go_to_dove_1(d1, 368.5)
+        arrow_12.subbobjects[0].pulse(start_time = 368.5, duration_time = 2)
+        arrow_42.subbobjects[0].pulse(start_time = 368.5, duration_time = 2)
 
         #Reset
-        go_to_dove_2(d2, 40)
-        h1.move_to(new_scale = 2, start_time = 40)
-        h2.move_to(new_scale = 2, start_time = 40)
-        you.disappear(disappear_time = 40.5)
-        me.disappear(disappear_time = 40.5)
+        go_to_dove_2(d2, 376)
+        h1.move_to(new_scale = 2, start_time = 376)
+        h2.move_to(new_scale = 2, start_time = 376)
+        you.disappear(disappear_time = 376.5)
+        me.disappear(disappear_time = 376.5)
 
-        arrow_13.subbobjects[0].pulse(start_time = 41, duration_time = 1)
-        arrow_43.subbobjects[0].pulse(start_time = 41, duration_time = 1)
 
-        arrow_12.subbobjects[0].pulse(start_time = 42, duration_time = 1)
-        arrow_42.subbobjects[0].pulse(start_time = 42, duration_time = 1)
 
         gt = tex_bobject.TexBobject(
             '\\text{\"Game Theory\"}',
@@ -2350,14 +2206,24 @@ class HawkDove(Scene):
             scale = 1.5,
             centered = True
         )
-        gt.add_to_blender(appear_time = 41)
-        gt.morph_figure(1, start_time = 42)
-        gt.move_to(new_scale = 1.4, start_time = 42)
-        gt.disappear(disappear_time = 43.5)
+        gt.add_to_blender(appear_time = 378.75)
+        arrow_13.subbobjects[0].pulse(start_time = 382.5, duration_time = 0.5)
+        arrow_43.subbobjects[0].pulse(start_time = 382.5, duration_time = 0.5)
+        arrow_12.subbobjects[0].pulse(start_time = 382.5, duration_time = 0.5)
+        arrow_42.subbobjects[0].pulse(start_time = 382.5, duration_time = 0.5)
+
+        arrow_13.subbobjects[0].pulse(start_time = 383, duration_time = 0.5)
+        arrow_43.subbobjects[0].pulse(start_time = 383, duration_time = 0.5)
+        arrow_12.subbobjects[0].pulse(start_time = 383, duration_time = 0.5)
+        arrow_42.subbobjects[0].pulse(start_time = 383, duration_time = 0.5)
+        gt.morph_figure(1, start_time = 385)
+        gt.move_to(new_scale = 1.4, start_time = 385)
+        gt.disappear(disappear_time = 395.5)
 
         grid.move_to(
             new_location = [-9.5, 3, 0],
-            start_time = 43
+            start_time = 395,
+            end_time = 396
         )
 
         def graph1():
@@ -2408,22 +2274,22 @@ class HawkDove(Scene):
 
             graph.add_all_bounded_regions()#colors = [3, 6])
 
-            graph.add_to_blender(appear_time = 40)
+            graph.add_to_blender(appear_time = 395)
             graph.move_to(
                 new_location = [3, 1.5, 0],
-                start_time = 43.5,
-                end_time = 44.5
+                start_time = 396,
+                end_time = 397
             )
             graph.animate_all_bounded_regions(
-                start_time = 44,
-                end_time = 47
+                start_time = 397,
+                end_time = 398.5
             )
             graph.move_to(
                 new_location = [30, 1.5, 0],
-                start_time = 55,
-                end_time = 56
+                start_time = 406.8,
+                end_time = 407.8
             )
-        #graph1()
+        graph1()
 
         def graph2():
             graph = graph_bobject.GraphBobject(
@@ -2476,37 +2342,44 @@ class HawkDove(Scene):
             graph.add_to_blender(appear_time = 40)
             graph.move_to(
                 new_location = [3, -6, 0],
-                start_time = 43.5,
-                end_time = 44.5
+                start_time = 398.5,
+                end_time = 399.5
             )
             graph.animate_all_bounded_regions(
-                start_time = 48,
-                end_time = 51
+                start_time = 399.5,
+                end_time = 401
             )
 
             graph.move_to(
                 new_location = [30, -6, 0],
-                start_time = 55,
-                end_time = 56
+                start_time = 407,
+                end_time = 408
             )
-        #graph2()
+        graph2()
+
+        grid.move_to(
+            new_location = [-3.5, 3, 0],
+            start_time = 407,
+            end_time = 408
+        )
 
         grid.move_to(
             new_location = [-11.5, 4.5, 0],
             new_scale = 0.6,
-            start_time = 59
+            start_time = 414.5
         )
 
         def equations_and_whatnot():
-
             eq_con_lab = tex_bobject.TexBobject(
                 '\\text{Equilibrium is when:}',
+                '\\text{Equilibrium:}',#' \\phanton{aah}',
+                '\\xcancel{\\text{Equilibrium:}}',#' \\phanton{aah}',
                 '\\text{Equilibrium:}',#' \\phanton{aah}',
                 location = [4.5, 3, 0],
                 scale = 1.5,
                 centered = True
             )
-            eq_con_lab.add_to_blender(appear_time = 60)
+            eq_con_lab.add_to_blender(appear_time = 415.5)
 
             eq_con = tex_bobject.TexBobject(
                 '\\text{Dove score} = \\text{Hawk score}',
@@ -2517,19 +2390,19 @@ class HawkDove(Scene):
                 centered = True,
                 scale = 1.5
             )
-            eq_con.add_to_blender(appear_time = 61)
+            eq_con.add_to_blender(appear_time = 416.5)
 
-            eq_con_lab.morph_figure(1, start_time = 63)
+            eq_con_lab.morph_figure(1, start_time = 431)
             eq_con_lab.move_to(
                 new_location = [-10.7, -3.8, 0],
                 new_scale = 1,
-                start_time = 63
+                start_time = 431
             )
-            eq_con.morph_figure(1, start_time = 63)
+            eq_con.morph_figure(1, start_time = 431)
             eq_con.move_to(
                 new_location = [-9.3, -5.6, 0],
                 new_scale = 2.3,
-                start_time = 63
+                start_time = 431
             )
 
             dummy = tex_bobject.TexBobject(
@@ -2547,22 +2420,22 @@ class HawkDove(Scene):
                 scale = 1
             )
             eq_box.add_to_blender(
-                appear_time = 64,
+                appear_time = 432,
                 subbobject_timing = [
                     0,
                     0, 30, 0, 30
                 ]
             )
-            dummy.disappear(disappear_time = 64)
+            dummy.disappear(disappear_time = 432)
 
-
-            '''np_doves = tex_bobject.TexBobject(
+            np_doves = tex_bobject.TexBobject(
                 '90\% \\text{ Doves}',
                 centered = True,
-                location = [5, 5, 0],
+                location = [5, 0, 0],
                 scale = 2
             )
-            np_doves.add_to_blender(appear_time = 66)'''
+            np_doves.add_to_blender(appear_time = 441.5)
+            np_doves.disappear(disappear_time = 444)
 
             dove_score = tex_bobject.TexBobject(
                 '\\text{D}',
@@ -2672,33 +2545,28 @@ class HawkDove(Scene):
                     alignment = 'top',
                     gest_scale = 0.6
                 )
-            dove_eq.add_to_blender(appear_time = 65)
+            dove_eq.add_to_blender(appear_time = 444.5)
 
-            dd_payoff_time = 67
-            dh_payoff_time = 70
+            dd_payoff_time = 450
+            dh_payoff_time = 457.5
 
-            dove_rhs.morph_figure(1, start_time = 66)
+            dove_rhs.morph_figure(1, start_time = 445.25)
             dove_rhs.morph_figure(2, start_time = dd_payoff_time)
-            dove_rhs.morph_figure(3, start_time = 68)
-            dove_rhs.morph_figure(4, start_time = 69)
+            dove_rhs.morph_figure(3, start_time = 451)
+            dove_rhs.morph_figure(4, start_time = 452.75)
             dove_rhs.morph_figure(5, start_time = dh_payoff_time)
-            dove_rhs.morph_figure(6, start_time = 71)
-            dove_score.morph_figure(1, start_time = 72)
-
-            #dove_eq.add_to_blender(appear_time = 373)
-            #dove_score.morph_figure(1, start_time = 375.5)
-            #rule.morph_figure(2, start_time = 377.5)
-            #rule.morph_figure(3, start_time = 379)
+            dove_rhs.morph_figure(6, start_time = 458.5)
+            dove_score.morph_figure(1, start_time = 465.5)
 
             d_lab = eq_con.lookup_table[1][0]
             h_lab = eq_con.lookup_table[1][2]
             for i in range(2):
                 d_lab.pulse(
-                    start_time = i + 73,
+                    start_time = i + 474,
                     duration_time = 1
                 )
                 h_lab.pulse(
-                    start_time = i + 73.5,
+                    start_time = i + 474.5,
                     duration_time = 1
                 )
 
@@ -2721,7 +2589,7 @@ class HawkDove(Scene):
                 '\!=\\,\\, d \\cdot \\nicefrac{3}{2} + (1-d) \\cdot 0',
                 '\!=\\,\\, d \\cdot \\nicefrac{3}{2} + (1-d) \\cdot 0',
                 '\!=\\,\\, d \\cdot \\nicefrac{3}{2} + (1-d) \\cdot \\nicefrac{1}{4}',
-                '\!=\\,\\, d \\cdot \\nicefrac{3}{2} + (1-d) \\cdot \\nicefrac{1}{2}',
+                #'\!=\\,\\, d \\cdot \\nicefrac{3}{2} + (1-d) \\cdot \\nicefrac{1}{2}',
                 '\!=\\,\\, d \\cdot \\nicefrac{3}{2} + (1-d) \\cdot \\nicefrac{3}{4}',
             )
             hawk_eq = tex_complex.TexComplex(
@@ -2766,8 +2634,8 @@ class HawkDove(Scene):
                             [8, 1, 5],
                             [9, 1, 5, None],
                             [10, 1, 5, None],
+                            #[11, 1, 5, None],
                             [11, 1, 5, None],
-                            [12, 1, 5, None],
                         ],
                     ],
                     labels = [
@@ -2782,7 +2650,7 @@ class HawkDove(Scene):
                         ['\\text{Score from}', '\\text{doves}'],
                         [],
                         [],
-                        [],
+                        #[],
                         []
                     ],
                     alignment = 'bottom',
@@ -2803,8 +2671,8 @@ class HawkDove(Scene):
                             [8, 7, 13],
                             [9, 7, 13, None],
                             [10, 7, 13, None],
+                            #[11, 7, 13, None],
                             [11, 7, 13, None],
-                            [12, 7, 13, None],
                         ],
                     ],
                     labels = [
@@ -2819,27 +2687,27 @@ class HawkDove(Scene):
                         ['\\text{Score from}', '\\text{other hawks}'],
                         [],
                         [],
-                        [],
+                        #[],
                         []
                     ],
                     alignment = 'bottom',
                     gest_scale = 0.6
                 )
-            hawk_eq.add_to_blender(appear_time = 75)
+            hawk_eq.add_to_blender(appear_time = 478.5)
             dove_eq.move_to(
                 new_location = [4.5, 2, 0],
-                start_time = 75
+                start_time = 478.5
             )
 
-            hd_payoff_time = 77
-            hh_payoff_time = 80
-            hawk_rhs.morph_figure(1, start_time = 76)
+            hd_payoff_time = 493
+            hh_payoff_time = 500
+            hawk_rhs.morph_figure(1, start_time = 490)
             hawk_rhs.morph_figure(2, start_time = hd_payoff_time)
-            hawk_rhs.morph_figure(3, start_time = 78)
-            hawk_rhs.morph_figure(4, start_time = 79)
+            hawk_rhs.morph_figure(3, start_time = 494)
+            hawk_rhs.morph_figure(4, start_time = 496)
             hawk_rhs.morph_figure(5, start_time = hh_payoff_time)
-            hawk_rhs.morph_figure(6, start_time = 81)
-            hawk_score.morph_figure(1, start_time = 82)
+            hawk_rhs.morph_figure(6, start_time = 501)
+            hawk_score.morph_figure(1, start_time = 502.5)
 
             def color_equations_and_pulse():
                 #Dove dove payoff
@@ -2888,7 +2756,7 @@ class HawkDove(Scene):
                 for pos in [14, 15]:
                     hawk_rhs.lookup_table[10][pos].color_shift(
                         color = COLORS_SCALED[5],
-                        start_time = 100,
+                        start_time = 595,
                         duration_time = None
                     )
                 to_highlight = hh.lookup_table[0][0:3:2]
@@ -2897,35 +2765,102 @@ class HawkDove(Scene):
                     thing.wobble(start_time = hh_payoff_time, end_time = hh_payoff_time + 1)
             color_equations_and_pulse()
 
-            hawk_score.pulse(start_time = 85, duration_time = 1)
-            dove_score.pulse(start_time = 86, duration_time = 1)
-            eq_con.morph_figure(2, start_time = 87)
-            eq_con.morph_figure(3, start_time = 88)
+            hawk_score.pulse(start_time = 507, duration_time = 1)
+            dove_score.pulse(start_time = 508, duration_time = 1)
+            eq_con.morph_figure(2, start_time = 507.75)
+            eq_con_lab.morph_figure(2, start_time = 507.75)
+            eq_con.morph_figure(3, start_time = 522)
+            eq_con_lab.morph_figure(3, start_time = 522)
 
-            dove_score.morph_figure(2, start_time = 90)
-            dove_rhs.morph_figure(7, start_time = 91)
-            hawk_score.morph_figure(2, start_time = 90)
-            hawk_rhs.morph_figure(7, start_time = 91)
+            dove_score.morph_figure(2, start_time = 522)
+            dove_rhs.morph_figure(7, start_time = 526)
+            hawk_score.morph_figure(2, start_time = 522)
+            hawk_rhs.morph_figure(7, start_time = 526)
 
-            dove_rhs.morph_figure(8, start_time = 95)
-            hawk_rhs.morph_figure(8, start_time = 95)
+            dove_rhs.morph_figure(8, start_time = 546.5)
+            hawk_rhs.morph_figure(8, start_time = 546.5)
 
-            dove_score.morph_figure(3, start_time = 99)
-            dove_rhs.morph_figure(9, start_time = 99)
-            hawk_score.morph_figure(3, start_time = 99)
-            hawk_rhs.morph_figure(9, start_time = 99)
+            to_highlight = [
+                dove_rhs.lookup_table[8][1],
+                dove_rhs.lookup_table[8][8],
+                hawk_rhs.lookup_table[8][1],
+                hawk_rhs.lookup_table[8][10],
+            ]
+            for thing in to_highlight:
+                thing.pulse(start_time = 552.25, duration_time = 1, factor = 1.2)
+                thing.wobble(start_time = 552.25, end_time = 552.25 + 1)
+
+            dove_score.morph_figure(3, start_time = 554.5)
+            dove_rhs.morph_figure(9, start_time = 554.5)
+            hawk_score.morph_figure(3, start_time = 554.5)
+            hawk_rhs.morph_figure(9, start_time = 554.5)
             dove_eq.move_to(
                 new_location = [4.5, -3.75, 0],
-                start_time = 99
+                start_time = 554.5
             )
             hawk_eq.move_to(
                 new_location = [4.5, -6.25, 0],
-                start_time = 99
+                start_time = 554.5
             )
 
-            hawk_rhs.morph_figure(10, start_time = 115)
-            hawk_rhs.morph_figure(11, start_time = 117)
-            hawk_rhs.morph_figure(12, start_time = 118)
+            def grid_pulses():
+                #Dove dove payoff
+                base_time = 583.5
+                for pos in [5]:
+                    dove_rhs.lookup_table[3][5].pulse(
+                        start_time = base_time,
+                        duration_time = 0.5
+                    )
+                to_highlight = dd.lookup_table[0][0:3:2]
+                for thing in to_highlight:
+                    thing.pulse(start_time = base_time, duration_time = 0.5, factor = 1.2)
+
+                #Dove hawk payoff
+                for pos in [11, 12, 13]:
+                    dove_rhs.lookup_table[5][pos].pulse(
+                        start_time = base_time + 0.25,
+                        duration_time = 0.5
+                    )
+                to_highlight = dh.lookup_table[0][0:4] + hd.lookup_table[0][4:7]
+                for thing in to_highlight:
+                    thing.pulse(start_time = base_time + 0.25, duration_time = 0.5, factor = 1.2)
+
+                #Hawk dove payoof
+                for pos in [5, 6, 7]:
+                    hawk_rhs.lookup_table[2][pos].pulse(
+                        start_time = base_time + 0.5,
+                        duration_time = 0.5
+                    )
+                to_highlight = dh.lookup_table[0][4:7] + hd.lookup_table[0][0:4]
+                for thing in to_highlight:
+                    thing.pulse(start_time = base_time + 0.5, duration_time = 0.5, factor = 1.2)
+
+                #Hawk hawk payoff
+                for pos in [13]:
+                    hawk_rhs.lookup_table[5][pos].pulse(
+                        start_time = base_time + 0.75,
+                        duration_time = 0.5
+                    )
+                for pos in [14, 15]:
+                    hawk_rhs.lookup_table[10][pos].pulse(
+                        start_time = base_time + 0.75,
+                        duration_time = 0.5
+                    )
+                to_highlight = hh.lookup_table[0][0:3:2]
+                for thing in to_highlight:
+                    thing.pulse(start_time = base_time + 0.75, duration_time = 0.5, factor = 1.2)
+            grid_pulses()
+
+            hawk_rhs.morph_figure(10, start_time = 599)
+            #hawk_rhs.morph_figure(11, start_time = 692.5)
+            hawk_rhs.morph_figure(11, start_time = 694.25)
+
+            to_disappear = [
+                eq_con_lab, eq_con, eq_box,
+                dove_eq, hawk_eq
+            ]
+            for thing in to_disappear:
+                thing.disappear(disappear_time = 700.25)
 
         equations_and_whatnot()
 
@@ -2934,6 +2869,7 @@ class HawkDove(Scene):
         def hawk_score_func2(x): return x * 3/2 + (1-x) * 1/4
         def hawk_score_func3(x): return x * 3/2 + (1-x) * 2/4
         def hawk_score_func4(x): return x * 3/2 + (1-x) * 3/4
+
 
         comparison_graph = graph_bobject.GraphBobject(
             #dove_score_func1, hawk_score_func1,
@@ -2957,12 +2893,12 @@ class HawkDove(Scene):
             #discrete_interpolation_style = 'linear',
             show_functions = False
         )
-        comparison_graph.add_to_blender(appear_time = 110)
+        comparison_graph.add_to_blender(appear_time = 555)
         comparison_graph.add_new_function_and_curve(dove_score_func1, color = 3)
         comparison_graph.add_new_function_and_curve(hawk_score_func1, color = 6)
         comparison_graph.animate_all_function_curves(
-            start_time = 111,
-            end_time = 111.75,
+            start_time = 556,
+            end_time = 556.75,
             start_window = 0.25
         )
         D_lab = tex_bobject.TexBobject(
@@ -2970,13 +2906,13 @@ class HawkDove(Scene):
             location = [12.5, 3.5, 0]
         )
         D_lab.ref_obj.parent = comparison_graph.ref_obj
-        D_lab.add_to_blender(appear_time = 111.25)
+        D_lab.add_to_blender(appear_time = 557)
         H_lab = tex_bobject.TexBobject(
             '\\text{H}',
             location = [12.5, 5.3, 0]
         )
         H_lab.ref_obj.parent = comparison_graph.ref_obj
-        H_lab.add_to_blender(appear_time = 111.5)
+        H_lab.add_to_blender(appear_time = 557.25)
 
         scale = 1
         tail1 = [6, 6]
@@ -3000,87 +2936,94 @@ class HawkDove(Scene):
                         'tail': (tail2[0] / scale, tail2[1] / scale, 0),
                         'head': (head2[0] / scale, head2[1] / scale, 0)
                     }
-                },
-                {
-                    'type': 'arrow',
-                    'points': {
-                        'tail': (tail3[0] / scale, tail3[1] / scale, 0),
-                        'head': (head3[0] / scale, head3[1] / scale, 0)
-                    }
-                },
+                }
             ],
             scale = scale,
         )
         eq_arrow.ref_obj.parent = comparison_graph.ref_obj
-        eq_arrow.add_to_blender(appear_time = 113)
+        eq_arrow.add_to_blender(appear_time = 562.75)
+
+
 
         #My handling of functions in graph bobjects is trash
         comparison_graph.functions.append(hawk_score_func2)
         comparison_graph.functions_coords.append(comparison_graph.func_to_coords(func_index = 2))
-        hh.morph_figure(1, start_time = 115)
+        hh.morph_figure(1, start_time = 599)
         comparison_graph.morph_curve(
             2,
             from_curve_index = 1,
-            start_time = 115,
-            end_time = 115.5
+            start_time = 601.75,
+            end_time = 602.25
         )
-        eq_arrow.morph_figure(1, start_time = 115)
+        eq_arrow.morph_figure(1, start_time = 601.75)
 
-        comparison_graph.functions.append(hawk_score_func3)
+        '''comparison_graph.functions.append(hawk_score_func3)
         comparison_graph.functions_coords.append(comparison_graph.func_to_coords(func_index = 3))
-        hh.morph_figure(2, start_time = 117)
+        hh.morph_figure(2, start_time = 692.5)
         comparison_graph.morph_curve(
             3,
             from_curve_index = 1,
-            start_time = 117,
-            end_time = 117.5
+            start_time = 692.5,
+            end_time = 693
         )
-        eq_arrow.morph_figure(2, start_time = 117)
+        eq_arrow.morph_figure(2, start_time = 692.5)'''
 
         comparison_graph.functions.append(hawk_score_func4)
-        comparison_graph.functions_coords.append(comparison_graph.func_to_coords(func_index = 4))
-        hh.morph_figure(3, start_time = 118)
+        comparison_graph.functions_coords.append(comparison_graph.func_to_coords(func_index = 3))
+        hh.morph_figure(2, start_time = 694.25) #Was 3
         comparison_graph.morph_curve(
-            4,
+            3, #Was 2
             from_curve_index = 1,
-            start_time = 118,
-            end_time = 118.5
+            start_time = 694.25,
+            end_time = 694.75
         )
-        eq_arrow.disappear(disappear_time = 118.5)
+        eq_arrow.disappear(disappear_time = 694.25)
+
+        to_disappear = [
+            comparison_graph #Rest in equations_and_whatnot()
+        ]
+        for thing in to_disappear:
+            thing.disappear(disappear_time = 700.25)
+        grid.move_to(
+            new_location = [-3.5, 3, 0],
+            new_scale = 1,
+            start_time = 700,
+            end_time = 700.5
+        )
 
         #hh pulses
-        hh.lookup_table[1][0].pulse(start_time = 122, duration_time = 1)
-        hh.lookup_table[1][1].pulse(start_time = 122, duration_time = 1)
-        hh.lookup_table[1][2].pulse(start_time = 122, duration_time = 1)
-        hh.lookup_table[1][4].pulse(start_time = 122, duration_time = 1)
-        hh.lookup_table[1][5].pulse(start_time = 122, duration_time = 1)
-        hh.lookup_table[1][6].pulse(start_time = 122, duration_time = 1)
+        hh.lookup_table[1][0].pulse(start_time = 701.5, duration_time = 1)
+        hh.lookup_table[1][1].pulse(start_time = 701.5, duration_time = 1)
+        hh.lookup_table[1][2].pulse(start_time = 701.5, duration_time = 1)
+        hh.lookup_table[1][4].pulse(start_time = 701.5, duration_time = 1)
+        hh.lookup_table[1][5].pulse(start_time = 701.5, duration_time = 1)
+        hh.lookup_table[1][6].pulse(start_time = 701.5, duration_time = 1)
 
-        dh.lookup_table[0][0].pulse(start_time = 125, duration_time = 1)
-        dh.lookup_table[0][1].pulse(start_time = 125, duration_time = 1)
-        dh.lookup_table[0][2].pulse(start_time = 125, duration_time = 1)
-        hd.lookup_table[0][4].pulse(start_time = 125, duration_time = 1)
-        hd.lookup_table[0][5].pulse(start_time = 125, duration_time = 1)
-        hd.lookup_table[0][6].pulse(start_time = 125, duration_time = 1)
+        dh.lookup_table[0][0].pulse(start_time = 704.5, duration_time = 1)
+        dh.lookup_table[0][1].pulse(start_time = 704.5, duration_time = 1)
+        dh.lookup_table[0][2].pulse(start_time = 704.5, duration_time = 1)
+        hd.lookup_table[0][4].pulse(start_time = 704.5, duration_time = 1)
+        hd.lookup_table[0][5].pulse(start_time = 704.5, duration_time = 1)
+        hd.lookup_table[0][6].pulse(start_time = 704.5, duration_time = 1)
 
-        arrow_42.morph_figure(1, start_time = 128)
-        arrow_43.morph_figure(1, start_time = 128)
+        arrow_42.morph_figure(1, start_time = 707.25)
+        arrow_43.morph_figure(1, start_time = 707.25)
 
-        arrow_12.subbobjects[0].pulse(start_time = 130, duration_time = 0.5)
-        arrow_42.subbobjects[0].pulse(start_time = 130.25, duration_time = 0.5)
-        arrow_13.subbobjects[0].pulse(start_time = 130.75, duration_time = 0.5)
-        arrow_43.subbobjects[0].pulse(start_time = 131, duration_time = 0.5)
+        arrow_12.subbobjects[0].pulse(start_time = 708, duration_time = 0.5)
+        arrow_42.subbobjects[0].pulse(start_time = 708.25, duration_time = 0.5)
+        arrow_13.subbobjects[0].pulse(start_time = 708.75, duration_time = 0.5)
+        arrow_43.subbobjects[0].pulse(start_time = 709, duration_time = 0.5)
 
         #hh pulses
-        hh.lookup_table[1][0].pulse(start_time = 132, duration_time = 1)
-        hh.lookup_table[1][1].pulse(start_time = 132, duration_time = 1)
-        hh.lookup_table[1][2].pulse(start_time = 132, duration_time = 1)
-        hh.lookup_table[1][4].pulse(start_time = 132, duration_time = 1)
-        hh.lookup_table[1][5].pulse(start_time = 132, duration_time = 1)
-        hh.lookup_table[1][6].pulse(start_time = 132, duration_time = 1)
+        hh.lookup_table[1][0].pulse(start_time = 712, duration_time = 1)
+        hh.lookup_table[1][1].pulse(start_time = 712, duration_time = 1)
+        hh.lookup_table[1][2].pulse(start_time = 712, duration_time = 1)
+        hh.lookup_table[1][4].pulse(start_time = 712, duration_time = 1)
+        hh.lookup_table[1][5].pulse(start_time = 712, duration_time = 1)
+        hh.lookup_table[1][6].pulse(start_time = 712, duration_time = 1)
         #dd pulses
-        dd.lookup_table[0][0].pulse(start_time = 133, duration_time = 1)
-        dd.lookup_table[0][2].pulse(start_time = 133, duration_time = 1)
+        dd.lookup_table[0][0].pulse(start_time = 714.5, duration_time = 1)
+        dd.lookup_table[0][2].pulse(start_time = 714.5, duration_time = 1)
 
     def building_from_here(self):
         building = tex_bobject.TexBobject(
@@ -3088,7 +3031,7 @@ class HawkDove(Scene):
             location = [-12, 5, 0],
             scale = 1.9
         )
-        building.add_to_blender(appear_time = 32)
+        building.add_to_blender(appear_time = 622)
 
         mixed = tex_bobject.TexBobject(
             '\\text{Creatures with more than one strategy}',
@@ -3096,84 +3039,694 @@ class HawkDove(Scene):
             location = [-11, 2.25, 0],
             scale = 1.4
         )
-        mixed.add_to_blender(appear_time = 35.5)
+        mixed.add_to_blender(appear_time = 628)
 
-        container = bobject.Bobject(
-            location = [0, -4, 0]
+        container1 = bobject.Bobject(
+            location = [0, -3.5, 0]
         )
-        container.add_to_blender(appear_time = 0)
+        container1.add_to_blender(appear_time = 630)
 
         zero_blob = blobject.Blobject(
             location = [-4, 0, 0],
             scale = 4,
-            mat = 'creature_color3'
+            mat = 'creature_color3',
+            wiggle = True
         )
-        zero_blob.ref_obj.parent = container.ref_obj
-        zero_blob.add_to_blender(appear_time = 36)
+        zero_blob.ref_obj.parent = container1.ref_obj
+        zero_blob.add_to_blender(appear_time = 631)
         one_blob = blobject.Blobject(
             location = [4, 0, 0],
             scale = 4,
-            mat = 'creature_color6'
+            mat = 'creature_color6',
+            wiggle = True
         )
-        one_blob.ref_obj.parent = container.ref_obj
-        one_blob.add_to_blender(appear_time = 37)
+        one_blob.ref_obj.parent = container1.ref_obj
+        one_blob.add_to_blender(appear_time = 632)
 
         zero_blob.move_to(
             new_location = [-10, 0, 0],
-            new_scale = 2,
-            start_time = 38
+            new_scale = 3,
+            start_time = 634
         )
         one_blob.move_to(
             new_location = [10, 0, 0],
-            new_scale = 2,
-            start_time = 38
+            new_scale = 3,
+            start_time = 634
         )
 
         for i in range(1, 4):
             bleb = blobject.Blobject(
                 location = [(i - 2) * 5, 0, 0],
-                scale = 2,
+                scale = 3,
+                wiggle = True
             )
             bleb.color_shift(
-                color = mix_colors_hsv(COLORS_SCALED[2], COLORS_SCALED[5], i / 10),
+                color = mix_colors_hsv(COLORS_SCALED[2], COLORS_SCALED[5], i / 4),
                 start_time = 0,
                 duration_time = None,
                 obj = bleb.ref_obj.children[0].children[0]
             )
-            bleb.add_to_blender(appear_time = 38)
-            bleb.ref_obj.parent = container.ref_obj
-
-
-        mixed.morph_figure(1, start_time = 46.5)
-
+            bleb.add_to_blender(appear_time = 634)
+            bleb.ref_obj.parent = container1.ref_obj
+        mixed.morph_figure(1, start_time = 639.5)
+        container1.move_to(
+            new_location = [2.59351, 2.25, 0],
+            new_scale = 0.254,
+            start_time = 642
+        )
 
         conditional = tex_bobject.TexBobject(
             '\\text{Conditional strategies}',
             location = [-11, -0.25, 0],
             scale = 1.4
         )
-        conditional.add_to_blender(appear_time = 57.5)
+        conditional.add_to_blender(appear_time = 643)
+
+        container2 = bobject.Bobject(
+            location = [0, -4.5, 0],
+            scale = 0.75
+        )
+        container2.add_to_blender(appear_time = 0)
+
+        g_blob = blobject.Blobject(
+            location = [-4, 0, 0],
+            scale = 4,
+            mat = 'creature_color7',
+            wiggle = True
+        )
+        g_blob.ref_obj.parent = container2.ref_obj
+        g_blob.add_to_blender(appear_time = 648)
+        o_blob = blobject.Blobject(
+            location = [4, 0, 0],
+            scale = 4,
+            mat = 'creature_color4',
+            wiggle = True
+        )
+        o_blob.ref_obj.parent = container2.ref_obj
+        o_blob.add_to_blender(appear_time = 652)
+
+        container2.move_to(
+            new_location = [3.73945, -0.25, 0],
+            new_scale = 0.188,
+            start_time = 668
+        )
 
         asymmetric = tex_bobject.TexBobject(
             '\\text{Asymmetric contests}',
             location = [-11, -2.75, 0],
             scale = 1.4
         )
-        asymmetric.add_to_blender(appear_time = 61)
+        asymmetric.add_to_blender(appear_time = 669.25)
+        container3 = bobject.Bobject(
+            location = [6.75, -5, 0],
+            scale = 0.5
+        )
+        container3.add_to_blender(appear_time = 0)
+        g_blob = blobject.Blobject(
+            location = [-4, 0, 0],
+            scale = 4,
+            mat = 'creature_color6',
+            wiggle = True
+        )
+        g_blob.ref_obj.parent = container3.ref_obj
+        g_blob.add_to_blender(appear_time = 672)
+        o_blob = blobject.Blobject(
+            location = [4, 0, 0],
+            scale = 4,
+            mat = 'creature_color6',
+            wiggle = True
+        )
+        o_blob.ref_obj.parent = container3.ref_obj
+        o_blob.add_to_blender(appear_time = 672.5)
+
+        cube_height = 2
+        cube = import_object(
+            'cube', 'primitives',
+            scale = [
+                o_blob.ref_obj.scale[0],
+                cube_height / 2,
+                o_blob.ref_obj.scale[2]
+            ],
+            location = [
+                o_blob.ref_obj.location[0],
+                o_blob.ref_obj.location[1] - o_blob.ref_obj.scale[1] + cube_height / 2,
+                o_blob.ref_obj.location[2]
+            ],
+            mat = 'color2'
+        )
+        cube.ref_obj.parent = container3.ref_obj
+        cube.add_to_blender(appear_time = 677)
+        o_blob.move_to(
+            displacement = [0, cube_height * 0.9, 0],
+            start_time = 677
+        )
+
+
+        container3.move_to(
+            new_location = [2.9, -2.75, 0],
+            new_scale = 0.188,
+            start_time = 682
+        )
+
+
 
         pd = tex_bobject.TexBobject(
             '\\text{Prisoner\'s dilemma}',
             location = [-11, -5.25, 0],
             scale = 1.4
         )
-        pd.add_to_blender(appear_time = 77)
+        pd.add_to_blender(appear_time = 715)
 
         to_disappear = [
             building,
-            mixed,
-            conditional,
-            asymmetric,
+            mixed, container1,
+            conditional, container2,
+            asymmetric, container3,
             pd
         ]
         for i, thing in enumerate(to_disappear):
-            thing.disappear(disappear_time = 58.5 - (len(to_disappear) - 1 - i) * 0.05)
+            thing.disappear(disappear_time = 723.5 - (len(to_disappear) - 1 - i) * 0.05)
+
+    def teaser(self):
+        bpy.context.scene.render.resolution_x = 1080
+        bpy.context.scene.render.resolution_y = 1920
+        bpy.data.cameras[0].type = 'ORTHO'
+
+        #Wave
+        def hello():
+            me = blobject.Blobject(
+                scale = 8,
+            )
+            me.add_to_blender(appear_time = 0)
+            me.hello(start_time = 0.4, end_time = 1.4)
+
+            me.move_to(
+                new_location = [0, -6, 0],
+                start_time = 4
+            )
+            me.move_head(
+                rotation_quaternion = [1, -0.1, 0, 0.2],
+                start_time = 12.5,
+                end_time = 15
+            )
+            me.move_head(
+                rotation_quaternion = [1, 0, 0.2, -0.2],
+                start_time = 26.5,
+                end_time = 28
+            )
+
+            me.hello(start_time = 35.5, end_time = 38)
+
+
+        hello()
+
+        def conflict():
+
+            disp = 8.5#9.75
+            scale_fac = 0.7
+
+            food1 = import_object(
+                'goodicosphere', 'primitives',
+                mat = 'color7',
+                location = [1, -5, 1],
+                scale = scale_fac
+            )
+            food21 = import_object(
+                'half_icosphere', 'primitives',
+                location = [-1, -5, -1],
+                rotation_euler = [0, -math.pi / 2, 0],
+                mat = 'color7',
+                scale = scale_fac
+            )
+            food22 = import_object(
+                'half_icosphere', 'primitives',
+                location = [-1, -5, -1],
+                rotation_euler = [0, math.pi / 2, 0],
+                mat = 'color7',
+                scale = scale_fac
+            )
+
+
+            for f in [food1, food21, food22]:
+                f.ref_obj.location = scalar_mult_vec(
+                    deepcopy(f.ref_obj.location),
+                    scale_fac
+                )
+                f.ref_obj.location[1] += disp
+
+            food1.add_to_blender(appear_time = 6)
+            food21.add_to_blender(appear_time = 6)
+            food22.add_to_blender(appear_time = 6)
+
+            dove = blobject.Blobject(
+                location = [-19, -2, 0],
+                rotation_euler = [0, math.pi / 2, 0],
+                scale = 5 * scale_fac
+            )
+            dove.ref_obj.location = scalar_mult_vec(
+                deepcopy(dove.ref_obj.location),
+                scale_fac
+            )
+            dove.ref_obj.location[1] += disp
+            dove.add_to_blender(appear_time = 5)
+            new_loc = [-6, -2, 0]
+            new_loc = scalar_mult_vec(deepcopy(new_loc), scale_fac)
+            new_loc[1] += disp
+            dove.walk_to(
+                new_location = new_loc,
+                start_time = 2
+            )
+
+            hawk = blobject.Blobject(
+                location = [19, -2, 0],
+                rotation_euler = [0, -math.pi / 2, 0],
+                scale = 5 * scale_fac
+            )
+            hawk.ref_obj.location = scalar_mult_vec(
+                deepcopy(hawk.ref_obj.location),
+                scale_fac
+            )
+            hawk.ref_obj.location[1] += disp
+            hawk.add_to_blender(appear_time = 5.5)
+            new_loc = [6, -2, 0]
+            new_loc = scalar_mult_vec(deepcopy(new_loc), scale_fac)
+            new_loc[1] += disp
+            hawk.walk_to(
+                new_location = new_loc,
+                start_time = 2
+            )
+
+            dove.move_head(
+                rotation_quaternion = [1, 0.1, 0, -0.3],
+                start_time = 7,
+                end_time = 8
+            )
+            hawk.move_head(
+                rotation_quaternion = [1, 00, 0, -0.3],
+                start_time = 7,
+                end_time = 8
+            )
+
+            dove.hello(start_time = 8.5, end_time = 10.5)
+            dove.eat_animation(start_frame = 8.5 * FRAME_RATE, end_frame = 10.5 * FRAME_RATE)
+
+            hawk.move_head(
+                rotation_quaternion = [1, 0, 0.9, -0.1],
+                start_time = 9.5,
+                end_time = 10.5
+            )
+            hawk.color_shift(
+                duration_time = None,
+                color = COLORS_SCALED[5],
+                start_time = 9.5,
+                shift_time = FRAME_RATE / 2,
+                obj = hawk.ref_obj.children[0].children[0]
+            )
+            hawk.angry_eyes(
+                start_time = 9.5,
+                attack = 0.5,
+                end_time = None
+            )
+
+
+            def eats():
+                drawn_contest_world.transfer_food_to_creature(
+                    food_bobj = food22,
+                    creature_bobj = hawk,
+                    start_time = 10.5,
+                    ground_plane = 'xz'
+                )
+
+                drawn_contest_world.animate_eating(
+                    food = food22,
+                    eater = hawk,
+                    start_time = 10.5,
+                    dur = 0.5,
+                    eat_rotation = [0, -30 * math.pi / 180, 0]
+                )
+
+                drawn_contest_world.transfer_food_to_creature(
+                    food_bobj = food21,
+                    creature_bobj = dove,
+                    start_time = 10.5,
+                    ground_plane = 'xz'
+                )
+
+                drawn_contest_world.animate_eating(
+                    food = food21,
+                    eater = dove,
+                    start_time = 10.5,
+                    dur = 0.5,
+                    eat_rotation = [0, 30 * math.pi / 180, 0]
+                )
+
+                drawn_contest_world.transfer_food_to_creature(
+                    food_bobj = food1,
+                    creature_bobj = hawk,
+                    start_time = 11,
+                    ground_plane = 'xz'
+                )
+
+                drawn_contest_world.animate_eating(
+                    food = food1,
+                    eater = hawk,
+                    start_time = 11,
+                    dur = 1,
+                    eat_rotation = [0, 30 * math.pi / 180, 0]
+                )
+
+                dove.surprise_eyes(
+                    start_time = 11,
+                    end_time = 12
+                )
+
+            eats()
+
+            dove.move_to(
+                new_angle = [0, 0, 0],
+                start_time = 12
+            )
+            dove.wince(start_time = 12.5, end_time = 15)
+            hawk.move_to(
+                new_angle = [0, 0, 0],
+                start_time = 12
+            )
+            hawk.evil_pose(start_time = 12, end_time = 15)
+
+            for thing in [hawk, dove, food1, food21, food22]:
+                thing.move_to(
+                    displacement = [-31, 0, 0],
+                    start_time = 13.5,
+                    end_time = 14.5
+                )
+        conflict()
+
+        def sim():
+            cam_bobj, cam_swivel = cam_and_swivel(
+                cam_location = [0, 0, 32.8],
+                cam_rotation_euler = [0, 0, 0],
+                cam_name = "Camera Bobject",
+                swivel_location = [0, 0, 0],
+                swivel_rotation_euler = [74 * math.pi / 180, 0, 0],
+                swivel_name = 'Cam swivel',
+                #control_sun = True
+            )
+            cam_swivel.add_to_blender(appear_time = -1, animate = False)
+
+            new_sim = True
+            if new_sim == True:
+                world = hawk_dove.World(
+                    food_count = 19,
+                    initial_creatures = 10
+                )
+                num_days = 5
+
+                for i in range(num_days):
+                    save = False
+                    if i == num_days - 1:
+                        save = True
+                    world.new_day(save = save)
+            else:
+                world = 'doves_only'
+
+            phase_durations = {
+                'day_prep' : CREATURE_MOVE_DURATION,
+                'creatures_go_out' : CREATURE_MOVE_DURATION,
+                'pause_before_contest' : PAUSE_LENGTH,
+                'contest' : CREATURE_MOVE_DURATION,
+                'pause_before_home' : PAUSE_LENGTH,
+                'creatures_go_home' : CREATURE_MOVE_DURATION,
+                'pause_before_reset' : PAUSE_LENGTH,
+                'food_disappear' : CREATURE_MOVE_DURATION,
+            }
+            drawn_world = drawn_contest_world.DrawnWorld(
+                sim = world,
+                loud = True,
+                location = [31, 0, 7.25],
+                scale = 7,
+                #rotation_euler = [-70 * math.pi / 180, 0, 0],
+                #phase_durations = phase_durations
+            )
+            #drawn_world.ref_obj.rotation_mode = 'ZYX'
+
+            drawn_world.add_to_blender(appear_time = 0)
+
+            drawn_world.move_to(
+                displacement = [-31, 0, 0],
+                start_time = 13.5 * 2,
+                end_time = 14.5 * 2
+            )
+            '''drawn_world.move_to(
+                new_angle = [0, 0, 2 * math.pi],
+                start_time = 0,
+                end_time = 13
+            )'''
+            drawn_world.spin(
+                spin_rate = 0.02 / 2,
+                start_time = 0,
+                end_time = 60 * 2,
+                axis = 2
+            )
+
+            drawn_world.animate_days(
+                start_time = 14 * 2,
+                first_animated_day = 0,
+                #last_animated_day = 2,
+                #phase_duration_updates = updates
+            )
+
+            drawn_world.move_to(
+                displacement = [-31, 0, 0],
+                start_time = 20.5 * 2,
+                end_time = 21.5 * 2
+            )
+        #sim()
+
+        def date():
+            date1 = tex_bobject.TexBobject(
+                '\\text{Saturday}',
+                location = [31, 12, 0],
+                centered = True,
+                scale = 4
+            )
+            date1.add_to_blender(appear_time = 0)
+            date2 = tex_bobject.TexBobject(
+                '\\text{July } 27',
+                location = [31, 8, 0],
+                centered = True,
+                scale = 4
+            )
+            date2.add_to_blender(appear_time = 0)
+
+            time = tex_bobject.TexBobject(
+                '10\\text{ am Central}',
+                location = [31, 4, 0],
+                centered = True,
+                scale = 2.5
+            )
+            time.add_to_blender(appear_time = 0)
+
+            date1.move_to(
+                displacement = [-31, 0, 0],
+                start_time = 20.5,
+                end_time = 21.5
+            )
+            date2.move_to(
+                displacement = [-31, 0, 0],
+                start_time = 21.5,
+                end_time = 22.5
+            )
+            time.move_to(
+                displacement = [-31, 0, 0],
+                start_time = 22.5,
+                end_time = 23.5
+            )
+        date()
+
+    def patreon(self):
+        '''pat = svg_bobject.SVGBobject(
+            'Patreon_Wordmark_Black',
+        )
+        pat.add_to_blender(appear_time = 0)'''
+
+        patreon = import_object(
+            'patreon_wordmark', 'svgblend',
+            scale = 0.367,
+            location = [-12, 5.25, 0.5],
+            name = 'Patreon'
+        )
+        patreon.add_to_blender(appear_time = 0)
+
+        names = [
+            'Jordan Scales',
+            'Kairui Wang',
+            'Vladimir Duchenchuk',
+            'Victor Anne',
+            'Noah Healy',
+            'Patrick Gorrell',
+            'Josh Levent',
+            'StackAbuse.com',
+            'Marcial Abrahantes',
+            'Feimeng Zheng',
+            'Zachariah Richard Fournier'
+        ]
+
+        top_right_loc = [-12, 1.5, 0]
+        x_disp = 8
+        y_disp = -2.5
+        tbs = []
+        for i in range(len(names)):
+            tb = tex_bobject.TexBobject(
+                '\\text{' + names[i] + '}',
+                centered = False,
+                location = [
+                    top_right_loc[0] + (i % 3) * x_disp,
+                    top_right_loc[1] + (i // 3) * y_disp,
+                    top_right_loc[2]
+                ]
+            )
+            tb.add_to_blender(appear_time = (1 + i) / 6)
+            for j in range(len(tb.lookup_table[0])):
+                tb.lookup_table[0][j].color_shift(
+                    color = [
+                        0.952941,
+                        0.94902,
+                        0.941176,
+                        1
+                    ],
+                    start_time = -1,
+                    duration_time = None
+                )
+            tbs.append(tb)
+
+        for i, thing in enumerate([patreon] + tbs):
+            thing.disappear(disappear_time = 8 + i / 6)
+
+        colors = [4, 3, 7, 6]
+        for i in range(4):
+            blob = blobject.Blobject(
+                location = [4 * i, 5, 0],
+                scale = 2,
+                mat = 'creature_color' + str(colors[i])
+            )
+            blob.add_to_blender(appear_time = 1 + i / 2)
+            blob.disappear(
+                disappear_time = 8 + i / 4
+            )
+
+            if i == 0:
+                blob.cheer(
+                    start_time = i + 1,
+                    end_time = i + 9
+                )
+            if i == 1:
+                blob.nod_yes(
+                    start_time = i + 1,
+                    end_time = i + 3
+                )
+
+                blob.nod_yes(
+                    start_time = i + 5,
+                    end_time = i + 7
+                )
+
+            if i == 2:
+                blob.surprise_eyes(
+                    start_time = i + 1,
+                    end_time = None
+                )
+                blob.show_mouth(
+                    start_time = i + 1,
+                    end_time = None
+                )
+
+            if i == 3:
+                blob.dance(
+                    start_time = i + 1,
+                    end_time = i + 10
+                )
+
+    def thumb(self):
+        #5202
+        food1 = import_object(
+            'goodicosphere', 'primitives',
+            mat = 'color7',
+            location = [1, -5, 1]
+        )
+        food21 = import_object(
+            'half_icosphere', 'primitives',
+            location = [-1, -5, -1],
+            rotation_euler = [0, -math.pi / 2, 0],
+            mat = 'color7'
+        )
+        food22 = import_object(
+            'half_icosphere', 'primitives',
+            location = [-1, -5, -1],
+            rotation_euler = [0, math.pi / 2, 0],
+            mat = 'color7'
+        )
+        food1.add_to_blender(appear_time = 83.5)
+        food21.add_to_blender(appear_time = 83.5)
+        food22.add_to_blender(appear_time = 83.5)
+
+        dove = blobject.Blobject(
+            location = [-32, -2, 0],
+            rotation_euler = [0, math.pi / 2, 0],
+            scale = 5,
+            wiggle = True
+        )
+        dove.add_to_blender(appear_time = 1)
+        dove.walk_to(
+            new_location = [-6, -2, 0],
+            start_time = 84,
+            end_time = 85.5
+        )
+
+        hawk = blobject.Blobject(
+            location = [32, -2, 0],
+            rotation_euler = [0, -math.pi / 2, 0],
+            scale = 5
+        )
+        hawk.add_to_blender(appear_time = 1)
+        hawk.walk_to(
+            new_location = [6, -2, 0],
+            start_time = 84,
+            end_time = 85.5
+        )
+
+        dove.hello(start_time = 85.5, end_time = 88.5)
+        dove.eat_animation(start_frame = 85.5 * FRAME_RATE, end_frame = 88.5 * FRAME_RATE)
+
+        hawk.move_head(
+            rotation_quaternion = [1, 0, 0.9, -0.1],
+            start_time = 85.5,
+            end_time = 88.5
+        )
+        hawk.color_shift(
+            duration_time = None,
+            color = COLORS_SCALED[5],
+            start_time = 86,
+            shift_time = FRAME_RATE / 2,
+            obj = hawk.ref_obj.children[0].children[0]
+        )
+        hawk.angry_eyes(
+            start_time = 86,
+            attack = 0.5,
+            end_time = None
+        )
+
+
+        sot = svg_bobject.SVGBobject(
+            "ShareOrTake_century",
+            location = [0, 5.5, 0],
+            scale = 4,
+            #color = 'color2',
+            centered = True
+        )
+        sot.add_to_blender(appear_time = 0)
+        '''for i in range(3, 10):
+            vom.lookup_table[0][i].color_shift(
+                color = COLORS_SCALED[6],
+                start_time = -1,
+                duration_time = None
+            )'''

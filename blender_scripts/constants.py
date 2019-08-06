@@ -6,7 +6,7 @@ from copy import deepcopy
 '''
 Quality
 '''
-RENDER_QUALITY = 'medium'
+RENDER_QUALITY = 'final'
 #'medium' or higher turns on expression morphing
 #which takes a few seconds per run
 if RENDER_QUALITY == 'final':
@@ -28,7 +28,7 @@ if RENDER_QUALITY == 'high':
     LAMPS_TO_A_SIDE = 1
     LAMP_TYPE = 'SUN'
     ICO_SUBDIVISIONS = 6
-    CONTROL_POINTS_PER_SPLINE = 50 #TODO: figure out the threshold for noticing a difference
+    CONTROL_POINTS_PER_SPLINE = 40 #TODO: figure out the threshold for noticing a difference
     PARTICLES_PER_MESH = 300000 #Could be smaller if morphing smaller objects
     #Could even be a function of scale
     #Or number of other objects
@@ -127,6 +127,9 @@ TEX_DIR           = os.path.join(FILE_DIR, "tex")
 SIM_DIR           = 'D:\\primer_overflow\\sims'
 SVG_DIR           = os.path.join(FILE_DIR, "svg")
 IMG_DIR           = os.path.join(FILE_DIR, "raster")
+#BLEND_DIR         = os.path.join(FILE_DIR, "blend")
+
+#Temporarily, for working on UCSF project
 BLEND_DIR         = os.path.join(FILE_DIR, "blend")
 
 for folder in [FILE_DIR, TEX_DIR, SIM_DIR, SVG_DIR, BLEND_DIR]:

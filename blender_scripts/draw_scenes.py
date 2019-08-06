@@ -75,13 +75,13 @@ imp.reload(drawn_contest_world)
 import aggression
 imp.reload(aggression)
 
-import inclusive_fitness
-imp.reload(inclusive_fitness)
+import final_vestibular_animations_anatomy
+imp.reload(final_vestibular_animations_anatomy)
 
 #import hawk_dove_basic
 #imp.reload(hawk_dove_basic)
 
-def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = True):
+def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = True, vertical = False):
     #clear objects and materials
     #Reading the homefile would likely by faster, but it
     #sets the context to None, which breaks a bunch of
@@ -103,6 +103,11 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = 
     scn.render.image_settings.file_format = 'PNG'
     scn.render.tile_x = RENDER_TILE_SIZE
     scn.render.tile_y = RENDER_TILE_SIZE
+    scn.render.resolution_x = 1920
+    scn.render.resolution_y = 1080
+    if vertical == True:
+        scn.render.resolution_x = 1080
+        scn.render.resolution_y = 1920
     #Apparentlly 16-bit color depth pngs don't convert well to mp4 in Blender.
     #It gets all dark. 8-bit it is.
     #BUT WAIT. I can put stacks of pngs straight into premiere.
@@ -544,7 +549,7 @@ def test():
     #sim_test()
 
     def animation_test():
-        world = 'doves_only'
+        world = 'hawks_only_10'
 
         drawn_world = drawn_contest_world.DrawnWorld(
             sim = world,
@@ -554,22 +559,22 @@ def test():
         #world = hawk_dove.World(food_count = 61)
         world = drawn_world.sim
         #sys.setrecursionlimit(10000)
-        num_days = 70
+        '''num_days = 70
 
         for i in range(num_days):
             save = False
             if i == num_days - 1:
                 save = True
-            world.new_day(save = save)
+            world.new_day(save = save)'''
 
-        #drawn_world.add_to_blender(appear_time = 1)
-        '''drawn_world.animate_days(
+        drawn_world.add_to_blender(appear_time = 1)
+        drawn_world.animate_days(
             start_time = 2,
             first_animated_day = 0,
-            last_animated_day = 3#10
-        )'''
+            last_animated_day = 5
+        )
 
-    #animation_test()
+    animation_test()
 
     def walk_to_test():
         bleb = blobject.Blobject(
@@ -620,11 +625,10 @@ def main():
     """"""
     #initialize_blender()
 
-
     #circle_grid()
     #test()
-    #draw_scenes_from_file(scds, clear = False)
-    draw_scenes_from_file(aggression)
+    #draw_scenes_from_file(final_vestibular_animations_anatomy, clear = False)
+    draw_scenes_from_file(final_vestibular_animations_anatomy)
 
     print_time_report()
     finish_noise()
