@@ -11,9 +11,14 @@ class Blobject(Bobject):
     def __init__(self, mat = 'creature_color3', **kwargs):
         if 'name' not in kwargs:
             kwargs['name'] = 'blob'
+
+        file = 'boerd_blob'
+        if 'upright' in kwargs and kwargs['upright'] == True:
+            file = 'blob'
+
         #returns a bobject
         blob = import_object(
-            'boerd_blob', 'creatures',
+            file, 'creatures',
             **kwargs
         )
         #Initialize with blob's ref_obj as a subbobject
@@ -23,6 +28,9 @@ class Blobject(Bobject):
         if self.get_from_kwargs('mouth', False):
             for child in self.ref_obj.children[0].children:
                 if 'Mouth' in child.name:
+                    self.mouth = child
+                    break
+                if 'mouth' in child.name:
                     self.mouth = child
                     break
 
@@ -215,7 +223,7 @@ class Blobject(Bobject):
                 name = 'beard'
             )
             beard.ref_obj.parent = self.ref_obj.children[0]
-            beard.ref_obj.parent_bone = self.ref_obj.children[0].pose.bones["brd_bone_neck"].name
+            beard.ref_obj.parent_bone = self.ref_obj.children[0].pose.bones["bone_neck"].name
             beard.ref_obj.parent_type = 'BONE'
             beard.add_to_blender(appear_time = start_time, transition_time = duration * FRAME_RATE)
 
@@ -318,7 +326,7 @@ class Blobject(Bobject):
         l_arm = None
         r_arm = None
         for child in self.ref_obj.children:
-            if 'boerd_blob' in child.name:
+            if 'blob' in child.name:
                 l_arm = child.pose.bones[1]
                 r_arm = child.pose.bones[2]
 
@@ -405,12 +413,19 @@ class Blobject(Bobject):
         self,
         start_time = 0,
         duration = 0,
-        top_pause_time = 0
+        top_pause_time = 0,
+        attack = 0.5,
+        decay = 0.5
     ):
         #This function only works for blob creatures. Maybe they deserve their
         #own subclass of bobject.
         start_frame = start_time * FRAME_RATE
-        duration_frames = (duration - top_pause_time) * FRAME_RATE
+        duration_frames = (duration) * FRAME_RATE
+        if duration < 1.5:
+            attack = duration / 3
+            decay = duration / 3
+        attack_frames = attack * FRAME_RATE
+        decay_frames = decay * FRAME_RATE
 
         l_arm_up_z = -2.7
         l_arm_down_z = 3
@@ -428,7 +443,7 @@ class Blobject(Bobject):
         l_arm = None
         r_arm = None
         for child in self.ref_obj.children:
-            if 'boerd_blob' in child.name:
+            if 'blob' in child.name:
                 l_arm = child.pose.bones[1]
                 r_arm = child.pose.bones[2]
 
@@ -443,25 +458,25 @@ class Blobject(Bobject):
         l_arm.rotation_quaternion[3] = l_arm_down_z
         l_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + duration_frames / 3
+            frame = start_frame + attack_frames
         )
 
         #scoop
         l_arm.rotation_quaternion[3] = l_arm_up_z
         l_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + 2 * duration_frames / 3
+            frame = start_frame + 2 * attack_frames
         )
         l_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + 2 * duration_frames / 3 + top_pause_time * FRAME_RATE
+            frame = start_frame + duration_frames - decay_frames
         )
 
         #And back
         l_arm.rotation_quaternion = initial_angle
         l_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + duration_frames + top_pause_time * FRAME_RATE
+            frame = start_frame + duration_frames
         )
 
         #Right arm
@@ -475,25 +490,25 @@ class Blobject(Bobject):
         r_arm.rotation_quaternion[3] = r_arm_down_z
         r_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + duration_frames / 3
+            frame = start_frame + attack_frames
         )
 
         #scoop
         r_arm.rotation_quaternion[3] = r_arm_up_z
         r_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + 2 * duration_frames / 3
+            frame = start_frame + 2 * attack_frames
         )
         r_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + 2 * duration_frames / 3
+            frame = start_frame + duration_frames - decay_frames
         )
 
         #And back
         r_arm.rotation_quaternion = initial_angle
         r_arm.keyframe_insert(
             data_path = "rotation_quaternion",
-            frame = start_frame + duration_frames + top_pause_time * FRAME_RATE
+            frame = start_frame + duration_frames
         )
 
     def evil_pose(
@@ -531,6 +546,10 @@ class Blobject(Bobject):
                 decay = (end_time - start_time) / 4
         decay_frames = decay * FRAME_RATE
 
+        new_action = bpy.data.actions.new('Evil Pose')
+        if self.ref_obj.children[0].animation_data.action == None:
+            self.ref_obj.children[0].animation_data_create()
+        self.ref_obj.children[0].animation_data.action = new_action
 
         #Blob's left arm up = [1, -2.5, -8.1, -1.5]
         #Blob's right arm up = [1, 0.4, -36.6, -9]
@@ -540,9 +559,9 @@ class Blobject(Bobject):
         l_arm = None
         r_arm = None
         for child in self.ref_obj.children:
-            if 'boerd_blob' in child.name:
-                l_arm = child.pose.bones[1]
-                r_arm = child.pose.bones[2]
+            if 'blob' in child.name:
+                l_arm = child.pose.bones['bone_arm.r']
+                r_arm = child.pose.bones['bone_arm.l']
 
         #Left arm up
         l_arm.keyframe_insert(
@@ -649,25 +668,12 @@ class Blobject(Bobject):
         )
 
         #Eyes
-        self.angry_eyes(
+        '''self.angry_eyes(
             start_time = start_time,
             end_time = end_time,
             attack = attack,
             decay = decay
-        )
-        '''eyes = [
-            self.ref_obj.children[0].children[-2],
-            self.ref_obj.children[0].children[-3],
-        ]
-        for eye in eyes:
-                key = eye.data.shape_keys.key_blocks['Key 1']
-                key.keyframe_insert(data_path = 'value', frame = start_frame)
-                key.value = 1
-                key.keyframe_insert(data_path = 'value', frame = start_frame + attack_frames)
-                if end_frame != None:
-                    key.keyframe_insert(data_path = 'value', frame = end_frame - decay_frames)
-                    key.value = 0
-                    key.keyframe_insert(data_path = 'value', frame = end_frame)'''
+        )'''
 
         #Mouth
         self.eat_animation(
@@ -785,8 +791,21 @@ class Blobject(Bobject):
         decay_frames = decay * FRAME_RATE
 
         #Eyes
+        #For some ungodly reason, I can't just refer to them by name directly
+        #bpy.data.objects['eye_l'] #
+        #bpy.data.objects['eye_r'] #
+
         left_eye = self.ref_obj.children[0].children[-2]
         right_eye = self.ref_obj.children[0].children[-3]
+
+        '''new_action = bpy.data.actions.new('angry_eyes')
+        if left_eye.animation_data.action == None:
+            left_eye.animation_data_create()
+        left_eye.animation_data.action = new_action
+        if right_eye.animation_data.action == None:
+            right_eye.animation_data_create()
+        right_eye.animation_data.action = new_action'''
+
 
         eyes = []
         if left == True:
@@ -948,7 +967,7 @@ class Blobject(Bobject):
         l_arm = None
         r_arm = None
         for child in self.ref_obj.children:
-            if 'boerd_blob' in child.name:
+            if 'blob' in child.name:
                 l_arm = child.pose.bones[1]
                 r_arm = child.pose.bones[2]
 
@@ -1112,6 +1131,10 @@ class Blobject(Bobject):
                 decay = (end_time - start_time) / 4
         decay_frames = decay * FRAME_RATE
 
+        new_action = bpy.data.actions.new('Hello')
+        if self.ref_obj.children[0].animation_data.action == None:
+            self.ref_obj.children[0].animation_data_create()
+        self.ref_obj.children[0].animation_data.action = new_action
 
         r_arm_up_z = -1.5
         r_arm_down_z = 1
@@ -1121,8 +1144,8 @@ class Blobject(Bobject):
         #from how they're labeled in the template .blend file. Huzzah.
         r_arm = None
         for child in self.ref_obj.children:
-            if 'boerd_blob' in child.name:
-                r_arm = child.pose.bones[2]
+            if 'blob' in child.name:
+                r_arm = child.pose.bones['bone_arm.r']
 
 
         r_arm.keyframe_insert(
@@ -1180,7 +1203,7 @@ class Blobject(Bobject):
 
 
         #Head
-        head = self.ref_obj.children[0].pose.bones[3]
+        head = self.ref_obj.children[0].pose.bones['bone_neck']
         initial = list(head.rotation_quaternion)
 
         head_tilt = [1, -0.1, 0, -0.1]
@@ -1621,7 +1644,7 @@ class Blobject(Bobject):
         l_arm = None
         r_arm = None
         for child in self.ref_obj.children:
-            if 'boerd_blob' in child.name:
+            if 'blob' in child.name:
                 l_arm = child.pose.bones[1]
                 r_arm = child.pose.bones[2]
 
@@ -1802,9 +1825,14 @@ class Blobject(Bobject):
 
         #I parented the mouth in a pretty ridiculous way, but it works.
         for child in self.ref_obj.children[0].children:
-            if 'Mouth' in child.name:
+            if 'Mouth' in child.name or 'mouth' in child.name:
                 mouth = child
                 break
+
+        new_action = bpy.data.actions.new('Mouth Open')
+        if mouth.animation_data.action == None:
+            mouth.animation_data_create()
+        mouth.animation_data.action = new_action
 
         o_loc = list(mouth.location)
         o_rot = list(mouth.rotation_euler)
@@ -1825,6 +1853,19 @@ class Blobject(Bobject):
             2.34,
             0.889
         ]
+
+        if 'upright' in self.kwargs and self.kwargs['upright'] == True:
+            mouth.location = [-0.04, -0.376, 1.29102]
+            mouth.rotation_euler = [
+                81.0898 * math.pi / 180,
+                3.41 * math.pi / 180,
+                -0.003005 * math.pi / 180,
+            ]
+            mouth.scale = [
+                0.853,
+                2.34,
+                0.889
+            ]
 
         mouth.keyframe_insert(data_path = 'location', frame = start_frame + attack_frames)
         mouth.keyframe_insert(data_path = 'rotation_euler', frame = start_frame + attack_frames)
@@ -1869,7 +1910,7 @@ class Blobject(Bobject):
         l_arm = None
         r_arm = None
         for child in self.ref_obj.children:
-            if 'boerd_blob' in child.name:
+            if 'blob' in child.name:
                 l_arm = child.pose.bones[1]
                 r_arm = child.pose.bones[2]
 

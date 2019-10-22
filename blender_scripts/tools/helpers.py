@@ -808,20 +808,23 @@ def import_object(filename, *folders, **kwargs):
     #Blender already adds numbers to the end of names, but this allows more
     #than 1000 objects with the (otherwise) same name and groups metaballs
     #together.
-    existing_names = [x.name for x in bpy.data.objects]
-    count = 0
-    prefix = str(count).zfill(4)
-    name = prefix + new_obj.name
-    while name in existing_names:
-        count += 1
-        prefix = str(count).zfill(4)
+    if filename != 'blob':
+        existing_names = [x.name for x in bpy.data.objects]
+        count = 0
+        zeros = 4
+
+        prefix = str(count).zfill(zeros)
         name = prefix + new_obj.name
-    new_obj.name = name
-    #Give children a unique prefix to separate metaball groups
-    #Would need to expand this if importing more complex files where children
-    #have children
-    for child in new_obj.children:
-        child.name = new_obj.name + child.name
+        while name in existing_names:
+            count += 1
+            prefix = str(count).zfill(4)
+            name = prefix + new_obj.name
+        new_obj.name = name
+        #Give children a unique prefix to separate metaball groups
+        #Would need to expand this if importing more complex files where children
+        #have children
+        for child in new_obj.children:
+            child.name = new_obj.name + child.name
 
     if 'name' not in kwargs.keys():
         name = new_obj.name
@@ -843,9 +846,24 @@ def import_object(filename, *folders, **kwargs):
 
     #Blinks
     ref_obj = new_bobject.ref_obj
-    if filename == 'boerd_blob' or filename == 'boerd_blob_squat':
+    if filename == 'boerd_blob' or filename == 'boerd_blob_squat' or filename == 'blob':
+        leye = ref_obj.children[0].children[-2]
+        reye = ref_obj.children[0].children[-3]
+        if filename == 'blob':
+            leye = ref_obj.children[0].children[0]
+            reye = ref_obj.children[0].children[1]
+        blink_action = bpy.data.actions.new('Blinks')
+        if ref_obj.children[0].animation_data.action == None:
+            ref_obj.children[0].animation_data_create()
+        ref_obj.children[0].animation_data.action = blink_action
+        #reye.animation_data_create()
+        #reye.animation_data.action = blink_action
+
         leye = ref_obj.children[0].pose.bones[5]
         reye = ref_obj.children[0].pose.bones[6]
+        if filename == 'blob':
+            leye = ref_obj.children[0].pose.bones[-2]
+            reye = ref_obj.children[0].pose.bones[-3]
         t = 0
         if 'cycle_length' not in kwargs:
             cycle_length = BLINK_CYCLE_LENGTH
@@ -884,7 +902,7 @@ def import_object(filename, *folders, **kwargs):
             else:
                 t += 1
         #Make blinks cyclical
-        try:
+        '''try:
             leye_fcurve = ref_obj.children[0].animation_data.action.fcurves.find(
                 'pose.bones["brd_bone_eye.l"].scale',
                 index = 1
@@ -902,15 +920,20 @@ def import_object(filename, *folders, **kwargs):
             #Sometimes a creature goes the whole cycle length without blinking,
             #in which case, there's no fcurve, so the above block throws an
             #error. In the end, it's fine if the creature never blinks. It's rare.
-            pass
+            pass'''
 
     #Wiggles
     if 'wiggle' in kwargs:
         wiggle = kwargs['wiggle']
     else:
         wiggle = False
-    if (filename == 'boerd_blob' or filename == 'boerd_blob_squat') \
+    if (filename == 'boerd_blob' or filename == 'boerd_blob_squat' or filename == 'blob') \
         and wiggle == True:
+        wiggle_action = bpy.data.actions.new('Wiggles')
+        if ref_obj.children[0].animation_data.action == None:
+            ref_obj.children[0].animation_data_create()
+        ref_obj.children[0].animation_data.action = wiggle_action
+
         if 'cycle_length' not in kwargs:
             wiggle_cycle_length = BLINK_CYCLE_LENGTH
         else:
@@ -1043,7 +1066,7 @@ def import_object(filename, *folders, **kwargs):
                 )
 
         #Make wiggle cyclical
-        bone_x_fcurve = ref_obj.children[0].animation_data.action.fcurves.find(
+        '''bone_x_fcurve = ref_obj.children[0].animation_data.action.fcurves.find(
             'pose.bones["brd_bone_neck"].rotation_quaternion',
             index = 0
         )
@@ -1065,7 +1088,7 @@ def import_object(filename, *folders, **kwargs):
         )
         neck_z_cycle = bone_z_fcurve.modifiers.new(type = 'CYCLES')
         neck_z_cycle.frame_start = 0
-        neck_z_cycle.frame_end = wiggle_cycle_length * wiggle_slow_factor
+        neck_z_cycle.frame_end = wiggle_cycle_length * wiggle_slow_factor'''
 
 
     if filename == 'stanford_bunny':
@@ -1210,18 +1233,19 @@ def fade(
             if RENDER_QUALITY == 'high':
                 transparency.default_value = extent
             transparency.keyframe_insert(data_path = 'default_value', frame = end_frame)
-            if transparency.default_value == 1:
-                object.keyframe_insert(data_path = 'hide', frame = end_frame - 1)
-                object.keyframe_insert(data_path = 'hide_render', frame = end_frame - 1)
-                object.hide = True
-                object.hide_render = True
-                object.keyframe_insert(data_path = 'hide', frame = end_frame)
-                object.keyframe_insert(data_path = 'hide_render', frame = end_frame)
         else:
             transparency.default_value = 1
             transparency.keyframe_insert(data_path = 'default_value', frame = start_frame)
             transparency.default_value = 0
             transparency.keyframe_insert(data_path = 'default_value', frame = end_frame)
+
+    if fade_out == True:
+        object.keyframe_insert(data_path = 'hide', frame = end_frame - 1)
+        object.keyframe_insert(data_path = 'hide_render', frame = end_frame - 1)
+        object.hide = True
+        object.hide_render = True
+        object.keyframe_insert(data_path = 'hide', frame = end_frame)
+        object.keyframe_insert(data_path = 'hide_render', frame = end_frame)
 
 def highlight_object(
     object = None,

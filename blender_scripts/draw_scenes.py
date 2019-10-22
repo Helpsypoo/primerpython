@@ -75,11 +75,11 @@ imp.reload(drawn_contest_world)
 import aggression
 imp.reload(aggression)
 
-import final_vestibular_animations_anatomy
-imp.reload(final_vestibular_animations_anatomy)
+import final_vestibular_animations_text
+imp.reload(final_vestibular_animations_text)
 
-#import hawk_dove_basic
-#imp.reload(hawk_dove_basic)
+import recurring_assets
+imp.reload(recurring_assets)
 
 def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = True, vertical = False):
     #clear objects and materials
@@ -174,6 +174,7 @@ def initialize_blender(total_duration = DEFAULT_SCENE_DURATION, clear_blender = 
     lamp.parent = lamp_parent
     lamp.matrix_parent_inverse = lamp.parent.matrix_world.inverted()
     lamp.data.node_tree.nodes[1].inputs[1].default_value = 1.57
+    #lamp.data.shadow_soft_size = 3
 
     #Sets view to look through camera.
     for area in bpy.context.screen.areas:
@@ -218,28 +219,29 @@ def get_scene_object_list(script_file):
 def tex_test():
     initialize_blender(total_duration = 100)
 
-    '''message = tex_bobject.TexBobject(
-        '\\text{You\'re}',
-        '\\text{the}',
-        '\\text{best!}',
+    message = tex_bobject.TexBobject(
+        '\\text{Always}',
+        '\\text{Pursue}',
+        '\\text{Beauty}',
+        '\\text{Always}',
         centered = True,
         scale = 8,
-        typeface = 'arial'
+        color = 'color10',
+        typeface = 'garamond'
     )
     message.add_to_blender(appear_time = 0)
-
     message.morph_figure('next', start_time = 1)
-
     message.morph_figure('next', start_time = 2)
+    message.morph_figure('next', start_time = 3)
 
-    message.disappear(disappear_time = 3.5)'''
+    #message.disappear(disappear_time = 3.5)
 
-    t = tex_bobject.TexBobject(
+    '''t = tex_bobject.TexBobject(
         '\\curvearrowleft'
     )
     t.add_to_blender(appear_time = 0)
 
-    print_time_report()
+    print_time_report()'''
 
 def marketing():
     scene_end = 12
@@ -345,8 +347,40 @@ def draw_scenes_from_file(script_file, clear = True):
 
     print_time_report()
 
+def make_blob_with_actions_for_unity():
+    #initialize_blender()
+
+    actual_blob = bpy.data.objects['blob']
+
+    blobj = blobject.Blobject(
+        upright = True,
+        name = 'blobject_ref_obj',
+        #wiggle = True
+    )
+
+    #trash = blobj.objects[0]
+
+    blobj.objects[0] = actual_blob
+    actual_blob.parent = blobj.ref_obj
+
+
+
+    #print()
+    #print(blob.__dict__)
+    #print()
+
+    '''blob.add_to_blender(
+        animate = False,
+        unhide = False
+    )'''
+
+    blobj.evil_pose(
+        start_time = 0,
+        end_time = 4
+    )
+
 def test():
-    initialize_blender()
+    #initialize_blender()
 
     def sim_test():
         print('Initial bimodal distribution')
@@ -574,7 +608,7 @@ def test():
             last_animated_day = 5
         )
 
-    animation_test()
+    #animation_test()
 
     def walk_to_test():
         bleb = blobject.Blobject(
@@ -594,30 +628,31 @@ def test():
 
     #walk_to_test()
 
-    '''func = [2, 3, 2, 5, 2, 6, 4, 4, 3, 9, 8]
-    def func2(x): return x
 
-    func3 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    func4 = [2, 0, 0, 0, 2, 1, 2, 1, 2, 1, 2]
-    func5 = [2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]
+    initialize_blender()
 
+    def func0(x):
+        return 4 + x / 5 + 3 * math.sin(x)
 
-    g = graph_bobject.GraphBobject(
-        func, func3, func4, func5,
-        centered = True,
-        show_functions = False,
-        show_bounded_regions = True,
-        high_res_curve_indices = [],
-        discrete_interpolation_style = 'linear'
+    def func1(x):
+        return 4 + x / 5 + 3 * math.sin(2 * x)
+
+    graph = graph_bobject.GraphBobject(
+        func0,
+        func1,
+        centered = True
     )
-    g.add_to_blender(
-        appear_time = 1,
-    )'''
-    '''g.animate_all_bounded_regions(
-        start_time = 2,
-        end_time = 3,
-        uniform_along_x = True
-    )'''
+
+    #Times in seconds
+    graph.add_to_blender(appear_time = 0) #Animate appearance of axes and labels
+    graph.animate_function_curve(start_time = 1, end_time = 2) #Animate drawing of curve
+    graph.morph_curve(1, start_time = 3) #Change curve to different function. First arg is destination function index
+    graph.change_window( #Animate change of window with same function.
+        new_x_range = [0, 15],
+        new_y_range = [0, 20],
+        new_tick_step = [5, 5],
+        start_time = 5
+    )
 
 def main():
     """Use this as a test scene"""
@@ -626,9 +661,10 @@ def main():
     #initialize_blender()
 
     #circle_grid()
-    #test()
+    test()
+    #make_blob_with_actions_for_unity()
     #draw_scenes_from_file(final_vestibular_animations_anatomy, clear = False)
-    draw_scenes_from_file(final_vestibular_animations_anatomy)
+    #draw_scenes_from_file(final_vestibular_animations_text)
 
     print_time_report()
     finish_noise()

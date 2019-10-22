@@ -4,8 +4,8 @@ from random import random, uniform, randrange
 import bpy
 
 import imp
-import scene
-imp.reload(scene)
+#import scene
+#imp.reload(scene)
 from scene import Scene
 
 import svg_bobject
@@ -22,6 +22,8 @@ import natural_sim
 imp.reload(natural_sim)
 import table_bobject
 imp.reload(table_bobject)
+import blobject
+imp.reload(blobject)
 
 import helpers
 imp.reload(helpers)
@@ -29,10 +31,10 @@ from helpers import *
 
 BLOB_VOLUME_DENSITY = 0.04
 
-class SelfishGene(Scene):
+class Asset(Scene):
     def __init__(self):
         self.subscenes = collections.OrderedDict([
-            ('card', {'duration': 10})
+            ('card', {'duration': 1000})
         ])
         super().__init__()
 
@@ -40,8 +42,10 @@ class SelfishGene(Scene):
         super().play()
 
         #self.end_card()
-        self.banner()
+        #self.banner()
+        self.waving_blob()
         #self.banner_angled()
+        #self.dftba_banner()
 
     def end_card(self):
         cues = self.subscenes
@@ -156,54 +160,87 @@ class SelfishGene(Scene):
             animate = False
         )
 
-        b_blob = import_object(
-            'boerd_blob', 'creatures',
+        b_blob = blobject.Blobject(
             scale = 2,
             location = [-9, 0, 0],
-            rotation_euler = [0, 20 * math.pi / 180, 0]
+            rotation_euler = [0, 20 * math.pi / 180, 0],
+            mat = 'creature_color3'
         )
         b_blob.add_to_blender(appear_time = 0, animate = False)
-        apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
+        #apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
         b_blob.hello(
             start_time = 2,
             end_time = 8
         )
 
-        r_blob = import_object(
-            'boerd_blob', 'creatures',
+        r_blob = blobject.Blobject(
             scale = 2,
             location = [12.5, 0, 0],
             rotation_euler = [0, 0, 0],
+            mat = 'creature_color6'
             #wiggle = True
         )
         r_blob.add_to_blender(appear_time = 0, animate = False)
-        apply_material(r_blob.ref_obj.children[0].children[0], 'creature_color6')
+        #apply_material(r_blob.ref_obj.children[0].children[0], 'creature_color6')
         r_blob.evil_pose(
             start_time = 6,
             end_time = 10
         )
 
-        g_blob = import_object(
-            'boerd_blob', 'creatures',
+        g_blob = blobject.Blobject(
             scale = 2,
             location = [9, 0, 0],
             rotation_euler = [0, - 10 * math.pi / 180, 0],
             wiggle = True,
-            cycle_length = 600
+            cycle_length = 600,
+            mat = 'creature_color7'
         )
         g_blob.add_to_blender(appear_time = 0, animate = False)
-        apply_material(g_blob.ref_obj.children[0].children[0], 'creature_color7')
+        #apply_material(g_blob.ref_obj.children[0].children[0], 'creature_color7')
 
-        o_blob = import_object(
-            'boerd_blob', 'creatures',
+        o_blob = blobject.Blobject(
             scale = 2,
             location = [-12.5, 0, 0],
             rotation_euler = [0, 0, 0],
+            mat = 'creature_color4'
             #wiggle = True
         )
         o_blob.add_to_blender(appear_time = 0, animate = False)
-        apply_material(o_blob.ref_obj.children[0].children[0], 'creature_color4')
+        #apply_material(o_blob.ref_obj.children[0].children[0], 'creature_color4')
 
+    def waving_blob(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 32.8],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 0],
+            swivel_rotation_euler = [0, 0, 0],
+            swivel_name = 'Cam swivel',
+            #control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1)
+
+        b_blob = blobject.Blobject(
+            scale = 7,
+            location = [0, 0, 0],
+            rotation_euler = [0, 0 * math.pi / 180, 0],
+            mat = 'creature_color3'
+        )
+        b_blob.add_to_blender(appear_time = 0, animate = False)
+        #apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
+        b_blob.hello(
+            start_time = 2,
+            end_time = 8
+        )
+        b_blob.show_mouth(start_time = 2)
+
+        r_blob = blobject.Blobject(
+            scale = 2,
+            location = [12.5, 0, 0],
+            rotation_euler = [0, 0, 0],
+            mat = 'creature_color6'
+            #wiggle = True
+        )
 
     def banner_angled(self):
         cam_bobj, cam_swivel = cam_and_swivel(
@@ -277,3 +314,124 @@ class SelfishGene(Scene):
         )
         o_blob.add_to_blender(appear_time = 0)
         apply_material(o_blob.ref_obj.children[0].children[0], 'creature_color4')
+
+    def dftba_banner(self):
+        cam_bobj, cam_swivel = cam_and_swivel(
+            cam_location = [0, 0, 32.8],
+            cam_rotation_euler = [0, 0, 0],
+            cam_name = "Camera Bobject",
+            swivel_location = [0, 0, 0],
+            swivel_rotation_euler = [70 * math.pi / 180, 0, 0],
+            swivel_name = 'Cam swivel',
+            control_sun = True
+        )
+        cam_swivel.add_to_blender(appear_time = -1)
+
+        scn = bpy.context.scene
+        scn.render.tile_y = RENDER_TILE_SIZE
+        scn.render.resolution_x = 1300
+        scn.render.resolution_y = 875
+
+        logo = svg_bobject.SVGBobject(
+            "Layer",
+            #file_name = "PrimerLogoWhite",
+            location = [0, 1.5, 4],
+            rotation_euler = [74 * math.pi / 180, 0, 0],
+            scale = 4,
+            centered = True
+        )
+        for bobj in logo.rendered_curve_bobjects:
+            apply_material(bobj.ref_obj.children[0], 'color2')
+        stroke = logo.rendered_curve_bobjects[0]
+        apply_material(stroke.ref_obj.children[0], 'color3')
+        logo.morph_chains[0][0].ref_obj.location[2] = -1
+        logo.add_to_blender(
+            appear_time = -1,
+            #subbobject_timing = [90, 30, 40, 50, 60, 70, 80],
+            #subbobject_timing = [42, 30, 33, 36, 39, 42, 45],
+            animate = False
+        )
+
+        b_blob = blobject.Blobject(
+            scale = 2,
+            location = [1, -10, 0],
+            rotation_euler = [math.pi / 2, 0, 0],
+            #wiggle = True
+        )
+        b_blob.add_to_blender(appear_time = 0)
+        apply_material(b_blob.ref_obj.children[0].children[0], 'creature_color3')
+
+
+        r_blob = blobject.Blobject(
+            scale = 2,
+            location = [-5, -7, 0],
+            rotation_euler = [math.pi / 2, 0, -10 * math.pi / 180],
+            wiggle = True
+        )
+        r_blob.add_to_blender(appear_time = 0)
+        apply_material(r_blob.ref_obj.children[0].children[0], 'creature_color6')
+
+        g_blob = blobject.Blobject(
+            scale = 2,
+            location = [-7, -9, 0],
+            rotation_euler = [math.pi / 2, 0, 100 * math.pi / 180],
+            wiggle = True
+        )
+        g_blob.add_to_blender(appear_time = 0)
+        apply_material(g_blob.ref_obj.children[0].children[0], 'creature_color7')
+
+        o_blob = blobject.Blobject(
+            scale = 2,
+            location = [8, -6, 0],
+            rotation_euler = [math.pi / 2, 0, -50 * math.pi / 180],
+            #wiggle = True
+        )
+        o_blob.add_to_blender(appear_time = 0)
+        apply_material(o_blob.ref_obj.children[0].children[0], 'creature_color4')
+
+        b_blob.hello(
+            start_time = 1,
+            end_time = 10
+        )
+        '''b_blob.eat_animation(
+            start_frame = 1 * FRAME_RATE,
+            end_frame = 10 * FRAME_RATE,
+            attack_frames = 0.5 * FRAME_RATE,
+            decay_frames = 0.5 * FRAME_RATE
+        )'''
+        b_blob.show_mouth(
+            start_time = 1,
+            #end_time = 10
+        )
+
+        r_blob.angry_eyes(
+            start_time = 0
+        )
+
+        o_blob.eat_animation(
+            start_frame = 1 * FRAME_RATE,
+            end_frame = 10 * FRAME_RATE,
+            attack_frames = 0.5 * FRAME_RATE,
+            decay_frames = 0.5 * FRAME_RATE
+        )
+        o_blob.blob_scoop(
+            start_time = 1,
+            duration = 10
+        )
+
+        food = import_object(
+            'goodicosphere', 'primitives',
+            location = [-0.05, 0.25, 1],
+            scale = 0.1,
+            mat = 'color7'
+        )
+        food.ref_obj.parent = o_blob.ref_obj
+        food.add_to_blender(appear_time = 0)
+
+        '''floor = import_object(
+            'xyplane', 'primitives',
+            location = [0, 0, 0],
+            name = 'ground'
+        )
+        apply_material(floor.ref_obj.children[0], 'color2')
+        floor.add_to_blender(appear_time = 0)'''

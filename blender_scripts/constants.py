@@ -77,7 +77,8 @@ elif color_scheme == 2: #Main. Why isn't #1 main? Because your face.
         #[255, 0, 0, 1]
         [105, 143, 63, 1],
         [219, 90, 186, 1],
-        [145, 146.5, 147, 1] #Gray from averaging 1 and 2
+        [145, 146.5, 147, 1], #Gray from averaging 1 and 2
+        [0, 0, 0, 1]
     ]
 
 elif color_scheme == 3:
@@ -127,9 +128,6 @@ TEX_DIR           = os.path.join(FILE_DIR, "tex")
 SIM_DIR           = 'D:\\primer_overflow\\sims'
 SVG_DIR           = os.path.join(FILE_DIR, "svg")
 IMG_DIR           = os.path.join(FILE_DIR, "raster")
-#BLEND_DIR         = os.path.join(FILE_DIR, "blend")
-
-#Temporarily, for working on UCSF project
 BLEND_DIR         = os.path.join(FILE_DIR, "blend")
 
 for folder in [FILE_DIR, TEX_DIR, SIM_DIR, SVG_DIR, BLEND_DIR]:

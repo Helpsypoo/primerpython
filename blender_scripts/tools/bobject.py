@@ -102,6 +102,11 @@ class Bobject(object):
 
             self.appear_frame = appear_frame
 
+            for obj in self.objects:
+                if obj.name not in bpy.context.scene.objects:
+                    bpy.context.scene.objects.link(obj)
+                link_descendants(obj) #Useful for multi-part imports from .blend files
+
             if unhide == True:
                 main_obj.hide = True
                 main_obj.hide_render = True
@@ -112,9 +117,6 @@ class Bobject(object):
 
 
                 for obj in self.objects:
-                    if obj.name not in bpy.context.scene.objects:
-                        bpy.context.scene.objects.link(obj)
-                    link_descendants(obj) #Useful for multi-part imports from .blend files
                     hide_self_and_descendants(
                         obj,
                         keyframes = True,
@@ -128,27 +130,29 @@ class Bobject(object):
                     )
 
             if animate == False:
-                if self.superbobject == None:
+                main_obj.scale = self.intrinsic_scale
+                '''if self.superbobject == None:
                     scale_up_frame = appear_frame - transition_time
                 #Might be able to get rid of this once morphing is fixed
                 else:
                     #print(self.superbobject.appear_frame)
                     scale_up_frame = self.superbobject.appear_frame - transition_time
                 #Makes the scale-up happen before the unhiding if we don't want
-                #the bobject to animate in
+                #the bobject to animate in'''
             else:
                 scale_up_frame = appear_frame
-            if is_creature == True:
-                duration = MATURATION_TIME
-            else:
-                duration = transition_time
+                if is_creature == True:
+                    duration = MATURATION_TIME
+                else:
+                    duration = transition_time
 
-            main_obj.scale = [0, 0, 0]
-            main_obj.keyframe_insert(data_path="scale", frame = scale_up_frame)
-            main_obj.scale = self.intrinsic_scale
-            main_obj.keyframe_insert(data_path="scale", frame = scale_up_frame + duration)
-            #don't need to do this for contained objects because it happens through
-            #parenting
+
+                main_obj.scale = [0, 0, 0]
+                main_obj.keyframe_insert(data_path="scale", frame = scale_up_frame)
+                main_obj.scale = self.intrinsic_scale
+                main_obj.keyframe_insert(data_path="scale", frame = scale_up_frame + duration)
+                #don't need to do this for contained objects because it happens through
+                #parenting
 
             self.added_to_blender = True
 
