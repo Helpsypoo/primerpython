@@ -1,7 +1,7 @@
 # primer
 Code that makes videos for this: youtube.com/c/primerlearning
 
-This is going to be a pretty minimal readme for now. If you're trying to get this running and hit a wall, feel free to email me at justin.r.helps@gmail.com.
+This is going to be a pretty minimal readme for now, and the code itself is likely very confusing. I intend to clean things up and improve documentation, though I don't know when that will be. If you'd like to receive an email when that update happens, you can submit your email here: https://forms.gle/GHTgKMUaMxqxGUu39
 
 ## Overview  
 This is a library of tools that lets you write high-level functions to build and animate objects in Blender. It's not set up to run from the command line. Instead, it uses the Script Runner addon for Blender, which lets you run scripts by pushing buttons within Blender. This makes it easy to see the results of your scripts and use the Blender interface to experiment with parameters before iterating on your script.
