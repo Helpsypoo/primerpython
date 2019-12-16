@@ -363,8 +363,6 @@ def make_blob_with_actions_for_unity():
     blobj.objects[0] = actual_blob
     actual_blob.parent = blobj.ref_obj
 
-
-
     #print()
     #print(blob.__dict__)
     #print()
@@ -374,9 +372,13 @@ def make_blob_with_actions_for_unity():
         unhide = False
     )'''
 
-    blobj.evil_pose(
+    '''blobj.evil_pose(
         start_time = 0,
         end_time = 4
+    )'''
+    blobj.hold_object(
+        start_time = 0,
+        end_time = 2
     )
 
 def test():
@@ -661,8 +663,8 @@ def main():
     #initialize_blender()
 
     #circle_grid()
-    test()
-    #make_blob_with_actions_for_unity()
+    #test()
+    make_blob_with_actions_for_unity()
     #draw_scenes_from_file(final_vestibular_animations_anatomy, clear = False)
     #draw_scenes_from_file(final_vestibular_animations_text)
 
