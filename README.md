@@ -18,7 +18,7 @@ The best scene to try when getting started is probably tex_test(), defined in dr
 There isn't a best practice for creating a series of scenes in a new file. As you'll see, the files from past primer videos are all structured fairly differently. I haven't landed on a steady-state workflow here. So if you're confused, that might be why.
 
 ## Requirements  
-Blender 
+Blender 2.79 (Not 2.8+, the api has changed)
 - [Download](https://www.blender.org/)  
 - [API](https://docs.blender.org/api/2.79/)  
 
