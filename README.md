@@ -1,3 +1,5 @@
+# This repo is archived. Helpsypoo/primerunity is what I'm using now. If you decide to move forward with trying to get this code running, know that it's extremely likely to waste your time, and nobody can help you.
+
 # primer
 Code that makes videos for this: youtube.com/c/primerlearning
 
