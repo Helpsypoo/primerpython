@@ -1,9 +1,7 @@
-# This repo is archived. Helpsypoo/primerunity is what I'm using now. If you decide to move forward with trying to get this code running, know that it's extremely likely to waste your time, and nobody can help you.
+# This repo is archived. If you decide to move forward with trying to get this code running, know that it's extremely likely to waste your time, and nobody can help you.
 
 # primer
 Code that makes videos for this: youtube.com/c/primerlearning
-
-This is going to be a pretty minimal readme for now, and the code itself is likely very confusing. I intend to clean things up and improve documentation, though I don't know when that will be. If you'd like to receive an email when that update happens, you can submit your email here: https://forms.gle/GHTgKMUaMxqxGUu39
 
 ## Overview  
 This is a library of tools that lets you write high-level functions to build and animate objects in Blender. It's not set up to run from the command line. Instead, it uses the Script Runner addon for Blender, which lets you run scripts by pushing buttons within Blender. This makes it easy to see the results of your scripts and use the Blender interface to experiment with parameters before iterating on your script.
