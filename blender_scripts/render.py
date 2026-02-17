@@ -3,10 +3,7 @@ import subprocess
 import os
 import shutil
 
-import sys
-sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts')
-sys.path.append('C:\\Users\\justi\\Documents\\CodeProjects\\Primer\\blender_scripts\\tools')
-import helpers
+from .tools import helpers
 
 overwrite = True
 
@@ -46,6 +43,7 @@ def render_with_skips(start, stop):
     # loop through each animated object and find its
     # animated frames. then remove those frames from
     # a set containing all frames, to get still frames.
+    fr_prev = None
     still_frames = set(render_range)
     for obj in all_obj_fcurves.keys():
         obj_animated_frames = []
